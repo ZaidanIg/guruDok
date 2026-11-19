@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Layers,
   X,
+  CheckSquare,
+  ClipboardList,
 } from 'lucide-react';
 import { CORE_SERVICES, UPCOMING_13_SERVICES } from '../../constants/services';
 import { ServiceCatalogItem, ServiceId } from '../../types';
@@ -30,6 +32,8 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
     if (item.id === '08_modul_ajar') return <BookOpen className="h-5 w-5 text-white" />;
     if (item.id === '05_prota') return <Calendar className="h-5 w-5 text-white" />;
     if (item.id === '04_atp') return <ListOrdered className="h-5 w-5 text-white" />;
+    if (item.id === '07_kktp') return <CheckSquare className="h-5 w-5 text-white" />;
+    if (item.id === '09_lkpd') return <ClipboardList className="h-5 w-5 text-white" />;
     if (item.id === 'coming_soon') return <Layers className="h-5 w-5 text-white" />;
     return <FileText className="h-5 w-5 text-white" />;
   };

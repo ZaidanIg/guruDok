@@ -11,7 +11,9 @@ class ServiceIdEnum(str, Enum):
     ATP = "04_atp"
     PROTA = "05_prota"
     PROMES = "06_promes"
+    KKTP = "07_kktp"
     MODUL_AJAR = "08_modul_ajar"
+    LKPD = "09_lkpd"
 
 
 class OutputFormatEnum(str, Enum):

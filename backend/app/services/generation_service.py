@@ -21,7 +21,9 @@ class DocumentGenerationService:
         ServiceIdEnum.ATP: "Alur Tujuan Pembelajaran (ATP)",
         ServiceIdEnum.PROTA: "Program Tahunan (Prota)",
         ServiceIdEnum.PROMES: "Program Semester (Promes)",
+        ServiceIdEnum.KKTP: "Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)",
         ServiceIdEnum.MODUL_AJAR: "Modul Ajar / RPP Lengkap (Deep Learning 3M)",
+        ServiceIdEnum.LKPD: "Lembar Kerja Peserta Didik Mandiri (LKPD)",
     }
 
     def __init__(
@@ -185,6 +187,14 @@ class DocumentGenerationService:
             db_teacher_id = None if job.teacher_id == "anon-placeholder" else job.teacher_id
             with self.db.get_connection() as conn:
                 with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO service_templates (service_code, service_name, cluster_number, is_mvp_phase1, required_form_schema)
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (service_code) DO NOTHING;
+                        """,
+                        (job.service_id, job.service_name, 2, False, Jsonb({"service_id": job.service_id})),
+                    )
                     cur.execute(
                         """
                         INSERT INTO generated_documents_log (

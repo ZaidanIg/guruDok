@@ -1,7 +1,7 @@
 export type Jenjang = 'SD' | 'SMP' | 'SMA';
 export type PaperSize = 'F4' | 'A4';
 export type OutputFormat = 'docx' | 'xlsx' | 'pdf';
-export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '08_modul_ajar';
+export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd';
 
 export interface LearningObjective {
   code: string;

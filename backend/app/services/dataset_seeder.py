@@ -1248,7 +1248,9 @@ class DatasetSeederService:
             ("04_atp", "Alur Tujuan Pembelajaran (ATP)", 2, True),
             ("05_prota", "Program Tahunan (Prota)", 2, True),
             ("06_promes", "Program Semester (Promes)", 2, True),
+            ("07_kktp", "Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)", 2, False),
             ("08_modul_ajar", "Modul Ajar / RPP Lengkap (Deep Learning 3M)", 2, True),
+            ("09_lkpd", "Lembar Kerja Peserta Didik Mandiri (LKPD)", 3, False),
         ]
         for code, name, cluster, is_mvp in mvp_services:
             cur.execute(

@@ -104,6 +104,10 @@ class DocxDocumentEngine(DocumentEngine):
                 self._build_prota(doc, request, subject, chapter, teacher)
             elif request.service_id == ServiceIdEnum.PROMES:
                 self._build_promes(doc, request, subject, chapter, teacher)
+            elif request.service_id == ServiceIdEnum.KKTP:
+                self._build_kktp(doc, request, subject, chapter, teacher)
+            elif request.service_id == ServiceIdEnum.LKPD:
+                self._build_lkpd(doc, request, subject, chapter, teacher, tpl)
 
             self._add_lembar_pengesahan(doc, teacher)
 
@@ -860,6 +864,191 @@ class DocxDocumentEngine(DocumentEngine):
                 r_tp[-1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         self._style_data_table(table, [12, 74, 12, 10, 10, 10, 10, 10, 10, 16], has_header_row=True)
+
+    def _add_doc_title(self, doc: Document, title: str, subtitle: str) -> None:
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.space_after = Pt(8)
+        r1 = p.add_run(f"{title}\n")
+        r1.bold = True
+        r1.font.size = Pt(12)
+        r2 = p.add_run(subtitle)
+        r2.bold = True
+        r2.font.size = Pt(11)
+
+    def _build_kktp(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+    ):
+        """Builds Service 07: Kriteria Ketercapaian Tujuan Pembelajaran (KKTP) PPA Revisi 2025."""
+        self._add_kop_surat(doc, teacher)
+        fase_label = subject.fase
+        self._add_doc_title(
+            doc,
+            "KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)",
+            f"MATA PELAJARAN {subject.nama_mapel.upper()} — FASE {fase_label} (KELAS {subject.kelas})",
+        )
+
+        # Identitas Dokumen
+        id_table = doc.add_table(rows=4, cols=2)
+        id_rows = [
+            ("Nama Penyusun", f"{teacher.nama_guru} (NIP. {teacher.nip_guru})"),
+            ("Satuan Pendidikan", teacher.nama_sekolah),
+            ("Mata Pelajaran / Kelas", f"{subject.nama_mapel} / Kelas {subject.kelas} (Fase {fase_label})"),
+            ("Semester / Tahun Ajaran", f"Semester {request.semester} / 2025–2026"),
+        ]
+        for idx, (k, v) in enumerate(id_rows):
+            id_table.rows[idx].cells[0].text = k
+            id_table.rows[idx].cells[1].text = v
+            for p in id_table.rows[idx].cells[0].paragraphs:
+                for r in p.runs:
+                    r.bold = True
+        self._style_data_table(id_table, [54, 120], has_header_row=False)
+
+        # A. Interval Nilai 4 Skala PPA Revisi 2025
+        self._add_section_heading(doc, "A. Pendekatan Interval Nilai (4 Skala PPA Revisi 2025)")
+        intervals = [
+            ("0 – 60", "Perlu Bimbingan (D)", "Belum mencapai ketuntasan, memerlukan remedial di seluruh bagian."),
+            ("61 – 74", "Cukup (C)", "Belum mencapai ketuntasan, remedial di bagian yang diperlukan."),
+            ("75 – 87", "Baik (B)", "Sudah mencapai ketuntasan (KKTP), tidak perlu remedial."),
+            ("88 – 100", "Sangat Baik (A)", "Sudah mencapai ketuntasan sangat baik, perlu pengayaan atau tantangan lebih."),
+        ]
+        int_tbl = doc.add_table(rows=len(intervals) + 1, cols=3)
+        int_headers = ["Interval Nilai", "Predikat / Kriteria", "Tindak Lanjut & Deskripsi Rapor"]
+        for c_i, h in enumerate(int_headers):
+            int_tbl.rows[0].cells[c_i].text = h
+        for idx, (rng, pred, tl) in enumerate(intervals, start=1):
+            int_tbl.rows[idx].cells[0].text = rng
+            int_tbl.rows[idx].cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            int_tbl.rows[idx].cells[1].text = pred
+            int_tbl.rows[idx].cells[2].text = tl
+        self._style_data_table(int_tbl, [34, 48, 92], has_header_row=True)
+
+        # B. Rubrik Kriteria Ketercapaian per Tujuan Pembelajaran (TP)
+        self._add_section_heading(doc, "B. Rubrik Kriteria Ketercapaian per Tujuan Pembelajaran (TP)")
+        target_chapters = [chapter] if chapter else [c for c in subject.bab_list if c.semester == request.semester]
+        if not target_chapters:
+            target_chapters = subject.bab_list[:2]
+
+        tp_rows = []
+        for ch in target_chapters:
+            for tp in _resolve_effective_tps(ch, request):
+                tp_rows.append((ch.nomor_bab, tp.code, tp.deskripsi))
+
+        rub_tbl = doc.add_table(rows=len(tp_rows) + 1, cols=5)
+        rub_headers = [
+            "Kode & Rumusan TP",
+            "Baru Berkembang (0–60)",
+            "Layak (61–74)",
+            "Cakap (75–87)",
+            "Mahir (88–100)",
+        ]
+        for c_i, h in enumerate(rub_headers):
+            rub_tbl.rows[0].cells[c_i].text = h
+        for idx, (no_bab, code, desc) in enumerate(tp_rows, start=1):
+            rub_tbl.rows[idx].cells[0].text = f"[{code}] (Bab {no_bab}) {desc}"
+            rub_tbl.rows[idx].cells[1].text = "Memerlukan bimbingan penuh dalam memahami konsep dasar."
+            rub_tbl.rows[idx].cells[2].text = "Mampu menjelaskan konsep dasar namun belum konsisten."
+            rub_tbl.rows[idx].cells[3].text = "Mampu menerapkan konsep secara mandiri dan tepat (Tuntas)."
+            rub_tbl.rows[idx].cells[4].text = "Mampu menganalisis, mengevaluasi, dan memecahkan kasus kompleks."
+        self._style_data_table(rub_tbl, [54, 30, 30, 30, 30], has_header_row=True)
+
+    def _build_lkpd(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+        tpl: Optional[dict] = None,
+    ):
+        """Builds Service 09: Lembar Kerja Peserta Didik Mandiri (LKPD)."""
+        self._add_kop_surat(doc, teacher)
+        ch = chapter or (subject.bab_list[0] if subject.bab_list else None)
+        fase_label = subject.fase
+        bab_title = ch.judul_bab if ch else subject.nama_mapel
+        self._add_doc_title(
+            doc,
+            "LEMBAR KERJA PESERTA DIDIK (LKPD) MANDIRI",
+            f"MATA PELAJARAN {subject.nama_mapel.upper()} — FASE {fase_label} (KELAS {subject.kelas})",
+        )
+
+        # Kotak Identitas Siswa
+        stu_tbl = doc.add_table(rows=4, cols=2)
+        stu_rows = [
+            ("Nama Peserta Didik", "............................................................"),
+            ("Kelas / No. Absen", f"Kelas {subject.kelas} / No. Absen: ........"),
+            ("Bab / Materi Pokok", f"Bab {ch.nomor_bab}: {bab_title}" if ch else bab_title),
+            ("Guru Pengampu", f"{teacher.nama_guru} ({teacher.nama_sekolah})"),
+        ]
+        for idx, (k, v) in enumerate(stu_rows):
+            stu_tbl.rows[idx].cells[0].text = k
+            stu_tbl.rows[idx].cells[1].text = v
+            for p in stu_tbl.rows[idx].cells[0].paragraphs:
+                for r in p.runs:
+                    r.bold = True
+        self._style_data_table(stu_tbl, [54, 120], has_header_row=False)
+
+        # A. Tujuan Pembelajaran
+        self._add_section_heading(doc, "A. Tujuan Pembelajaran")
+        tps = _resolve_effective_tps(ch, request) if ch else []
+        tp_tbl = doc.add_table(rows=max(1, len(tps)) + 1, cols=2)
+        tp_tbl.rows[0].cells[0].text = "Kode TP"
+        tp_tbl.rows[0].cells[1].text = "Rumusan Tujuan Pembelajaran"
+        if tps:
+            for idx, tp in enumerate(tps, start=1):
+                tp_tbl.rows[idx].cells[0].text = tp.code
+                tp_tbl.rows[idx].cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                tp_tbl.rows[idx].cells[1].text = tp.deskripsi
+        else:
+            tp_tbl.rows[1].cells[0].text = "TP.1"
+            tp_tbl.rows[1].cells[1].text = f"Peserta didik mampu memahami dan menerapkan materi {bab_title}."
+        self._style_data_table(tp_tbl, [28, 146], has_header_row=True)
+
+        # B. Petunjuk Pengerjaan & Aktivitas 3M
+        self._add_section_heading(doc, "B. Petunjuk Belajar & Langkah Aktivitas (3M)")
+        ov = request.custom_overrides
+        topik = (ov.topik_kontekstual if ov and ov.topik_kontekstual else None) or (
+            tpl.get("topik_kontekstual") if tpl else None
+        ) or f"Penerapan materi {bab_title} dalam kehidupan sehari-hari."
+        lkpd_steps = (ov.langkah_lkpd if ov and ov.langkah_lkpd else None) or (
+            tpl.get("langkah_lkpd") if tpl else None
+        ) or [
+            f"1. Memahami: Baca dan amati topik kontekstual '{topik}' secara cermat.",
+            "2. Mengaplikasi: Diskusikan bersama kelompok atau kerjakan langkah pemecahan masalah pada lembar berikut.",
+            "3. Merefleksi: Tuliskan kesimpulan dan refleksi pemahaman Anda setelah menyelesaikan aktivitas.",
+        ]
+
+        act_tbl = doc.add_table(rows=len(lkpd_steps) + 2, cols=2)
+        act_tbl.rows[0].cells[0].text = "Tahap / Komponen"
+        act_tbl.rows[0].cells[1].text = "Uraian Aktivitas & Ruang Jawaban Siswa"
+        act_tbl.rows[1].cells[0].text = "Topik Kontekstual"
+        act_tbl.rows[1].cells[1].text = topik
+        for idx, step in enumerate(lkpd_steps, start=2):
+            act_tbl.rows[idx].cells[0].text = f"Langkah {idx - 1}"
+            act_tbl.rows[idx].cells[1].text = f"{step}\n\nJawaban / Catatan Siswa:\n............................................................................................"
+        self._style_data_table(act_tbl, [44, 130], has_header_row=True)
+
+        # C. Soal Latihan / Asesmen Mandiri
+        self._add_section_heading(doc, "C. Pertanyaan Pemahaman & Latihan Mandiri")
+        soal_list = (ov.soal_asesmen_proses if ov and ov.soal_asesmen_proses else None) or (
+            tpl.get("soal_asesmen_proses") if tpl else None
+        ) or [
+            f"Jelaskan konsep utama dari materi {bab_title} dengan bahasa Anda sendiri!",
+            f"Berikan satu contoh penerapan nyata {bab_title} di lingkungan sekitar Anda!",
+        ]
+        soal_tbl = doc.add_table(rows=len(soal_list) + 1, cols=2)
+        soal_tbl.rows[0].cells[0].text = "No."
+        soal_tbl.rows[0].cells[1].text = "Pertanyaan & Lembar Jawaban"
+        for idx, q in enumerate(soal_list, start=1):
+            soal_tbl.rows[idx].cells[0].text = str(idx)
+            soal_tbl.rows[idx].cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            soal_tbl.rows[idx].cells[1].text = f"{q}\nJawaban: ......................................................................................."
+        self._style_data_table(soal_tbl, [16, 158], has_header_row=True)
 
     def _add_section_heading(self, doc: Document, title: str):
         p = doc.add_paragraph()

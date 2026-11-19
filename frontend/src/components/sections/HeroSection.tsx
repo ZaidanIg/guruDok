@@ -7,6 +7,8 @@ import {
   ListOrdered,
   LayoutGrid,
   History,
+  CheckSquare,
+  ClipboardList,
 } from 'lucide-react';
 import { CORE_SERVICES } from '../../constants/services';
 import { ServiceId } from '../../types';
@@ -29,6 +31,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (id === '08_modul_ajar') return <BookOpen className="h-6 w-6 text-white" />;
     if (id === '05_prota') return <Calendar className="h-6 w-6 text-white" />;
     if (id === '04_atp') return <ListOrdered className="h-6 w-6 text-white" />;
+    if (id === '07_kktp') return <CheckSquare className="h-6 w-6 text-white" />;
+    if (id === '09_lkpd') return <ClipboardList className="h-6 w-6 text-white" />;
     return <FileText className="h-6 w-6 text-white" />;
   };
 

@@ -103,6 +103,10 @@ class PdfDocumentEngine(DocumentEngine):
                 self._build_prota(pdf, request, subject, chapter)
             elif request.service_id == ServiceIdEnum.PROMES:
                 self._build_promes(pdf, request, subject, chapter, tpl)
+            elif request.service_id == ServiceIdEnum.KKTP:
+                self._build_kktp(pdf, request, subject, chapter)
+            elif request.service_id == ServiceIdEnum.LKPD:
+                self._build_lkpd(pdf, request, subject, chapter, tpl)
 
             # 3. Lembar Pengesahan
             self._add_lembar_pengesahan(pdf, teacher)
@@ -346,6 +350,69 @@ class PdfDocumentEngine(DocumentEngine):
             pdf.set_font("Helvetica", "", 9)
             for tp in tps:
                 pdf.multi_cell(0, 5, _ascii_safe(f"  - [{tp.code}] {tp.deskripsi} ({tp.alokasi_jp} JP)"), new_x="LMARGIN", new_y="NEXT")
+
+    def _build_kktp(self, pdf: FPDF, request: DocumentGenerateRequest, subject: CurriculumSubject, chapter: Optional[ChapterTopic]) -> None:
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 6, "KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)", new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.ln(3)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 5, _ascii_safe(f"Mata Pelajaran : {subject.nama_mapel} ({subject.jenjang} Kelas {request.kelas} / Fase {subject.fase})"), new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 5, _ascii_safe(f"Materi/Bab     : {chapter.judul_bab if chapter else 'Semua Bab'} | Semester: {request.semester}"), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 6, "A. Skala Interval Nilai KKTP (4 Interval)", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        intervals = [
+            ("0 - 40%", "Belum Mencapai", "Remedial di seluruh bagian"),
+            ("41 - 65%", "Belum Mencapai Ketuntasan", "Remedial di bagian yang diperlukan"),
+            ("66 - 85%", "Sudah Mencapai Ketuntasan", "Tidak perlu remedial"),
+            ("86 - 100%", "Sudah Mencapai Ketuntasan", "Perlu pengayaan atau tantangan lebih"),
+        ]
+        for rng, status, action in intervals:
+            pdf.multi_cell(0, 5, _ascii_safe(f"  - {rng} : {status} -> {action}"), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 6, "B. Rubrik Ketercapaian Tujuan Pembelajaran", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        tps = _resolve_effective_tps(chapter, request) if chapter else [tp for c in subject.bab_list for tp in c.tujuan_pembelajaran]
+        for tp in tps:
+            pdf.multi_cell(0, 5, _ascii_safe(f"  - [{tp.code}] {tp.deskripsi} (Alokasi: {tp.alokasi_jp} JP)"), new_x="LMARGIN", new_y="NEXT")
+
+    def _build_lkpd(self, pdf: FPDF, request: DocumentGenerateRequest, subject: CurriculumSubject, chapter: Optional[ChapterTopic], tpl: dict) -> None:
+        ch = chapter or (subject.bab_list[0] if subject.bab_list else None)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 6, "LEMBAR KERJA PESERTA DIDIK (LKPD) MANDIRI", new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.ln(3)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 5, _ascii_safe(f"Mata Pelajaran : {subject.nama_mapel} | Kelas {request.kelas} (Fase {subject.fase}) | Semester {request.semester}"), new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 5, _ascii_safe(f"Topik / Materi : {ch.judul_bab if ch else '-'}"), new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 5, "Nama Siswa     : ..........................................   Kelas/No: ........", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 6, "A. Tujuan Pembelajaran", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        tps = _resolve_effective_tps(ch, request) if ch else []
+        for tp in tps:
+            pdf.multi_cell(0, 5, _ascii_safe(f"  - [{tp.code}] {tp.deskripsi}"), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 6, "B. Langkah Aktivitas Pembelajaran Mendalam (3M)", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        pm = tpl.get("pembelajaran_mendalam_3m") or {}
+        for phase, label in [("memahami", "1. Memahami"), ("mengaplikasi", "2. Mengaplikasi"), ("merefleksi", "3. Merefleksi")]:
+            val = pm.get(phase, f"Kegiatan {label.lower()} bersama kelompok/mandiri.")
+            pdf.multi_cell(0, 5, _ascii_safe(f"  {label}: {val}"), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 6, "C. Soal Latihan / Tugas Mandiri", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        for idx in range(1, 4):
+            pdf.multi_cell(0, 5, _ascii_safe(f"  {idx}. Jawablah pertanyaan terkait {ch.judul_bab if ch else subject.nama_mapel} di lembar jawaban."), new_x="LMARGIN", new_y="NEXT")
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
         pengesahan = teacher.get_lembar_pengesahan()

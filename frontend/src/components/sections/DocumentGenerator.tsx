@@ -1851,6 +1851,203 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 </div>
               )}
 
+              {activeService.id === '07_kktp' && (
+                <div className="mt-5 space-y-5 text-xs leading-relaxed">
+                  <div className="text-center">
+                    <h2 className="text-base font-extrabold uppercase text-slate-900">
+                      KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)
+                    </h2>
+                    <p className="font-bold uppercase text-slate-700">
+                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — FASE {selectedSubject?.fase} (KELAS {selectedSubject?.kelas})
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">Identitas Dokumen</h3>
+                    <table className="paper-table mt-1.5">
+                      <tbody>
+                        <tr>
+                          <th className="w-1/3 text-left">Mata Pelajaran</th>
+                          <td>{selectedSubject?.nama_mapel}</td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Jenjang / Kelas / Fase</th>
+                          <td>
+                            {selectedSubject?.jenjang} / Kelas {selectedSubject?.kelas} / Fase {selectedSubject?.fase}
+                          </td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Semester / Tahun Ajaran</th>
+                          <td>Semester {semester} / 2025/2026</td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Materi / Bab</th>
+                          <td>{selectedChapter?.judul_bab || 'Semua Bab'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">
+                      A. Skala Interval Nilai KKTP (4 Interval — PPA Revisi 2025)
+                    </h3>
+                    <table className="paper-table mt-1.5">
+                      <thead>
+                        <tr>
+                          <th className="w-24 text-center">Interval</th>
+                          <th className="w-40 text-left">Kriteria</th>
+                          <th className="text-left">Tindak Lanjut / Intervensi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="text-center font-bold">0 - 40%</td>
+                          <td>Belum Mencapai</td>
+                          <td>Remedial di seluruh bagian</td>
+                        </tr>
+                        <tr>
+                          <td className="text-center font-bold">41 - 65%</td>
+                          <td>Belum Mencapai Ketuntasan</td>
+                          <td>Remedial di bagian yang diperlukan</td>
+                        </tr>
+                        <tr>
+                          <td className="text-center font-bold">66 - 85%</td>
+                          <td>Sudah Mencapai Ketuntasan</td>
+                          <td>Tidak perlu remedial</td>
+                        </tr>
+                        <tr>
+                          <td className="text-center font-bold">86 - 100%</td>
+                          <td>Sudah Mencapai Ketuntasan</td>
+                          <td>Perlu pengayaan atau tantangan lebih</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">
+                      B. Rubrik Ketercapaian Tujuan Pembelajaran (TP)
+                    </h3>
+                    <table className="paper-table mt-1.5">
+                      <thead>
+                        <tr>
+                          <th className="w-20 text-center">Kode TP</th>
+                          <th className="text-left">Tujuan Pembelajaran & Indikator Ketercapaian</th>
+                          <th className="w-16 text-center">JP</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeTps.map((tp, idx) => (
+                          <tr key={`${tp.code}-${idx}`}>
+                            <td className="text-center font-bold">{tp.code}</td>
+                            <td>{tp.deskripsi}</td>
+                            <td className="text-center">{tp.alokasi_jp}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {activeService.id === '09_lkpd' && (
+                <div className="mt-5 space-y-5 text-xs leading-relaxed">
+                  <div className="text-center">
+                    <h2 className="text-base font-extrabold uppercase text-slate-900">
+                      LEMBAR KERJA PESERTA DIDIK (LKPD) MANDIRI
+                    </h2>
+                    <p className="font-bold uppercase text-slate-700">
+                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — FASE {selectedSubject?.fase} (KELAS {selectedSubject?.kelas})
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">Identitas Peserta Didik</h3>
+                    <table className="paper-table mt-1.5">
+                      <tbody>
+                        <tr>
+                          <th className="w-1/3 text-left">Nama Peserta Didik</th>
+                          <td>............................................................</td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Kelas / No. Absen</th>
+                          <td>Kelas {selectedSubject?.kelas} / ........</td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Topik / Materi Pokok</th>
+                          <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">A. Tujuan Pembelajaran</h3>
+                    <ul className="mt-1.5 list-disc space-y-1 pl-5">
+                      {activeTps.map((tp, idx) => (
+                        <li key={`${tp.code}-${idx}`}>
+                          <strong>[{tp.code}]</strong> {tp.deskripsi}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">
+                      B. Langkah Aktivitas Pembelajaran Mendalam (3M)
+                    </h3>
+                    <table className="paper-table mt-1.5">
+                      <thead>
+                        <tr>
+                          <th className="w-32 text-left">Tahap 3M</th>
+                          <th className="text-left">Panduan Aktivitas Mandiri / Kelompok</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="font-bold">1. Memahami</td>
+                          <td>
+                            {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
+                              `Membaca dan memahami konsep inti pada materi ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}.`}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="font-bold">2. Mengaplikasi</td>
+                          <td>
+                            {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
+                              'Mengerjakan studi kasus atau praktik pemecahan masalah secara terstruktur.'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="font-bold">3. Merefleksi</td>
+                          <td>
+                            {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
+                              'Menuliskan kesimpulan dan refleksi pemahaman diri setelah aktivitas.'}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">C. Soal Latihan / Tugas Mandiri</h3>
+                    <ol className="mt-1.5 list-decimal space-y-1.5 pl-5">
+                      <li>
+                        Jelaskan konsep utama yang dipelajari pada topik{' '}
+                        {selectedChapter?.judul_bab || selectedSubject?.nama_mapel} dengan bahasamu sendiri!
+                      </li>
+                      <li>
+                        Berikan satu contoh penerapan nyata dari materi ini dalam kehidupan sehari-hari!
+                      </li>
+                      <li>
+                        Apa bagian yang paling menantang dan bagaimana kamu menyelesaikannya?
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+
               {/* 3. LEMBAR PENGESAHAN RESMI */}
               <div className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-300 pt-5 text-xs">
                 <div>

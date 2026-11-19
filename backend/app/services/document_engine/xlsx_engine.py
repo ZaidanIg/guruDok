@@ -56,6 +56,8 @@ class XlsxDocumentEngine(DocumentEngine):
         try:
             if request.service_id == ServiceIdEnum.PROMES:
                 return self._generate_promes_xlsx(request, subject, teacher, raw_template)
+            if request.service_id == ServiceIdEnum.KKTP:
+                return self._generate_kktp_xlsx(request, subject, chapter, teacher)
             return self._generate_structured_curriculum_xlsx(request, subject, chapter, teacher, raw_template)
         except Exception as e:
             raise DocumentGenerationError(f"Failed to generate Excel document: {str(e)}")
@@ -335,6 +337,86 @@ class XlsxDocumentEngine(DocumentEngine):
         ws.column_dimensions["D"].width = 50
         ws.column_dimensions["E"].width = 28
         ws.column_dimensions["F"].width = 12
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def _generate_kktp_xlsx(
+        self,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+    ) -> bytes:
+        """Generates Service 07 (KKTP) Excel workbook with active =IF, =AVERAGE, and =COUNTIF formulas."""
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"KKTP Smt {request.semester}"
+
+        title_font = Font(name="Arial", size=12, bold=True)
+        header_font = Font(name="Arial", size=10, bold=True)
+        data_font = Font(name="Arial", size=10)
+        header_fill = PatternFill(start_color="D9E2F3", end_color="D9E2F3", fill_type="solid")
+        thin_side = Side(style="thin", color="334155")
+        border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        ws["A1"] = f"KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP) — {subject.nama_mapel.upper()}"
+        ws["A1"].font = title_font
+        ws["A2"] = f"{teacher.nama_sekolah} | Kelas {subject.kelas} (Fase {subject.fase}) | Penyusun: {teacher.nama_guru}"
+        ws["A2"].font = data_font
+
+        headers = ["No", "Kode TP", "Rumusan Tujuan Pembelajaran", "Skor Capaian (0-100)", "Predikat Otomatis", "Status Ketuntasan (KKTP >= 75)"]
+        for idx, h in enumerate(headers, start=1):
+            c = ws.cell(row=4, column=idx, value=h)
+            c.font = header_font
+            c.fill = header_fill
+            c.border = border
+
+        target_chapters = [chapter] if chapter else [c for c in subject.bab_list if c.semester == request.semester]
+        if not target_chapters:
+            target_chapters = subject.bab_list[:2]
+
+        row_idx = 5
+        no = 1
+        for ch in target_chapters:
+            for tp in _resolve_effective_tps(ch, request):
+                ws.cell(row=row_idx, column=1, value=no).border = border
+                ws.cell(row=row_idx, column=2, value=tp.code).border = border
+                ws.cell(row=row_idx, column=3, value=tp.deskripsi).border = border
+                c_score = ws.cell(row=row_idx, column=4, value=80)
+                c_score.border = border
+                c_pred = ws.cell(
+                    row=row_idx,
+                    column=5,
+                    value=f'=IF(D{row_idx}>=88,"Sangat Baik (A)",IF(D{row_idx}>=75,"Baik (B)",IF(D{row_idx}>=61,"Cukup (C)","Perlu Bimbingan (D)")))',
+                )
+                c_pred.border = border
+                c_status = ws.cell(
+                    row=row_idx,
+                    column=6,
+                    value=f'=IF(D{row_idx}>=75,"Tuntas (Tidak Remedial)","Belum Tuntas (Remedial)")',
+                )
+                c_status.border = border
+                row_idx += 1
+                no += 1
+
+        last_data_row = max(5, row_idx - 1)
+        ws.cell(row=row_idx, column=3, value="RATA-RATA SKOR & JUMLAH TUNTAS").font = header_font
+        avg_cell = ws.cell(row=row_idx, column=4, value=f"=AVERAGE(D5:D{last_data_row})")
+        avg_cell.font = header_font
+        avg_cell.border = border
+        cnt_cell = ws.cell(row=row_idx, column=6, value=f'=COUNTIF(F5:F{last_data_row},"Tuntas (Tidak Remedial)")')
+        cnt_cell.font = header_font
+        cnt_cell.border = border
+
+        ws.column_dimensions["A"].width = 6
+        ws.column_dimensions["B"].width = 14
+        ws.column_dimensions["C"].width = 52
+        ws.column_dimensions["D"].width = 20
+        ws.column_dimensions["E"].width = 24
+        ws.column_dimensions["F"].width = 28
 
         buffer = io.BytesIO()
         wb.save(buffer)
