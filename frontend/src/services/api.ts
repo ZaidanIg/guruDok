@@ -161,13 +161,11 @@ export class GuruDokApiClient {
       const res = await fetch(`${this.baseUrl}/documents/history?limit=100`);
       if (!res.ok) throw new Error('Failed to fetch history');
       const json: ApiEnvelope<HistoryDocumentItem[]> = await res.json();
-      if (json.data && json.data.length > 0) {
-        return json.data;
-      }
+      return Array.isArray(json.data) ? json.data : [];
     } catch {
-      // Return initial fallback history when offline or empty
+      // Return initial fallback history only when backend is offline/unreachable
+      return INITIAL_HISTORY_ITEMS;
     }
-    return INITIAL_HISTORY_ITEMS;
   }
 }
 
