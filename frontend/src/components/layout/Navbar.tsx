@@ -87,10 +87,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="hidden pr-1 sm:block">
               <p className="text-xs font-bold leading-tight text-slate-900">
-                {teacher.nama_guru}
+                {teacher.nama_guru || 'Lengkapi Profil Guru'}
               </p>
               <p className="text-[11px] font-medium text-slate-500">
-                {teacher.nama_sekolah}
+                {teacher.nama_sekolah || 'Klik untuk isi KOP Sekolah'}
               </p>
             </div>
             <span className="text-xs font-bold text-slate-700 sm:hidden">

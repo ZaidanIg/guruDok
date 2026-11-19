@@ -29,7 +29,7 @@ import { DocumentHistory } from './components/sections/DocumentHistory';
 import { SchoolProfileModal } from './components/modals/SchoolProfileModal';
 import { SuccessDownloadModal } from './components/modals/SuccessDownloadModal';
 
-const STORAGE_KEY_TEACHER = 'gurudok_teacher_profile_v1';
+const STORAGE_KEY_TEACHER = 'gurudok_teacher_profile_v2';
 
 export const App: React.FC = () => {
   // Multi-Page Navigation State: 'home' | 'katalog' | 'generator' | 'riwayat'
@@ -223,6 +223,17 @@ export const App: React.FC = () => {
   const handleGenerateDocument = async () => {
     if (!selectedSubject) {
       setErrorMsg('Silakan pilih Mata Pelajaran terlebih dahulu.');
+      return;
+    }
+    if (
+      !teacher.nama_guru.trim() ||
+      !teacher.nama_sekolah.trim() ||
+      !teacher.kabupaten_kota.trim() ||
+      !teacher.nama_kepala_sekolah.trim() ||
+      !teacher.no_whatsapp.trim()
+    ) {
+      setErrorMsg('Silakan lengkapi Profil Guru & KOP Sekolah Anda terlebih dahulu.');
+      setIsProfileModalOpen(true);
       return;
     }
 

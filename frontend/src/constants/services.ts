@@ -101,16 +101,16 @@ export const FASE_BY_GRADE: Record<number, string> = {
 };
 
 export const DEFAULT_TEACHER_PROFILE: TeacherProfile = {
-  nama_guru: 'Siti Aminah, S.Pd.',
-  nip_guru: '198805122014022003',
-  nama_sekolah: 'SMP Negeri 1 Surabaya',
-  npsn: '20531234',
-  kabupaten_kota: 'Kota Surabaya',
-  provinsi: 'Jawa Timur',
-  nama_kepala_sekolah: 'Drs. H. Bambang Irawan, M.Pd.',
-  nip_kepala_sekolah: '196904151995121002',
-  no_whatsapp: '081234567890',
-  email: 'sitiaminah.guru@sekolah.sch.id',
+  nama_guru: '',
+  nip_guru: '',
+  nama_sekolah: '',
+  npsn: '',
+  kabupaten_kota: '',
+  provinsi: '',
+  nama_kepala_sekolah: '',
+  nip_kepala_sekolah: '',
+  no_whatsapp: '',
+  email: '',
   ukuran_kertas_default: 'F4',
 };
 

@@ -1030,14 +1030,14 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               {/* 1. KOP SEKOLAH RESMI */}
               <div className="border-b-2 border-slate-900 pb-3 text-center">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-700">
-                  PEMERINTAH {teacher.kabupaten_kota.toUpperCase()} — DINAS PENDIDIKAN
+                  PEMERINTAH {(teacher.kabupaten_kota || 'KABUPATEN/KOTA').toUpperCase()} — DINAS PENDIDIKAN
                 </p>
                 <p className="mt-0.5 text-lg font-extrabold uppercase tracking-tight text-slate-900">
-                  {teacher.nama_sekolah}
+                  {teacher.nama_sekolah || 'NAMA SATUAN PENDIDIKAN'}
                 </p>
                 <p className="mt-0.5 text-[11px] text-slate-600">
-                  NPSN: {teacher.npsn || '-'} • {teacher.kabupaten_kota}, Provinsi{' '}
-                  {teacher.provinsi}
+                  NPSN: {teacher.npsn || '-'} • {teacher.kabupaten_kota || 'Kabupaten/Kota'}, Provinsi{' '}
+                  {teacher.provinsi || 'Provinsi'}
                 </p>
               </div>
 
@@ -1363,12 +1363,12 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                         <tr>
                           <th className="w-1/3 text-left">Nama Penyusun</th>
                           <td>
-                            {teacher.nama_guru} (NIP. {teacher.nip_guru})
+                            {teacher.nama_guru || 'Nama Guru Anda'} (NIP. {teacher.nip_guru || '-'})
                           </td>
                         </tr>
                         <tr>
                           <th className="text-left">Institusi / Sekolah</th>
-                          <td>{teacher.nama_sekolah}</td>
+                          <td>{teacher.nama_sekolah || 'Nama Sekolah Anda'}</td>
                         </tr>
                         <tr>
                           <th className="text-left">Tahun Penyusunan / Semester</th>
@@ -1838,18 +1838,22 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-300 pt-5 text-xs">
                 <div>
                   <p>Mengetahui,</p>
-                  <p className="font-bold">Kepala {teacher.nama_sekolah}</p>
+                  <p className="font-bold">Kepala {teacher.nama_sekolah || 'Sekolah'}</p>
                   <div className="h-14" />
-                  <p className="font-extrabold underline">{teacher.nama_kepala_sekolah}</p>
-                  <p className="text-[11px] text-slate-600">NIP. {teacher.nip_kepala_sekolah}</p>
+                  <p className="font-extrabold underline">
+                    {teacher.nama_kepala_sekolah || 'Nama Kepala Sekolah'}
+                  </p>
+                  <p className="text-[11px] text-slate-600">
+                    NIP. {teacher.nip_kepala_sekolah || '-'}
+                  </p>
                 </div>
 
                 <div className="text-right sm:text-left sm:pl-12">
-                  <p>{teacher.kabupaten_kota}, Tahun Ajaran 2025/2026</p>
+                  <p>{teacher.kabupaten_kota || 'Kota/Kabupaten'}, Tahun Ajaran 2025/2026</p>
                   <p className="font-bold">Guru Mata Pelajaran</p>
                   <div className="h-14" />
-                  <p className="font-extrabold underline">{teacher.nama_guru}</p>
-                  <p className="text-[11px] text-slate-600">NIP. {teacher.nip_guru}</p>
+                  <p className="font-extrabold underline">{teacher.nama_guru || 'Nama Guru Anda'}</p>
+                  <p className="text-[11px] text-slate-600">NIP. {teacher.nip_guru || '-'}</p>
                 </div>
               </div>
             </div>
