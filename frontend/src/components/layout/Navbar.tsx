@@ -1,5 +1,5 @@
-import React from 'react';
-import { BookOpen, UserCheck, LogOut } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { BookOpen, UserCheck, LogIn, LogOut, ChevronDown, School } from 'lucide-react';
 import { AuthUser, TeacherProfile } from '../../types';
 
 interface NavbarProps {
@@ -21,6 +21,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLoginModal,
   onLogout,
 }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const displayName =
+    authUser?.full_name || teacher.nama_guru || 'Akun & Profil';
+  const displaySub =
+    teacher.nama_sekolah || (authUser ? authUser.email : 'Atur KOP & Masuk');
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -80,67 +98,133 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Right Teacher Profile Button */}
-        <div className="flex items-center gap-2">
+        {/* Right Unified Profile Dropdown (KOP Sekolah + Sign In Biru + Logout Merah) */}
+        <div className="relative" ref={dropdownRef}>
           <button
             type="button"
-            onClick={onOpenProfileModal}
-            title="Ubah KOP Sekolah & Profil Guru"
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
             className="clay-btn-white flex items-center gap-2.5 px-3 py-1.5 text-left"
+            aria-expanded={isDropdownOpen}
+            aria-haspopup="true"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-700">
-              <UserCheck className="h-4 w-4" />
-            </div>
-            <div className="hidden pr-1 sm:block">
-              <p className="text-xs font-bold leading-tight text-slate-900">
-                {teacher.nama_guru || 'Lengkapi Profil Guru'}
+            {authUser?.avatar_url ? (
+              <img
+                src={authUser.avatar_url}
+                alt={authUser.full_name}
+                className="h-7 w-7 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+                <UserCheck className="h-4 w-4" />
+              </div>
+            )}
+
+            <div className="hidden max-w-[160px] pr-1 sm:block">
+              <p className="truncate text-xs font-bold leading-tight text-slate-900">
+                {displayName}
               </p>
-              <p className="text-[11px] font-medium text-slate-500">
-                {teacher.nama_sekolah || 'Klik untuk isi KOP Sekolah'}
+              <p className="truncate text-[11px] font-medium text-slate-500">
+                {displaySub}
               </p>
             </div>
-            <span className="text-xs font-bold text-slate-700 sm:hidden">
-              Profil KOP
-            </span>
+            <span className="text-xs font-bold text-slate-700 sm:hidden">Profil</span>
+            <ChevronDown
+              className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+                isDropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
 
-          {authUser ? (
-            <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-2 pr-1.5">
-              {authUser.avatar_url ? (
-                <img
-                  src={authUser.avatar_url}
-                  alt={authUser.full_name}
-                  className="h-6 w-6 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-700 text-[10px] font-bold text-white">
-                  {authUser.full_name.slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <span className="hidden max-w-[110px] truncate text-xs font-bold text-slate-700 lg:inline">
-                {authUser.full_name}
-              </span>
-              {onLogout && (
+          {isDropdownOpen && (
+            <div className="clay-card absolute right-0 z-50 mt-2 w-72 p-3 shadow-xl">
+              {/* Header Status Akun Google */}
+              <div className="border-b border-slate-100 pb-2.5">
+                {authUser ? (
+                  <div className="flex items-center gap-2.5">
+                    {authUser.avatar_url ? (
+                      <img
+                        src={authUser.avatar_url}
+                        alt={authUser.full_name}
+                        className="h-9 w-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-700 text-xs font-bold text-white">
+                        {authUser.full_name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-extrabold text-slate-900">
+                        {authUser.full_name}
+                      </p>
+                      <p className="truncate text-[11px] font-medium text-slate-500">
+                        {authUser.email}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    Belum masuk akun Google (opsional hingga unduh dokumen).
+                  </p>
+                )}
+              </div>
+
+              {/* Menu Item: Profil KOP Sekolah */}
+              <div className="py-2">
                 <button
                   type="button"
-                  onClick={onLogout}
-                  title="Keluar akun Google"
-                  className="rounded-full p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onOpenProfileModal();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
                 >
-                  <LogOut className="h-3.5 w-3.5" />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <School className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800">
+                      Profil KOP Sekolah
+                    </p>
+                    <p className="truncate text-[11px] font-medium text-slate-500">
+                      {teacher.nama_sekolah
+                        ? `${teacher.nama_guru || 'Guru'} • ${teacher.nama_sekolah}`
+                        : 'Belum diisi (Opsional)'}
+                    </p>
+                  </div>
                 </button>
-              )}
+              </div>
+
+              {/* Tombol Sign In (Biru) & Logout (Merah) */}
+              <div className="space-y-2 border-t border-slate-100 pt-2.5">
+                {!authUser && onOpenLoginModal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      onOpenLoginModal();
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Sign In dengan Google</span>
+                  </button>
+                )}
+
+                {authUser && onLogout && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      onLogout();
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </button>
+                )}
+              </div>
             </div>
-          ) : (
-            onOpenLoginModal && (
-              <button
-                type="button"
-                onClick={onOpenLoginModal}
-                className="clay-btn-primary px-3 py-1.5 text-xs font-bold"
-              >
-                Masuk Google
-              </button>
-            )
           )}
         </div>
       </div>
