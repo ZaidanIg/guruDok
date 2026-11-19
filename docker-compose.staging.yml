@@ -1,0 +1,92 @@
+# ==============================================================================
+# GuruDok Staging — Coolify + DuckDNS Docker Compose
+# ==============================================================================
+# Cara pakai di Coolify:
+# 1. Pilih Resource Type: Docker Compose
+# 2. Arahkan Compose File ke: docker-compose.staging.yml
+# 3. Isi Environment Variables (DB_PASSWORD, CORS_ORIGINS, dll.)
+# 4. Pada service 'frontend', isi Domains dengan subdomain DuckDNS Anda, misal:
+#    https://gurudok-staging.duckdns.org
+# ==============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-GuruDocDB}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gurudok_staging_secret}
+    volumes:
+      - gurudok_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-GuruDocDB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gurudok_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: staging
+      DEBUG: "False"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-GuruDocDB}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-gurudok_staging_secret}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-gurudok_staging_secret}@db:5432/${DB_NAME:-GuruDocDB}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://gurudok-staging.duckdns.org}
+      DATASET_PATH: /app/backend/dataset
+      GENERATED_DIR: /app/backend/generated_docs
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+    volumes:
+      - gurudok_generated_docs:/app/backend/generated_docs
+    expose:
+      - "8000"
+    networks:
+      - gurudok_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "80"
+    networks:
+      - gurudok_net
+
+  # Opsional: Aktifkan jika IP VPS staging Anda dinamis (Docker Compose Profile: duckdns)
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    profiles:
+      - duckdns
+    restart: unless-stopped
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Asia/Jakarta
+      SUBDOMAINS: ${DUCKDNS_SUBDOMAINS:-gurudok-staging}
+      TOKEN: ${DUCKDNS_TOKEN:-your_duckdns_token_here}
+      LOG_FILE: "false"
+
+volumes:
+  gurudok_pgdata:
+  gurudok_generated_docs:
+
+networks:
+  gurudok_net:
+    driver: bridge

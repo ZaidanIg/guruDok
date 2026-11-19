@@ -1,0 +1,300 @@
+{
+  "metadata": {
+    "nama_dataset": "Master Referensi Regulasi Kurikulum Nasional & Kerangka Pembelajaran Mendalam",
+    "sumber_hukum": [
+      "Peraturan Menteri Pendidikan Dasar dan Menengah (Permendikdasmen) Nomor 10 Tahun 2025 tentang Standar Kompetensi Lulusan (8 Dimensi Profil Lulusan)",
+      "Permendikdasmen Nomor 12 Tahun 2025 tentang Standar Isi",
+      "Permendikdasmen Nomor 13 Tahun 2025 tentang Perubahan atas Permendikbudristek Nomor 12 Tahun 2024 tentang Kurikulum pada PAUD, Dikdas, dan Dikmen",
+      "Permendikdasmen Nomor 1 Tahun 2026 tentang Standar Proses",
+      "Keputusan Kepala BSKAP Kemendikdasmen Nomor 046/H/KR/2025 tentang Capaian Pembelajaran pada PAUD, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Ditetapkan 16 Juli 2025, mencabut Kepka BSKAP No. 032/H/KR/2024)",
+      "Panduan Pembelajaran dan Asesmen (PPA) Edisi Revisi Tahun 2025 - BSKAP Kemendikdasmen"
+    ],
+    "catatan_penting_sistem": "Per Juli 2025 - 2026, Kemendikdasmen telah memperbarui istilah '6 Dimensi Profil Pelajar Pancasila' menjadi '8 Dimensi Profil Lulusan (DPL)' serta menerapkan kerangka 'Pembelajaran Mendalam (Deep Learning)' pada RPP/Modul Ajar. Dataset ini menyertakan pemetaan keduanya agar kompatibel untuk semua format pengawas sekolah."
+  },
+  "pembagian_fase": [
+    {
+      "kode_fase": "Fondasi",
+      "jenjang": "PAUD",
+      "kelas": [
+        "TK A",
+        "TK B"
+      ],
+      "durasi_1_jp_menit": 30
+    },
+    {
+      "kode_fase": "A",
+      "jenjang": "SD",
+      "kelas": [
+        1,
+        2
+      ],
+      "label_kelas": "Kelas I - II SD/MI",
+      "durasi_1_jp_menit": 35
+    },
+    {
+      "kode_fase": "B",
+      "jenjang": "SD",
+      "kelas": [
+        3,
+        4
+      ],
+      "label_kelas": "Kelas III - IV SD/MI",
+      "durasi_1_jp_menit": 35
+    },
+    {
+      "kode_fase": "C",
+      "jenjang": "SD",
+      "kelas": [
+        5,
+        6
+      ],
+      "label_kelas": "Kelas V - VI SD/MI",
+      "durasi_1_jp_menit": 35
+    },
+    {
+      "kode_fase": "D",
+      "jenjang": "SMP",
+      "kelas": [
+        7,
+        8,
+        9
+      ],
+      "label_kelas": "Kelas VII - IX SMP/MTs",
+      "durasi_1_jp_menit": 40
+    },
+    {
+      "kode_fase": "E",
+      "jenjang": "SMA",
+      "kelas": [
+        10
+      ],
+      "label_kelas": "Kelas X SMA/MA/SMK",
+      "durasi_1_jp_menit": 45
+    },
+    {
+      "kode_fase": "F",
+      "jenjang": "SMA",
+      "kelas": [
+        11,
+        12
+      ],
+      "label_kelas": "Kelas XI - XII SMA/MA/SMK",
+      "durasi_1_jp_menit": 45
+    }
+  ],
+  "delapan_dimensi_profil_lulusan": [
+    {
+      "kode": "DPL-1",
+      "nama_dimensi": "Keimanan dan Ketakwaan terhadap Tuhan Yang Maha Esa",
+      "padanan_p5_lama": "Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia",
+      "deskripsi": "Individu yang memiliki keyakinan dan mengamalkan ajaran agama/kepercayaannya secara konsisten, berakhlak mulia terhadap sesama manusia, alam, dan negara.",
+      "indikator_perilaku_kelas": "Berdoa sebelum dan sesudah belajar, bersikap jujur dalam mengerjakan tugas/asesmen, serta menghargai ciptaan Tuhan melalui kepedulian terhadap lingkungan sekitar."
+    },
+    {
+      "kode": "DPL-2",
+      "nama_dimensi": "Kewargaan",
+      "padanan_p5_lama": "Berkebinekaan Global",
+      "deskripsi": "Individu yang memiliki rasa cinta tanah air, menaati aturan dan norma sosial, menghargai keberagaman budaya, serta peduli pada keberlanjutan kehidupan lokal dan global.",
+      "indikator_perilaku_kelas": "Menghargai perbedaan pendapat teman saat diskusi, mematuhi kesepakatan kelas, dan mengaitkan materi pelajaran dengan konteks kemasyarakatan Indonesia."
+    },
+    {
+      "kode": "DPL-3",
+      "nama_dimensi": "Penalaran Kritis",
+      "padanan_p5_lama": "Bernalar Kritis",
+      "deskripsi": "Individu yang mampu berpikir secara logis, analitis, sistematis, dan reflektif dalam memproses informasi, mengevaluasi bukti, serta memecahkan masalah.",
+      "indikator_perilaku_kelas": "Mengajukan pertanyaan kritis terhadap fenomena/masalah, menganalisis data/informasi dari berbagai sumber secara objektif, dan menarik kesimpulan berbasis bukti."
+    },
+    {
+      "kode": "DPL-4",
+      "nama_dimensi": "Kreativitas",
+      "padanan_p5_lama": "Kreatif",
+      "deskripsi": "Individu yang mampu berpikir inovatif, fleksibel, dan orisinal dalam mengolah gagasan untuk menghasilkan karya atau solusi baru yang bermanfaat.",
+      "indikator_perilaku_kelas": "Mengeksplorasi berbagai alternatif solusi dalam menyelesaikan LKPD/proyek serta menyajikan hasil karya dalam bentuk yang orisinal dan komunikatif."
+    },
+    {
+      "kode": "DPL-5",
+      "nama_dimensi": "Kolaborasi",
+      "padanan_p5_lama": "Bergotong Royong",
+      "deskripsi": "Individu yang mampu bekerja sama secara efektif dalam kelompok dengan semangat gotong royong, empati, dan berbagi peran untuk mencapai tujuan bersama.",
+      "indikator_perilaku_kelas": "Berpartisipasi aktif dalam kerja kelompok, berbagi tugas secara adil, dan saling membantu rekan yang mengalami kesulitan memahami materi."
+    },
+    {
+      "kode": "DPL-6",
+      "nama_dimensi": "Kemandirian",
+      "padanan_p5_lama": "Mandiri",
+      "deskripsi": "Individu yang bertanggung jawab atas proses dan hasil belajarnya sendiri, memiliki inisiatif, regulasi diri, serta pantang menyerah menghadapi tantangan.",
+      "indikator_perilaku_kelas": "Menyelesaikan tugas individu tepat waktu, berinisiatif mencari referensi belajar tambahan, dan mampu melakukan refleksi/evaluasi atas kemajuan belajarnya sendiri."
+    },
+    {
+      "kode": "DPL-7",
+      "nama_dimensi": "Kesehatan",
+      "padanan_p5_lama": "Mandiri (Sub-elemen Merawat Diri secara Fisik, Mental, dan Spiritual)",
+      "deskripsi": "Individu yang memiliki kebugaran fisik, menerapkan pola hidup bersih dan sehat, serta mampu menjaga keseimbangan kesehatan mental dan emosional (well-being).",
+      "indikator_perilaku_kelas": "Menjaga postur tubuh, kebersihan ruang kelas, keselamatan kerja saat praktikum, serta mengelola fokus dan emosi secara positif selama belajar."
+    },
+    {
+      "kode": "DPL-8",
+      "nama_dimensi": "Komunikasi",
+      "padanan_p5_lama": "Bergotong Royong (Sub-elemen Komunikasi untuk Mencapai Tujuan Bersama)",
+      "deskripsi": "Individu yang mampu menyimak secara aktif serta menyampaikan gagasan, data, dan perasaan secara lisan, tulisan, maupun multimodal dengan jelas, santun, dan efektif.",
+      "indikator_perilaku_kelas": "Mempresentasikan hasil diskusi kelompok secara runtut, menanggapi pendapat teman dengan bahasa yang santun, dan menuliskan laporan/kesimpulan secara sistematis."
+    }
+  ],
+  "kerangka_pembelajaran_mendalam": {
+    "prinsip_pembelajaran": [
+      {
+        "kode": "PP-1",
+        "nama": "Berkesadaran (Mindful)",
+        "deskripsi": "Melibatkan murid secara penuh dan sadar dalam memahami tujuan belajar, memotivasi regulasi diri, serta menyadari proses berpikir yang sedang dijalani."
+      },
+      {
+        "kode": "PP-2",
+        "nama": "Bermakna (Meaningful)",
+        "deskripsi": "Mengaitkan konsep pelajaran dengan pengalaman nyata, pengetahuan awal murid, dan permasalahan sehari-hari sehingga ilmu yang dipelajari terasa relevan dan bermanfaat."
+      },
+      {
+        "kode": "PP-3",
+        "nama": "Menggembirakan (Joyful)",
+        "deskripsi": "Menciptakan suasana kelas yang aman, inklusif, saling memuliakan, interaktif, dan menantang secara positif sehingga murid antusias dalam belajar."
+      }
+    ],
+    "pengalaman_belajar_3m": [
+      {
+        "tahap": "Memahami",
+        "urutan": 1,
+        "fokus": "Mengonstruksi pengetahuan esensial, aplikatif, serta nilai dan karakter dari berbagai sumber.",
+        "template_aktivitas_umum": [
+          "Guru menyajikan fenomena/masalah kontekstual dan mengajukan pertanyaan pemantik untuk menggali pengetahuan awal murid (Berkesadaran & Bermakna).",
+          "Murid mengamati bahan bacaan/visual/demonstrasi dan mengidentifikasi konsep-konsep kunci melalui tanya jawab terbimbing.",
+          "Murid mendiskusikan hubungan antar-konsep untuk membangun pemahaman mendasar sebelum melakukan penerapan."
+        ]
+      },
+      {
+        "tahap": "Mengaplikasi",
+        "urutan": 2,
+        "fokus": "Menerapkan pemahaman konsep secara kontekstual dalam pemecahan masalah nyata, proyek, atau praktik.",
+        "template_aktivitas_umum": [
+          "Murid bekerja dalam kelompok menggunakan Lembar Kerja Peserta Didik (LKPD) untuk menganalisis studi kasus atau melakukan penyelidikan/praktik nyata (Bermakna & Menggembirakan).",
+          "Guru memfasilitasi diskusi dan memberikan bimbingan berdiferensiasi (scaffolding) sesuai tingkat kesiapan kelompok.",
+          "Murid menyusun solusi/produk/laporan hasil eksplorasi dan mempresentasikannya di depan kelas untuk mendapatkan umpan balik."
+        ]
+      },
+      {
+        "tahap": "Merefleksi",
+        "urutan": 3,
+        "fokus": "Mengevaluasi proses dan hasil belajar, memaknai nilai yang dipelajari, serta mengatur strategi belajar ke depan (regulasi diri).",
+        "template_aktivitas_umum": [
+          "Murid bersama guru menyimpulkan konsep utama yang telah dipelajari dan meninjau kembali ketercapaian tujuan pembelajaran.",
+          "Murid melakukan refleksi metakognitif (3-2-1: 3 hal yang dipahami, 2 hal menarik yang ingin didalami, 1 kendala yang dihadapi beserta cara mengatasinya).",
+          "Guru memberikan apresiasi, umpan balik konstruktif, serta informasi tindak lanjut untuk pertemuan berikutnya."
+        ]
+      }
+    ],
+    "praktik_pedagogis_model_pembelajaran": [
+      {
+        "kode_model": "PBL",
+        "nama_model": "Problem-Based Learning (Pembelajaran Berbasis Masalah)",
+        "cocok_untuk": "Materi yang berkaitan dengan pemecahan kasus nyata, analisis sosial, sains terapan, dan matematika kontekstual.",
+        "sintaks_langkah": [
+          "1. Orientasi murid pada masalah kontekstual (Tahap Memahami)",
+          "2. Mengorganisasikan murid untuk belajar dan mendefinisikan masalah (Tahap Memahami)",
+          "3. Membimbing penyelidikan individu maupun kelompok melalui LKPD (Tahap Mengaplikasi)",
+          "4. Mengembangkan dan menyajikan hasil karya/solusi pemecahan masalah (Tahap Mengaplikasi)",
+          "5. Menganalisis dan mengevaluasi proses pemecahan masalah serta refleksi diri (Tahap Merefleksi)"
+        ]
+      },
+      {
+        "kode_model": "PJBL",
+        "nama_model": "Project-Based Learning (Pembelajaran Berbasis Proyek)",
+        "cocok_untuk": "Materi yang menghasilkan karya/produk nyata, purwarupa, kampanye, teks karya tulis, atau unjuk kerja kreatif.",
+        "sintaks_langkah": [
+          "1. Pertanyaan mendasar dan penentuan tema proyek (Tahap Memahami)",
+          "2. Menyusun perencanaan desain proyek dan pembagian peran (Tahap Memahami)",
+          "3. Menyusun jadwal pelaksanaan dan target penyelesaian proyek (Tahap Mengaplikasi)",
+          "4. Memantau keaktifan murid dan perkembangan pembuatan proyek (Tahap Mengaplikasi)",
+          "5. Menguji hasil/presentasi produk proyek dan evaluasi pengalaman belajar (Tahap Merefleksi)"
+        ]
+      },
+      {
+        "kode_model": "DISCOVERY",
+        "nama_model": "Discovery Learning (Pembelajaran Penemuan)",
+        "cocok_untuk": "Materi pengenalan konsep baru, prinsip ilmiah, pola bahasa, atau penemuan rumus/aturan.",
+        "sintaks_langkah": [
+          "1. Pemberian rangsangan (Stimulation) melalui pengamatan fenomena/contoh (Tahap Memahami)",
+          "2. Pernyataan/identifikasi masalah (Problem Statement) dan perumusan hipotesis (Tahap Memahami)",
+          "3. Pengumpulan data (Data Collection) melalui eksplorasi/percobaan (Tahap Mengaplikasi)",
+          "4. Pengolahan data (Data Processing) dan pembuktian (Verification) pada LKPD (Tahap Mengaplikasi)",
+          "5. Menarik simpulan/generalisasi (Generalization) dan refleksi belajar (Tahap Merefleksi)"
+        ]
+      },
+      {
+        "kode_model": "INQUIRY",
+        "nama_model": "Inquiry-Based Learning (Pembelajaran Inkuiri)",
+        "cocok_untuk": "Materi eksperimen sains (IPA/IPAS/Fisika/Kimia/Biologi) dan riset sosial/sejarah.",
+        "sintaks_langkah": [
+          "1. Orientasi dan perumusan pertanyaan penyelidikan ilmiah (Tahap Memahami)",
+          "2. Menyusun hipotesis atau dugaan sementara (Tahap Memahami)",
+          "3. Merancang dan melakukan eksperimen/pengumpulan bukti (Tahap Mengaplikasi)",
+          "4. Menganalisis data hasil pengamatan dan menguji hipotesis (Tahap Mengaplikasi)",
+          "5. Merumuskan kesimpulan ilmiah dan merefleksikan proses inkuiri (Tahap Merefleksi)"
+        ]
+      },
+      {
+        "kode_model": "CONTEXTUAL",
+        "nama_model": "Contextual Teaching and Learning (CTL) & Pembelajaran Berdiferensiasi",
+        "cocok_untuk": "Semua mata pelajaran, khususnya jenjang SD (Fase A-C) dan materi literasi-numerasi dasar.",
+        "sintaks_langkah": [
+          "1. Pemodelan (Modelling) dan pengaitan materi dengan pengalaman keseharian murid (Tahap Memahami)",
+          "2. Bertanya (Questioning) dan eksplorasi konsep secara multimodal: visual, auditori, kinestetik (Tahap Memahami)",
+          "3. Masyarakat belajar (Learning Community) melalui aktivitas kelompok berjenjang sesuai kesiapan murid (Tahap Mengaplikasi)",
+          "4. Konstruktivisme (Constructivism) melalui praktik langsung dan unjuk kerja (Tahap Mengaplikasi)",
+          "5. Penilaian autentik dan refleksi bersama (Reflection) (Tahap Merefleksi)"
+        ]
+      }
+    ],
+    "opsi_kemitraan_pembelajaran": [
+      "Kolaborasi antarmurid dalam kelompok belajar heterogen (tutor sebaya)",
+      "Kolaborasi lintas mata pelajaran dengan guru serumpun di sekolah",
+      "Keterlibatan orang tua/wali murid dalam pendampingan pengamatan di rumah",
+      "Pemanfaatan narasumber lokal / komunitas / lingkungan sekitar sekolah"
+    ],
+    "opsi_lingkungan_pembelajaran": [
+      "Ruang kelas fisik dengan tata letak tempat duduk berkelompok (kolaboratif) yang aman, inklusif, dan saling memuliakan",
+      "Laboratorium sekolah / perpustakaan / halaman dan lingkungan sekitar sekolah sebagai sumber belajar kontekstual",
+      "Ruang belajar hibrida (menggabungkan diskusi tatap muka di kelas dengan eksplorasi sumber digital)"
+    ],
+    "opsi_pemanfaatan_digital": [
+      "Tayangan salindia interaktif / video pembelajaran kontekstual melalui proyektor",
+      "Kuis interaktif dan refleksi digital (atau kartu kupon kertas bagi kelas tanpa gawai)",
+      "Pemanfaatan buku teks digital SIBI Kemendikdasmen dan simulasi interaktif"
+    ]
+  },
+  "template_kktp_dan_deskripsi_rapor": {
+    "interval_nilai_default": [
+      {
+        "rentang": "0 - 60",
+        "predikat": "Perlu Bimbingan (D)",
+        "tindak_lanjut": "Belum mencapai ketuntasan, memerlukan remedial dan pendampingan intensif pada seluruh kriteria.",
+        "template_deskripsi_rapor_terendah": "Perlu bimbingan dan pendampingan lebih lanjut dalam {ringkasan_tp}."
+      },
+      {
+        "rentang": "61 - 74",
+        "predikat": "Cukup (C)",
+        "tindak_lanjut": "Belum mencapai ketuntasan penuh, memerlukan remedial pada bagian kriteria yang belum dikuasai.",
+        "template_deskripsi_rapor_terendah": "Perlu peningkatan pemahaman dan latihan lebih lanjut dalam {ringkasan_tp}."
+      },
+      {
+        "rentang": "75 - 87",
+        "predikat": "Baik (B)",
+        "tindak_lanjut": "Sudah mencapai ketuntasan (KKTP), dapat melanjutkan ke materi berikutnya.",
+        "template_deskripsi_rapor_tertinggi": "Menunjukkan penguasaan yang baik dalam {ringkasan_tp}."
+      },
+      {
+        "rentang": "88 - 100",
+        "predikat": "Sangat Baik (A)",
+        "tindak_lanjut": "Sudah mencapai ketuntasan sangat baik, diberikan tantangan pengayaan.",
+        "template_deskripsi_rapor_tertinggi": "Menunjukkan penguasaan yang sangat baik dalam {ringkasan_tp}."
+      }
+    ]
+  }
+}

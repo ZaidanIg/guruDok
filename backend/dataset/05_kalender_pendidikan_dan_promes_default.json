@@ -1,0 +1,185 @@
+{
+  "metadata": {
+    "nama_dataset": "Master Kalender Pendidikan & Matriks Minggu Efektif Default (Prota & Promes)",
+    "tahun_ajaran_default": "2026/2027",
+    "fungsi_di_gurudok": "Digunakan sebagai nilai default otomatis saat guru membuka form Prota (Service 05) dan Promes (Service 06) agar matriks tabel bulan Juli-Desember (Semester 1) dan Januari-Juni (Semester 2) langsung terisi tanpa perlu menghitung kalender manual."
+  },
+  "semester_1_ganjil": {
+    "label": "Semester 1 (Ganjil)",
+    "rentang_bulan": ["Juli", "Agustus", "September", "Oktober", "November", "Desember"],
+    "total_minggu_kalender": 26,
+    "total_minggu_efektif_belajar": 18,
+    "total_minggu_tidak_efektif": 8,
+    "rincian_per_bulan": [
+      {
+        "no_bulan": 7,
+        "nama_bulan": "Juli",
+        "jumlah_minggu": 5,
+        "minggu_efektif": 2,
+        "minggu_tidak_efektif": 3,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "LIBUR_AKHIR_TAHUN", "kode_tabel": "LSMT", "keterangan": "Libur Akhir Tahun Ajaran Sebelumnya"},
+          {"minggu_ke": 2, "status": "LIBUR_AKHIR_TAHUN", "kode_tabel": "LSMT", "keterangan": "Libur Akhir Tahun Ajaran Sebelumnya"},
+          {"minggu_ke": 3, "status": "MPLS", "kode_tabel": "MPLS", "keterangan": "Masa Pengenalan Lingkungan Satuan Pendidikan (MPLS)"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 1, "keterangan": "Minggu Efektif Belajar Ke-1"},
+          {"minggu_ke": 5, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 2, "keterangan": "Minggu Efektif Belajar Ke-2"}
+        ]
+      },
+      {
+        "no_bulan": 8,
+        "nama_bulan": "Agustus",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 4,
+        "minggu_tidak_efektif": 0,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 3, "keterangan": "Minggu Efektif Belajar Ke-3"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 4, "keterangan": "Minggu Efektif Belajar Ke-4"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 5, "keterangan": "Minggu Efektif Belajar Ke-5 (Peringatan HUT RI)"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 6, "keterangan": "Minggu Efektif Belajar Ke-6"}
+        ]
+      },
+      {
+        "no_bulan": 9,
+        "nama_bulan": "September",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 3,
+        "minggu_tidak_efektif": 1,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 7, "keterangan": "Minggu Efektif Belajar Ke-7"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 8, "keterangan": "Minggu Efektif Belajar Ke-8"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 9, "keterangan": "Minggu Efektif Belajar Ke-9"},
+          {"minggu_ke": 4, "status": "STS", "kode_tabel": "STS", "keterangan": "Sumatif Tengah Semester (STS) Ganjil"}
+        ]
+      },
+      {
+        "no_bulan": 10,
+        "nama_bulan": "Oktober",
+        "jumlah_minggu": 5,
+        "minggu_efektif": 5,
+        "minggu_tidak_efektif": 0,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 10, "keterangan": "Minggu Efektif Belajar Ke-10"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 11, "keterangan": "Minggu Efektif Belajar Ke-11"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 12, "keterangan": "Minggu Efektif Belajar Ke-12"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 13, "keterangan": "Minggu Efektif Belajar Ke-13"},
+          {"minggu_ke": 5, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 14, "keterangan": "Minggu Efektif Belajar Ke-14"}
+        ]
+      },
+      {
+        "no_bulan": 11,
+        "nama_bulan": "November",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 4,
+        "minggu_tidak_efektif": 0,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 15, "keterangan": "Minggu Efektif Belajar Ke-15"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 16, "keterangan": "Minggu Efektif Belajar Ke-16"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 17, "keterangan": "Minggu Efektif Belajar Ke-17"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 18, "keterangan": "Minggu Efektif Belajar Ke-18"}
+        ]
+      },
+      {
+        "no_bulan": 12,
+        "nama_bulan": "Desember",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 0,
+        "minggu_tidak_efektif": 4,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "SAS", "kode_tabel": "SAS", "keterangan": "Sumatif Akhir Semester (SAS) Ganjil"},
+          {"minggu_ke": 2, "status": "PENGOLAHAN_NILAI", "kode_tabel": "RMD", "keterangan": "Remedial, Pengolahan Nilai & Pengisian e-Rapor"},
+          {"minggu_ke": 3, "status": "PEMBAGIAN_RAPOR", "kode_tabel": "RPR", "keterangan": "Pembagian Rapor Semester Ganjil"},
+          {"minggu_ke": 4, "status": "LIBUR_SEMESTER", "kode_tabel": "LSMT", "keterangan": "Libur Semester Ganjil & Hari Raya Natal"}
+        ]
+      }
+    ]
+  },
+  "semester_2_genap": {
+    "label": "Semester 2 (Genap)",
+    "rentang_bulan": ["Januari", "Februari", "Maret", "April", "Mei", "Juni"],
+    "total_minggu_kalender": 26,
+    "total_minggu_efektif_reguler": 18,
+    "total_minggu_efektif_kelas_akhir_6_9_12": 14,
+    "rincian_per_bulan": [
+      {
+        "no_bulan": 1,
+        "nama_bulan": "Januari",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 4,
+        "minggu_tidak_efektif": 0,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 1, "keterangan": "Minggu Efektif Belajar Ke-1"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 2, "keterangan": "Minggu Efektif Belajar Ke-2"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 3, "keterangan": "Minggu Efektif Belajar Ke-3"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 4, "keterangan": "Minggu Efektif Belajar Ke-4"}
+        ]
+      },
+      {
+        "no_bulan": 2,
+        "nama_bulan": "Februari",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 4,
+        "minggu_tidak_efektif": 0,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 5, "keterangan": "Minggu Efektif Belajar Ke-5"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 6, "keterangan": "Minggu Efektif Belajar Ke-6"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 7, "keterangan": "Minggu Efektif Belajar Ke-7"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 8, "keterangan": "Minggu Efektif Belajar Ke-8"}
+        ]
+      },
+      {
+        "no_bulan": 3,
+        "nama_bulan": "Maret",
+        "jumlah_minggu": 5,
+        "minggu_efektif": 2,
+        "minggu_tidak_efektif": 3,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "STS", "kode_tabel": "STS", "keterangan": "Sumatif Tengah Semester (STS) Genap"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 9, "keterangan": "Minggu Efektif Belajar Ke-9"},
+          {"minggu_ke": 3, "status": "LIBUR_HARI_RAYA", "kode_tabel": "LHR", "keterangan": "Libur Sekitar Hari Raya Idulfitri / Nyepi"},
+          {"minggu_ke": 4, "status": "LIBUR_HARI_RAYA", "kode_tabel": "LHR", "keterangan": "Libur Hari Raya Idulfitri"},
+          {"minggu_ke": 5, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 10, "keterangan": "Minggu Efektif Belajar Ke-10"}
+        ]
+      },
+      {
+        "no_bulan": 4,
+        "nama_bulan": "April",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 4,
+        "minggu_tidak_efektif": 0,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 11, "keterangan": "Minggu Efektif Belajar Ke-11"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 12, "keterangan": "Minggu Efektif Belajar Ke-12"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 13, "keterangan": "Minggu Efektif Belajar Ke-13"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 14, "keterangan": "Minggu Efektif Belajar Ke-14 (Batas Minggu Efektif Kelas Akhir VI, IX, XII)"}
+        ]
+      },
+      {
+        "no_bulan": 5,
+        "nama_bulan": "Mei",
+        "jumlah_minggu": 4,
+        "minggu_efektif": 4,
+        "minggu_tidak_efektif": 0,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 15, "keterangan": "Minggu Efektif Belajar Ke-15 (Ujian Satuan Pendidikan Kelas Akhir)"},
+          {"minggu_ke": 2, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 16, "keterangan": "Minggu Efektif Belajar Ke-16"},
+          {"minggu_ke": 3, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 17, "keterangan": "Minggu Efektif Belajar Ke-17"},
+          {"minggu_ke": 4, "status": "EFEKTIF", "kode_tabel": "JP", "minggu_efektif_urut": 18, "keterangan": "Minggu Efektif Belajar Ke-18"}
+        ]
+      },
+      {
+        "no_bulan": 6,
+        "nama_bulan": "Juni",
+        "jumlah_minggu": 5,
+        "minggu_efektif": 0,
+        "minggu_tidak_efektif": 5,
+        "status_tiap_minggu": [
+          {"minggu_ke": 1, "status": "SAS", "kode_tabel": "SAS", "keterangan": "Sumatif Akhir Tahun (SAT / SAS Genap)"},
+          {"minggu_ke": 2, "status": "PENGOLAHAN_NILAI", "kode_tabel": "RMD", "keterangan": "Remedial, Class Meeting & Pengolahan Nilai e-Rapor"},
+          {"minggu_ke": 3, "status": "PEMBAGIAN_RAPOR", "kode_tabel": "RPR", "keterangan": "Pembagian Rapor Kenaikan Kelas"},
+          {"minggu_ke": 4, "status": "LIBUR_AKHIR_TAHUN", "kode_tabel": "LSMT", "keterangan": "Libur Akhir Tahun Pelajaran"},
+          {"minggu_ke": 5, "status": "LIBUR_AKHIR_TAHUN", "kode_tabel": "LSMT", "keterangan": "Libur Akhir Tahun Pelajaran"}
+        ]
+      }
+    ]
+  }
+}

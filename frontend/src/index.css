@@ -1,0 +1,215 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif;
+    background-color: #F4F7FB;
+    color: #0F172A;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* 1. Soft Tactile Surface Card */
+  .clay-card {
+    background: #FFFFFF;
+    border-radius: 1.25rem;
+    box-shadow:
+      0 4px 16px -2px rgba(15, 23, 42, 0.06),
+      0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    border: 1px solid #E2E8F0;
+    transition: all 0.2s ease;
+  }
+
+  /* 2. Sub-card / Section Box */
+  .clay-subcard {
+    background: #F8FAFC;
+    border-radius: 0.875rem;
+    border: 1px solid #E2E8F0;
+  }
+
+  /* 3. Clean Input / Select */
+  .clay-input {
+    background: #F8FAFC;
+    border-radius: 0.75rem;
+    border: 1px solid #CBD5E1;
+    color: #0F172A;
+    transition: all 0.15s ease;
+  }
+
+  .clay-input:focus {
+    outline: none;
+    background: #FFFFFF;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  }
+
+  /* 4. Primary Button */
+  .clay-btn-primary {
+    background: #1D4ED8;
+    color: #FFFFFF;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(29, 78, 216, 0.25);
+    transition: all 0.15s ease;
+  }
+
+  .clay-btn-primary:hover:not(:disabled) {
+    background: #1E40AF;
+  }
+
+  .clay-btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  /* 5. Success Button */
+  .clay-btn-success {
+    background: #059669;
+    color: #FFFFFF;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.22);
+    transition: all 0.15s ease;
+  }
+
+  .clay-btn-success:hover:not(:disabled) {
+    background: #047857;
+  }
+
+  /* 6. Secondary / White Button */
+  .clay-btn-white {
+    background: #FFFFFF;
+    color: #1E293B;
+    border-radius: 0.75rem;
+    border: 1px solid #CBD5E1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: all 0.15s ease;
+  }
+
+  .clay-btn-white:hover:not(:disabled) {
+    background: #F8FAFC;
+    border-color: #94A3B8;
+    color: #1D4ED8;
+  }
+
+  /* 7. Clean Pill / Badge */
+  .clay-badge {
+    background: #FFFFFF;
+    border-radius: 0.625rem;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  /* 8. Regulation Badge */
+  .clay-badge-amber {
+    background: #FEF3C7;
+    color: #92400E;
+    border-radius: 0.5rem;
+    border: 1px solid #FDE68A;
+  }
+
+  /* 9. Clean Accent Icon Containers */
+  .clay-icon-blue {
+    background: #1D4ED8;
+    color: #FFFFFF;
+  }
+
+  .clay-icon-green {
+    background: #059669;
+    color: #FFFFFF;
+  }
+
+  .clay-icon-amber {
+    background: #D97706;
+    color: #FFFFFF;
+  }
+
+  /* 10. Live Document Paper Sheet Preview */
+  .paper-sheet {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    box-shadow:
+      0 10px 25px -5px rgba(15, 23, 42, 0.08),
+      0 4px 10px -2px rgba(15, 23, 42, 0.04);
+    font-family: Arial, 'Liberation Sans', sans-serif;
+    color: #0F172A;
+  }
+
+  .paper-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .paper-table th,
+  .paper-table td {
+    border: 1px solid #334155;
+    padding: 6px 8px;
+    vertical-align: top;
+    line-height: 1.45;
+  }
+
+  .paper-table th {
+    background-color: #D9E2F3;
+    color: #0F172A;
+    font-weight: 700;
+  }
+
+  /* 11. Full-Screen Radial Glow + Thin Grid & Planetary Orbit (Sprint 17) */
+  .hero-grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(100, 116, 139, 0.14) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(100, 116, 139, 0.14) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 35%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 35%, transparent 100%);
+  }
+
+  .hero-radial-glow {
+    background:
+      radial-gradient(circle at 50% 46%, rgba(59, 130, 246, 0.20) 0%, rgba(16, 185, 129, 0.10) 30%, rgba(244, 247, 251, 0) 68%);
+  }
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit-counter-spin {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-orbit-1 {
+  animation: orbit-spin 42s linear infinite;
+}
+
+.animate-orbit-counter-1 {
+  animation: orbit-counter-spin 42s linear infinite;
+}
+
+.animate-orbit-2 {
+  animation: orbit-counter-spin 34s linear infinite;
+}
+
+.animate-orbit-counter-2 {
+  animation: orbit-spin 34s linear infinite;
+}
+
+.animate-orbit-3 {
+  animation: orbit-spin 26s linear infinite;
+}
+
+.animate-orbit-counter-3 {
+  animation: orbit-counter-spin 26s linear infinite;
+}

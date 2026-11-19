@@ -1,0 +1,1320 @@
+{
+  "metadata": {
+    "nama_dataset": "Master Struktur Kurikulum & Alokasi Waktu Jam Pelajaran (JP) SD, SMP, SMA",
+    "sumber_hukum": "Lampiran II Peraturan Menteri Pendidikan Dasar dan Menengah (Permendikdasmen) Nomor 13 Tahun 2025 tentang Perubahan Atas Permendikbudristek Nomor 12 Tahun 2024",
+    "fungsi_di_gurudok": "Digunakan untuk menghitung otomatis Alokasi Waktu pada Prota (Service 05), Promes (Service 06), dan ATP (Service 04) tanpa guru harus menghitung manual."
+  },
+  "jenjang": {
+    "SD": {
+      "durasi_1_jp_menit": 35,
+      "kelas": {
+        "1": {
+          "fase": "A",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 252,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 288,
+              "jp_intrakurikuler_minggu": 7,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya (Seni Musik/Rupa/Teater/Tari)",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        },
+        "2": {
+          "fase": "A",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 288,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 324,
+              "jp_intrakurikuler_minggu": 8,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya (Seni Musik/Rupa/Teater/Tari)",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        },
+        "3": {
+          "fase": "B",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 216,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 252,
+              "jp_intrakurikuler_minggu": 6,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya (Seni Musik/Rupa/Teater/Tari)",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        },
+        "4": {
+          "fase": "B",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 216,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 252,
+              "jp_intrakurikuler_minggu": 6,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya (Seni Musik/Rupa/Teater/Tari)",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        },
+        "5": {
+          "fase": "C",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 216,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 252,
+              "jp_intrakurikuler_minggu": 6,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya (Seni Musik/Rupa/Teater/Tari)",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        },
+        "6": {
+          "fase": "C",
+          "minggu_efektif_per_tahun": 32,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 14,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 128,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 128,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 192,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 224,
+              "jp_intrakurikuler_minggu": 6,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 192,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 192,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 128,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya (Seni Musik/Rupa/Teater/Tari)",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 128,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        }
+      }
+    },
+    "SMP": {
+      "durasi_1_jp_menit": 40,
+      "kelas": {
+        "7": {
+          "fase": "D",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam (IPA)",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Sosial (IPS)",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Informatika",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni, Budaya, dan Prakarya",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        },
+        "8": {
+          "fase": "D",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 216,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam (IPA)",
+              "jp_intrakurikuler_tahun": 144,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Sosial (IPS)",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Informatika",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni, Budaya, dan Prakarya",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        },
+        "9": {
+          "fase": "D",
+          "minggu_efektif_per_tahun": 32,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 14,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 192,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 128,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam (IPA)",
+              "jp_intrakurikuler_tahun": 128,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 4,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Sosial (IPS)",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 128,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 128,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Informatika",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni, Budaya, dan Prakarya",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan"
+            },
+            {
+              "nama": "Muatan Lokal",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Muatan Lokal"
+            }
+          ]
+        }
+      }
+    },
+    "SMA": {
+      "durasi_1_jp_menit": 45,
+      "kelas": {
+        "10": {
+          "fase": "E",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Alam (Fisika, Kimia, Biologi - Terintegrasi)",
+              "jp_intrakurikuler_tahun": 216,
+              "jp_kokurikuler_tahun": 108,
+              "total_jp_tahun": 324,
+              "jp_intrakurikuler_minggu": 6,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "IPA - Fisika (Skema Paralel)",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "IPA - Kimia (Skema Paralel)",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "IPA - Biologi (Skema Paralel)",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Ilmu Pengetahuan Sosial (Sosiologi, Ekonomi, Sejarah, Geografi - Terintegrasi)",
+              "jp_intrakurikuler_tahun": 288,
+              "jp_kokurikuler_tahun": 144,
+              "total_jp_tahun": 432,
+              "jp_intrakurikuler_minggu": 8,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "IPS - Sejarah (Skema Paralel)",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "IPS - Ekonomi (Skema Paralel)",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "IPS - Geografi (Skema Paralel)",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "IPS - Sosiologi (Skema Paralel)",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Informatika",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni, Budaya, dan Prakarya",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan"
+            }
+          ]
+        },
+        "11": {
+          "fase": "F",
+          "minggu_efektif_per_tahun": 36,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 18,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 144,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 108,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 36,
+              "total_jp_tahun": 108,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Sejarah",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Fisika",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Kimia",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Biologi",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Ekonomi",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Geografi",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Sosiologi",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Antropologi",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Sejarah Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Bahasa Indonesia Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Bahasa Inggris Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Informatika",
+              "jp_intrakurikuler_tahun": 180,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 180,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Prakarya dan Kewirausahaan",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 72,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 72,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan Peminatan"
+            }
+          ]
+        },
+        "12": {
+          "fase": "F",
+          "minggu_efektif_per_tahun": 32,
+          "minggu_efektif_semester_1": 18,
+          "minggu_efektif_semester_2": 14,
+          "mata_pelajaran": [
+            {
+              "nama": "Pendidikan Agama dan Budi Pekerti",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Pancasila",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Indonesia",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 128,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 128,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Bahasa Inggris",
+              "jp_intrakurikuler_tahun": 96,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 3,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Pendidikan Jasmani, Olahraga, dan Kesehatan",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 32,
+              "total_jp_tahun": 96,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Sejarah",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Seni dan Budaya",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Wajib"
+            },
+            {
+              "nama": "Matematika Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Fisika",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Kimia",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Biologi",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Ekonomi",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Geografi",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Sosiologi",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Antropologi",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Sejarah Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Bahasa Indonesia Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Bahasa Inggris Tingkat Lanjut",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Informatika",
+              "jp_intrakurikuler_tahun": 160,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 160,
+              "jp_intrakurikuler_minggu": 5,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Prakarya dan Kewirausahaan",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan Peminatan"
+            },
+            {
+              "nama": "Koding dan Kecerdasan Artifisial",
+              "jp_intrakurikuler_tahun": 64,
+              "jp_kokurikuler_tahun": 0,
+              "total_jp_tahun": 64,
+              "jp_intrakurikuler_minggu": 2,
+              "kategori": "Pilihan Peminatan"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

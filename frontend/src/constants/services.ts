@@ -1,0 +1,131 @@
+import { ServiceCatalogItem, TeacherProfile } from '../types';
+
+export const CORE_SERVICES: ServiceCatalogItem[] = [
+  {
+    id: '03_cp_tp',
+    codeLabel: 'Service 03',
+    title: 'CP dan TP Resmi BSKAP',
+    shortTitle: 'CP & TP',
+    description: 'Pemetaan Capaian & Tujuan Pembelajaran resmi terbaru per elemen sesuai Kepka BSKAP 046/2025.',
+    formats: ['DOCX', 'XLSX', 'PDF'],
+    isFree: true,
+    iconColor: 'blue',
+    requiresChapter: false,
+  },
+  {
+    id: '04_atp',
+    codeLabel: 'Service 04',
+    title: 'Alur Tujuan Belajar (ATP)',
+    shortTitle: 'ATP',
+    description: 'Susunan kronologis TP lengkap dengan alokasi JP, urutan fase, dan dimensi Profil Lulusan.',
+    formats: ['DOCX', 'XLSX', 'PDF'],
+    isFree: true,
+    iconColor: 'blue',
+    requiresChapter: false,
+  },
+  {
+    id: '08_modul_ajar',
+    codeLabel: 'Service 08',
+    title: 'Modul Ajar / RPP Lengkap',
+    shortTitle: 'Modul Ajar',
+    description: 'Langkah Pembelajaran Mendalam 3M (Memahami, Mengaplikasi, Merefleksi) + Asesmen, Rubrik & LKPD.',
+    formats: ['DOCX', 'XLSX', 'PDF'],
+    isFree: true,
+    isPopular: true,
+    iconColor: 'blue',
+    requiresChapter: true,
+  },
+  {
+    id: '05_prota',
+    codeLabel: 'Service 05',
+    title: 'Program Tahunan (Prota)',
+    shortTitle: 'Prota',
+    description: 'Distribusi alokasi waktu Jam Pelajaran (JP) seluruh bab selama 1 tahun ajaran penuh.',
+    formats: ['DOCX', 'XLSX', 'PDF'],
+    isFree: true,
+    iconColor: 'blue',
+    requiresChapter: false,
+  },
+  {
+    id: '06_promes',
+    codeLabel: 'Service 06',
+    title: 'Program Semester (Promes)',
+    shortTitle: 'Promes',
+    description: 'Matriks sebaran 26 minggu efektif kalender pendidikan lengkap dengan rumus otomatis SUM.',
+    formats: ['XLSX', 'DOCX', 'PDF'],
+    isFree: true,
+    iconColor: 'green',
+    requiresChapter: false,
+  },
+  {
+    id: 'coming_soon',
+    codeLabel: 'Segera Hadir',
+    title: '13 Service Tambahan',
+    shortTitle: 'Roadmap 18 Service',
+    description: 'Bank Soal STS/SAS, Kisi-Kisi, KKTP, Jurnal Harian, Modul P5 & Paket Siap Supervisi.',
+    formats: ['DOCX', 'XLSX', 'PDF'],
+    isFree: false,
+    isComingSoon: true,
+    iconColor: 'amber',
+    requiresChapter: false,
+  },
+];
+
+export const PEDAGOGICAL_MODELS: string[] = [
+  'Inquiry Based Learning (Mendalam/DL)',
+  'Problem Based Learning (PBL)',
+  'Project Based Learning (PjBL)',
+  'Discovery Learning',
+  'Differentiated Instruction (Berbasis Minat & Profil)',
+];
+
+export const GRADES_BY_JENJANG: Record<'SD' | 'SMP' | 'SMA', number[]> = {
+  SD: [1, 2, 3, 4, 5, 6],
+  SMP: [7, 8, 9],
+  SMA: [10, 11, 12],
+};
+
+export const FASE_BY_GRADE: Record<number, string> = {
+  1: 'Fase A',
+  2: 'Fase A',
+  3: 'Fase B',
+  4: 'Fase B',
+  5: 'Fase C',
+  6: 'Fase C',
+  7: 'Fase D',
+  8: 'Fase D',
+  9: 'Fase D',
+  10: 'Fase E',
+  11: 'Fase F',
+  12: 'Fase F',
+};
+
+export const DEFAULT_TEACHER_PROFILE: TeacherProfile = {
+  nama_guru: 'Siti Aminah, S.Pd.',
+  nip_guru: '198805122014022003',
+  nama_sekolah: 'SMP Negeri 1 Surabaya',
+  npsn: '20531234',
+  kabupaten_kota: 'Kota Surabaya',
+  provinsi: 'Jawa Timur',
+  nama_kepala_sekolah: 'Drs. H. Bambang Irawan, M.Pd.',
+  nip_kepala_sekolah: '196904151995121002',
+  no_whatsapp: '081234567890',
+  email: 'sitiaminah.guru@sekolah.sch.id',
+  ukuran_kertas_default: 'F4',
+};
+
+export const UPCOMING_13_SERVICES = [
+  { code: '01', name: 'Kalender Pendidikan & Analisis Minggu Efektif', format: 'XLSX' },
+  { code: '02', name: 'Jadwal Pelajaran & Alokasi JP Permendikdasmen 13/2025', format: 'XLSX' },
+  { code: '07', name: 'Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)', format: 'DOCX' },
+  { code: '09', name: 'Lembar Kerja Peserta Didik (LKPD) Mandiri', format: 'DOCX' },
+  { code: '10', name: 'Bahan Ajar & Ringkasan Materi Bab', format: 'DOCX' },
+  { code: '11', name: 'Instrumen Asesmen Diagnostik, Formatif & Sumatif', format: 'DOCX' },
+  { code: '12', name: 'Kisi-Kisi & Kartu Soal Ujian (STS / SAS) + Kunci', format: 'DOCX' },
+  { code: '13', name: 'Modul Projek Kokurikuler 8 Dimensi Profil Lulusan', format: 'DOCX' },
+  { code: '14', name: 'Daftar Nilai & Olah Nilai Rapor Kurikulum Merdeka', format: 'XLSX' },
+  { code: '15', name: 'Program Remedial & Pengayaan Terstruktur', format: 'DOCX' },
+  { code: '16', name: 'Jurnal Mengajar Harian & Agenda Guru', format: 'DOCX' },
+  { code: '17', name: 'Buku Absensi & Rekap Kehadiran Siswa Bulanan', format: 'XLSX' },
+  { code: '18', name: 'Catatan Bimbingan Konseling & Anecdotal Record', format: 'DOCX' },
+];

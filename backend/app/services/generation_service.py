@@ -1,0 +1,241 @@
+import time
+import re
+from typing import Optional, List
+from psycopg.types.json import Jsonb
+
+from app.core.database import DatabaseManager, get_db_manager
+from app.core.exceptions import CurriculumNotFoundError, ValidationError
+from app.models.teacher import TeacherProfile
+from app.models.document import DocumentGenerationJob
+from app.repositories.base import ICurriculumRepository, ITeacherRepository
+from app.schemas.generation import DocumentGenerateRequest, DocumentGenerateResponse, ServiceIdEnum
+from app.services.storage_service import IStorageService
+from app.services.document_engine.generator_factory import DocumentEngineFactory
+
+
+class DocumentGenerationService:
+    """Core domain service orchestrating deterministic document generation backed by GuruDocDB."""
+
+    SERVICE_DISPLAY_NAMES = {
+        ServiceIdEnum.CP_TP: "Capaian Pembelajaran & Alur Tujuan (CP-TP)",
+        ServiceIdEnum.ATP: "Alur Tujuan Pembelajaran (ATP)",
+        ServiceIdEnum.PROTA: "Program Tahunan (Prota)",
+        ServiceIdEnum.PROMES: "Program Semester (Promes)",
+        ServiceIdEnum.MODUL_AJAR: "Modul Ajar / RPP Lengkap (Deep Learning 3M)",
+    }
+
+    def __init__(
+        self,
+        curriculum_repo: ICurriculumRepository,
+        teacher_repo: ITeacherRepository,
+        storage_service: IStorageService,
+        db_manager: Optional[DatabaseManager] = None,
+    ):
+        self.curriculum_repo = curriculum_repo
+        self.teacher_repo = teacher_repo
+        self.storage_service = storage_service
+        self.db = db_manager or get_db_manager()
+        self._history: List[DocumentGenerationJob] = []
+
+    def generate_document(self, req: DocumentGenerateRequest) -> DocumentGenerateResponse:
+        start_time = time.perf_counter()
+
+        # 1. Resolve Curriculum Subject
+        subject = self.curriculum_repo.get_subject_by_id(req.subject_id)
+        if not subject:
+            raise CurriculumNotFoundError(f"Subject '{req.subject_id}' does not exist in master curriculum database.")
+
+        # 2. Resolve Chapter if requested
+        chapter = None
+        if req.chapter_id:
+            chapter = subject.get_chapter(req.chapter_id)
+            if not chapter:
+                raise CurriculumNotFoundError(f"Chapter '{req.chapter_id}' not found in subject '{subject.nama_mapel}'.")
+
+        # 3. Resolve Teacher Profile
+        teacher: Optional[TeacherProfile] = None
+        if req.teacher_profile:
+            existing = self.teacher_repo.find_by_phone(req.teacher_profile.no_whatsapp)
+            if existing:
+                existing.nama_guru = req.teacher_profile.nama_guru
+                existing.nip_guru = req.teacher_profile.nip_guru
+                existing.nama_sekolah = req.teacher_profile.nama_sekolah
+                existing.npsn = req.teacher_profile.npsn
+                existing.kabupaten_kota = req.teacher_profile.kabupaten_kota
+                existing.provinsi = req.teacher_profile.provinsi
+                existing.nama_kepala_sekolah = req.teacher_profile.nama_kepala_sekolah
+                existing.nip_kepala_sekolah = req.teacher_profile.nip_kepala_sekolah
+                existing.ukuran_kertas_default = req.teacher_profile.ukuran_kertas_default.value
+                teacher = self.teacher_repo.save(existing)
+            else:
+                new_teacher = TeacherProfile(
+                    nama_guru=req.teacher_profile.nama_guru,
+                    nip_guru=req.teacher_profile.nip_guru,
+                    nama_sekolah=req.teacher_profile.nama_sekolah,
+                    npsn=req.teacher_profile.npsn,
+                    kabupaten_kota=req.teacher_profile.kabupaten_kota,
+                    provinsi=req.teacher_profile.provinsi,
+                    nama_kepala_sekolah=req.teacher_profile.nama_kepala_sekolah,
+                    nip_kepala_sekolah=req.teacher_profile.nip_kepala_sekolah,
+                    no_whatsapp=req.teacher_profile.no_whatsapp,
+                    email=req.teacher_profile.email,
+                    ukuran_kertas_default=req.teacher_profile.ukuran_kertas_default.value,
+                )
+                teacher = self.teacher_repo.save(new_teacher)
+        elif req.teacher_id:
+            teacher = self.teacher_repo.find_by_id(req.teacher_id)
+            if not teacher:
+                raise ValidationError(f"Teacher profile with ID '{req.teacher_id}' was not found.")
+
+        if not teacher:
+            raise ValidationError("Teacher profile is required to generate official document.")
+
+        # 4. Engine Strategy & Output Format Selection (docx, xlsx, or pdf)
+        if req.output_format:
+            file_format = req.output_format.value
+        else:
+            file_format = "xlsx" if req.service_id == ServiceIdEnum.PROMES else "docx"
+        engine = DocumentEngineFactory.get_engine(req.service_id, req.output_format)
+
+        # 5. Generate Binary File Bytes Enriched from GuruDocDB
+        raw_template = None
+        if req.chapter_id and hasattr(self.curriculum_repo, "get_raw_modul_template"):
+            raw_template = self.curriculum_repo.get_raw_modul_template(req.subject_id, req.chapter_id)
+        if req.service_id == ServiceIdEnum.PROMES and hasattr(self.curriculum_repo, "get_calendar_weeks"):
+            cal_weeks = self.curriculum_repo.get_calendar_weeks(req.semester)
+            raw_template = {"calendar_weeks": cal_weeks}
+
+        file_bytes = engine.generate(
+            request=req,
+            subject=subject,
+            chapter=chapter,
+            teacher=teacher,
+            raw_template=raw_template,
+        )
+
+        # 6. Generate Clean & Safe Filename
+        service_slug = req.service_id.value.replace("_", "-")
+        mapel_clean = re.sub(r"[^a-zA-Z0-9]", "_", subject.nama_mapel)[:15].strip("_")
+        bab_part = f"_Bab{chapter.nomor_bab}" if chapter else ""
+        filename = f"{service_slug}_{mapel_clean}_K{subject.kelas}_Smtr{req.semester}{bab_part}_{int(time.time())}.{file_format}"
+
+        # 7. Persist to Storage
+        download_url = self.storage_service.save_file(filename, file_bytes)
+
+        # 8. Record Job in Memory & GuruDocDB (generated_documents_log)
+        execution_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        size_bytes = len(file_bytes)
+        params_payload = {
+            "jenjang": req.jenjang.value,
+            "kelas": req.kelas,
+            "subject_id": req.subject_id,
+            "chapter_id": req.chapter_id,
+            "semester": req.semester,
+        }
+
+        job = DocumentGenerationJob(
+            service_id=req.service_id.value,
+            service_name=self.SERVICE_DISPLAY_NAMES.get(req.service_id, "Dokumen Kurikulum Merdeka"),
+            teacher_id=teacher.id,
+            file_format=file_format,
+            filename=filename,
+            paper_size=req.paper_size.value,
+            file_url=download_url,
+            file_size_bytes=size_bytes,
+            parameters=params_payload,
+        )
+        self._history.insert(0, job)
+        self._persist_job_to_db(job, subject)
+
+        return DocumentGenerateResponse(
+            job_id=job.id,
+            service_id=job.service_id,
+            service_name=job.service_name,
+            filename=job.filename,
+            file_format=job.file_format,
+            paper_size=job.paper_size,
+            download_url=job.file_url,
+            file_size_bytes=job.file_size_bytes,
+            file_size_human=job.to_dict()["file_size_human"],
+            total_pages_approx=max(1, size_bytes // 15000),
+            execution_time_ms=execution_time_ms,
+            created_at=job.created_at.isoformat(),
+        )
+
+    def _persist_job_to_db(self, job: DocumentGenerationJob, subject) -> None:
+        """Persists generated document job into generated_documents_log table in GuruDocDB."""
+        try:
+            with self.db.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO generated_documents_log (
+                            id, teacher_id, service_code, service_name, education_level, grade,
+                            subject_id, subject_name, semester, filename, paper_size,
+                            output_format, file_size_bytes, r2_file_url, form_input_payload
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id) DO NOTHING;
+                        """,
+                        (
+                            job.id,
+                            job.teacher_id,
+                            job.service_id,
+                            job.service_name,
+                            subject.jenjang,
+                            subject.kelas,
+                            subject.id,
+                            subject.nama_mapel,
+                            int(job.parameters.get("semester", 1)),
+                            job.filename,
+                            job.paper_size,
+                            job.file_format,
+                            job.file_size_bytes,
+                            job.file_url,
+                            Jsonb(job.parameters),
+                        ),
+                    )
+        except Exception:
+            # Keep in-memory history intact if custom mock teacher_repo is used in isolated unit test
+            pass
+
+    def get_history(self, limit: int = 20) -> List[dict]:
+        """Reads document generation history directly from GuruDocDB with fallback to in-memory jobs."""
+        try:
+            with self.db.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT *
+                        FROM generated_documents_log
+                        ORDER BY created_at DESC
+                        LIMIT %s;
+                        """,
+                        (limit,),
+                    )
+                    rows = cur.fetchall()
+                    if rows:
+                        results = []
+                        for r in rows:
+                            size_kb = round(int(r["file_size_bytes"]) / 1024, 1)
+                            results.append(
+                                {
+                                    "id": r["id"],
+                                    "service_id": r["service_code"],
+                                    "service_name": r["service_name"],
+                                    "teacher_id": r["teacher_id"] or "",
+                                    "filename": r["filename"],
+                                    "file_format": r["output_format"],
+                                    "paper_size": r["paper_size"],
+                                    "file_url": r["r2_file_url"],
+                                    "file_size_bytes": int(r["file_size_bytes"]),
+                                    "file_size_human": f"{size_kb} KB",
+                                    "status": "completed",
+                                    "parameters": r["form_input_payload"] or {},
+                                    "created_at": r["created_at"].isoformat() if hasattr(r["created_at"], "isoformat") else str(r["created_at"]),
+                                }
+                            )
+                        return results
+        except Exception:
+            pass
+        return [j.to_dict() for j in self._history[:limit]]

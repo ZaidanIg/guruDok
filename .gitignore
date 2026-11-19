@@ -1,0 +1,35 @@
+# Python & Virtual Environments
+.venv/
+v/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Node & Frontend Build
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Environment & Secrets
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# Generated Documents & Temporary Files
+backend/generated_docs/*.docx
+backend/generated_docs/*.xlsx
+backend/generated_docs/*.pdf
+!backend/generated_docs/.gitkeep
+
+# Internal Docs, Plans, Rules & Agent Contracts (Keep local only, exclude from GitHub)
+document/
+rule/
+plan/
+todo/
+AGENTS.md
+
+# OS & Editor
+.DS_Store
+Thumbs.db
