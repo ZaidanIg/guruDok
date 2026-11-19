@@ -156,6 +156,14 @@
     font-weight: 700;
   }
 
+  .preview-protected {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
   /* 11. Full-Screen Radial Glow + Thin Grid & Planetary Orbit (Sprint 17) */
   .hero-grid-bg {
     background-image:

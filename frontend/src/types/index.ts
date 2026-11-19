@@ -113,7 +113,7 @@ export interface DocumentGenerateRequest {
   model_pembelajaran?: string;
   paper_size: PaperSize;
   output_format?: OutputFormat;
-  teacher_profile: TeacherProfile;
+  teacher_profile?: TeacherProfile;
   include_lkpd: boolean;
   include_asesmen: boolean;
   include_rubrik: boolean;
@@ -172,4 +172,18 @@ export interface ApiEnvelope<T> {
   success: boolean;
   message: string;
   data: T;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url?: string | null;
+  role: string;
+}
+
+export interface AuthLoginResponse {
+  access_token: string;
+  token_type: string;
+  user: AuthUser;
 }

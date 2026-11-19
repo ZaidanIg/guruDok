@@ -134,7 +134,8 @@ class DocumentGenerateRequest(BaseModel):
     model_pembelajaran: Optional[str] = Field("Inquiry Based Learning (Mendalam/DL)", max_length=100)
     paper_size: PaperSizeEnum = PaperSizeEnum.F4
     output_format: Optional[OutputFormatEnum] = None
-    teacher_profile: TeacherProfileCreate
+    teacher_id: Optional[str] = None
+    teacher_profile: Optional[TeacherProfileCreate] = None
     include_lkpd: bool = True
     include_asesmen: bool = True
     include_rubrik: bool = True

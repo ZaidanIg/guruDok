@@ -16,9 +16,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    google_sub VARCHAR(128) UNIQUE,
     email VARCHAR(255) UNIQUE,
     whatsapp_number VARCHAR(30) UNIQUE,
     full_name VARCHAR(150) NOT NULL,
+    avatar_url TEXT,
     role VARCHAR(30) DEFAULT 'teacher',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

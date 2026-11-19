@@ -81,6 +81,16 @@ class Settings(BaseModel):
     # Storage driver: "local" or "s3"
     storage_driver: str = os.getenv("STORAGE_DRIVER", "local")
 
+    # Google OAuth & JWT Auth Gate for Downloads
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "gurudok-dev-secret-change-in-staging")
+    jwt_expire_minutes: int = int(os.getenv("JWT_EXPIRE_MINUTES", "10080"))
+    auth_required_for_download: bool = os.getenv("AUTH_REQUIRED_FOR_DOWNLOAD", "False").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+
     # Cloudflare R2 / S3
     r2_account_id: str = os.getenv("R2_ACCOUNT_ID", "")
     r2_access_key_id: str = os.getenv("R2_ACCESS_KEY_ID", "")

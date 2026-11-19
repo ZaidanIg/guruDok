@@ -50,6 +50,9 @@ services:
       DATASET_PATH: /app/backend/dataset
       GENERATED_DIR: /app/backend/generated_docs
       STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-gurudok_staging_jwt_secret_key_change_me}
+      AUTH_REQUIRED_FOR_DOWNLOAD: ${AUTH_REQUIRED_FOR_DOWNLOAD:-True}
     volumes:
       - gurudok_generated_docs:/app/backend/generated_docs
     expose:
@@ -61,6 +64,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     restart: unless-stopped
     depends_on:
       - backend

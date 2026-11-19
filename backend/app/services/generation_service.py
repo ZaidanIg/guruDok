@@ -37,7 +37,9 @@ class DocumentGenerationService:
         self.db = db_manager or get_db_manager()
         self._history: List[DocumentGenerationJob] = []
 
-    def generate_document(self, req: DocumentGenerateRequest) -> DocumentGenerateResponse:
+    def generate_document(
+        self, req: DocumentGenerateRequest, user_id: Optional[str] = None
+    ) -> DocumentGenerateResponse:
         start_time = time.perf_counter()
 
         # 1. Resolve Curriculum Subject
@@ -88,7 +90,19 @@ class DocumentGenerationService:
                 raise ValidationError(f"Teacher profile with ID '{req.teacher_id}' was not found.")
 
         if not teacher:
-            raise ValidationError("Teacher profile is required to generate official document.")
+            teacher = TeacherProfile(
+                id="anon-placeholder",
+                nama_guru="........................................",
+                nip_guru="-",
+                nama_sekolah="........................................",
+                npsn="-",
+                kabupaten_kota="....................",
+                provinsi="",
+                nama_kepala_sekolah="........................................",
+                nip_kepala_sekolah="-",
+                no_whatsapp="-",
+                ukuran_kertas_default=req.paper_size.value,
+            )
 
         # 4. Engine Strategy & Output Format Selection (docx, xlsx, or pdf)
         if req.output_format:
@@ -131,6 +145,7 @@ class DocumentGenerationService:
             "subject_id": req.subject_id,
             "chapter_id": req.chapter_id,
             "semester": req.semester,
+            "user_id": user_id,
         }
 
         job = DocumentGenerationJob(
@@ -145,7 +160,7 @@ class DocumentGenerationService:
             parameters=params_payload,
         )
         self._history.insert(0, job)
-        self._persist_job_to_db(job, subject)
+        self._persist_job_to_db(job, subject, user_id=user_id)
 
         return DocumentGenerateResponse(
             job_id=job.id,
@@ -162,24 +177,28 @@ class DocumentGenerationService:
             created_at=job.created_at.isoformat(),
         )
 
-    def _persist_job_to_db(self, job: DocumentGenerationJob, subject) -> None:
+    def _persist_job_to_db(
+        self, job: DocumentGenerationJob, subject, user_id: Optional[str] = None
+    ) -> None:
         """Persists generated document job into generated_documents_log table in GuruDocDB."""
         try:
+            db_teacher_id = None if job.teacher_id == "anon-placeholder" else job.teacher_id
             with self.db.get_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
                         INSERT INTO generated_documents_log (
-                            id, teacher_id, service_code, service_name, education_level, grade,
+                            id, user_id, teacher_id, service_code, service_name, education_level, grade,
                             subject_id, subject_name, semester, filename, paper_size,
                             output_format, file_size_bytes, r2_file_url, form_input_payload
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id) DO NOTHING;
                         """,
                         (
                             job.id,
-                            job.teacher_id,
+                            user_id,
+                            db_teacher_id,
                             job.service_id,
                             job.service_name,
                             subject.jenjang,
@@ -199,20 +218,37 @@ class DocumentGenerationService:
             # Keep in-memory history intact if custom mock teacher_repo is used in isolated unit test
             pass
 
-    def get_history(self, limit: int = 20) -> List[dict]:
-        """Reads document generation history directly from GuruDocDB with fallback to in-memory jobs."""
+    def get_history(self, limit: int = 20, user_id: Optional[str] = None) -> List[dict]:
+        """Reads document generation history directly from GuruDocDB, isolated per user_id when provided."""
+        from app.core.config import settings
+
+        if settings.auth_required_for_download and not user_id:
+            return []
+
         try:
             with self.db.get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        """
-                        SELECT *
-                        FROM generated_documents_log
-                        ORDER BY created_at DESC
-                        LIMIT %s;
-                        """,
-                        (limit,),
-                    )
+                    if user_id:
+                        cur.execute(
+                            """
+                            SELECT *
+                            FROM generated_documents_log
+                            WHERE user_id = %s::uuid
+                            ORDER BY created_at DESC
+                            LIMIT %s;
+                            """,
+                            (user_id, limit),
+                        )
+                    else:
+                        cur.execute(
+                            """
+                            SELECT *
+                            FROM generated_documents_log
+                            ORDER BY created_at DESC
+                            LIMIT %s;
+                            """,
+                            (limit,),
+                        )
                     rows = cur.fetchall()
                     if rows:
                         results = []
@@ -236,6 +272,11 @@ class DocumentGenerationService:
                                 }
                             )
                         return results
+                    if user_id:
+                        return []
         except Exception:
             pass
+        if user_id:
+            filtered = [j for j in self._history if j.parameters.get("user_id") == user_id]
+            return [j.to_dict() for j in filtered[:limit]]
         return [j.to_dict() for j in self._history[:limit]]

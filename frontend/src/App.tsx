@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+  AuthUser,
   ChapterTopic,
   CurriculumSubject,
   CustomDocumentOverrides,
@@ -28,6 +29,7 @@ import { DocumentGenerator } from './components/sections/DocumentGenerator';
 import { DocumentHistory } from './components/sections/DocumentHistory';
 import { SchoolProfileModal } from './components/modals/SchoolProfileModal';
 import { SuccessDownloadModal } from './components/modals/SuccessDownloadModal';
+import { GoogleLoginModal } from './components/modals/GoogleLoginModal';
 
 const STORAGE_KEY_TEACHER = 'gurudok_teacher_profile_v2';
 
@@ -75,6 +77,15 @@ export const App: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<DocumentGenerateResponse | null>(null);
   const [history, setHistory] = useState<HistoryDocumentItem[]>([]);
+
+  // Google Auth Gate State
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [pendingAction, setPendingAction] = useState<
+    | { type: 'generate' }
+    | { type: 'download'; fileUrl: string; filename: string }
+    | null
+  >(null);
 
   // Load Generator Subjects whenever Jenjang or Kelas changes
   const loadSubjects = useCallback(
@@ -133,9 +144,12 @@ export const App: React.FC = () => {
     };
   }, [selectedSubject?.id, semester]);
 
-  // Load History on mount
+  // Load Google Auth Session & History on mount
   useEffect(() => {
-    apiClient.getHistory().then(setHistory);
+    apiClient.getCurrentUser().then((user) => {
+      setAuthUser(user);
+      apiClient.getHistory().then(setHistory);
+    });
   }, []);
 
   // Multi-Page Navigation Helper
@@ -202,7 +216,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // Save Teacher Profile
+  // Save Teacher Profile (Disimpan di browser saja, bersifat opsional)
   const handleSaveTeacherProfile = async (updated: TeacherProfile) => {
     setTeacher(updated);
     setPaperSize(updated.ukuran_kertas_default);
@@ -211,29 +225,11 @@ export const App: React.FC = () => {
     } catch {
       // ignore storage errors
     }
-    try {
-      const savedFromApi = await apiClient.saveTeacherProfile(updated);
-      setTeacher(savedFromApi);
-    } catch {
-      // Keep local profile if backend is offline
-    }
   };
 
-  // Trigger Document Generation with Custom Overrides
-  const handleGenerateDocument = async () => {
+  const executeGenerateDocument = async () => {
     if (!selectedSubject) {
       setErrorMsg('Silakan pilih Mata Pelajaran terlebih dahulu.');
-      return;
-    }
-    if (
-      !teacher.nama_guru.trim() ||
-      !teacher.nama_sekolah.trim() ||
-      !teacher.kabupaten_kota.trim() ||
-      !teacher.nama_kepala_sekolah.trim() ||
-      !teacher.no_whatsapp.trim()
-    ) {
-      setErrorMsg('Silakan lengkapi Profil Guru & KOP Sekolah Anda terlebih dahulu.');
-      setIsProfileModalOpen(true);
       return;
     }
 
@@ -242,6 +238,14 @@ export const App: React.FC = () => {
 
     try {
       const hasCustomOverrides = Object.keys(customOverrides).length > 0;
+      const hasCompleteProfile = Boolean(
+        teacher.nama_guru.trim() &&
+          teacher.nama_sekolah.trim() &&
+          teacher.kabupaten_kota.trim() &&
+          teacher.nama_kepala_sekolah.trim() &&
+          teacher.no_whatsapp.trim()
+      );
+
       const response = await apiClient.generateDocument({
         service_id: selectedServiceId,
         jenjang,
@@ -252,7 +256,7 @@ export const App: React.FC = () => {
         model_pembelajaran: modelPembelajaran,
         paper_size: paperSize,
         output_format: outputFormat,
-        teacher_profile: teacher,
+        teacher_profile: hasCompleteProfile ? teacher : undefined,
         include_lkpd: includeLkpd,
         include_asesmen: includeAsesmen,
         include_rubrik: includeRubrik,
@@ -275,18 +279,68 @@ export const App: React.FC = () => {
     }
   };
 
-  // Trigger File Download
-  const handleDownloadFile = (url: string, filename: string) => {
+  // Trigger Document Generation (Wajib Google Login sebelum generate/download)
+  const handleGenerateDocument = async () => {
+    if (!selectedSubject) {
+      setErrorMsg('Silakan pilih Mata Pelajaran terlebih dahulu.');
+      return;
+    }
+    if (!authUser) {
+      setPendingAction({ type: 'generate' });
+      setIsLoginModalOpen(true);
+      return;
+    }
+    await executeGenerateDocument();
+  };
+
+  // Trigger File Download (Wajib Google Login)
+  const handleDownloadFile = async (url: string, filename: string) => {
     if (!url || url === '#') {
       handleNavigate('generator');
       return;
     }
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!authUser) {
+      setPendingAction({ type: 'download', fileUrl: url, filename });
+      setIsLoginModalOpen(true);
+      return;
+    }
+    try {
+      await apiClient.downloadAuthenticatedFile(url, filename);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === 'UNAUTHORIZED') {
+        apiClient.clearAuthToken();
+        setAuthUser(null);
+        setPendingAction({ type: 'download', fileUrl: url, filename });
+        setIsLoginModalOpen(true);
+      } else {
+        setErrorMsg('Gagal mengunduh berkas dari server.');
+      }
+    }
+  };
+
+  const handleGoogleLoginSuccess = async (user: AuthUser) => {
+    setAuthUser(user);
+    setIsLoginModalOpen(false);
+    const updatedHistory = await apiClient.getHistory();
+    setHistory(updatedHistory);
+
+    const action = pendingAction;
+    setPendingAction(null);
+    if (action?.type === 'generate') {
+      await executeGenerateDocument();
+    } else if (action?.type === 'download') {
+      try {
+        await apiClient.downloadAuthenticatedFile(action.fileUrl, action.filename);
+      } catch {
+        setErrorMsg('Gagal mengunduh berkas setelah login.');
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    apiClient.clearAuthToken();
+    setAuthUser(null);
+    setHistory([]);
   };
 
   const activeServiceObj =
@@ -298,9 +352,12 @@ export const App: React.FC = () => {
         {/* Top Clean Navbar (3 Pages: Home, Katalog Layanan, Riwayat Dokumen) */}
         <Navbar
           teacher={teacher}
+          authUser={authUser}
           activeSection={activeSection}
           onNavigate={handleNavigate}
           onOpenProfileModal={() => setIsProfileModalOpen(true)}
+          onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          onLogout={handleLogout}
         />
 
         {/* Multi-Page Content Router */}
@@ -404,6 +461,16 @@ export const App: React.FC = () => {
         teacher={teacher}
         onClose={() => setIsSuccessModalOpen(false)}
         onDownload={handleDownloadFile}
+      />
+
+      {/* Modal 3: Google Sign-In Gate (Wajib saat Download) */}
+      <GoogleLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => {
+          setIsLoginModalOpen(false);
+          setPendingAction(null);
+        }}
+        onSuccess={handleGoogleLoginSuccess}
       />
     </div>
   );

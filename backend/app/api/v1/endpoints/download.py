@@ -1,5 +1,7 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Response, HTTPException, status
-from app.api.deps import get_storage_service
+from app.api.deps import get_optional_current_user, get_storage_service
+from app.core.config import settings
 from app.core.security import PathTraversalGuard, FileAttackGuard
 from app.core.exceptions import (
     GuruDokException,
@@ -22,9 +24,15 @@ MIME_TYPES = {
 async def download_document_file(
     filename: str,
     storage: IStorageService = Depends(get_storage_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
 ):
     """Safely serves generated .docx, .xlsx, or .pdf file with Content-Disposition attachment."""
     try:
+        if settings.auth_required_for_download and not current_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Silakan masuk dengan akun Google untuk mengunduh dokumen.",
+            )
         clean_filename = PathTraversalGuard.sanitize_filename(filename)
         ext = FileAttackGuard.validate_extension(clean_filename)
 

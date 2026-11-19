@@ -1,5 +1,7 @@
 import {
   ApiEnvelope,
+  AuthLoginResponse,
+  AuthUser,
   ChapterCreateRequest,
   ChapterTopic,
   CurriculumSubject,
@@ -12,6 +14,7 @@ import {
 import { FALLBACK_SUBJECTS, INITIAL_HISTORY_ITEMS } from './fallbackData';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const AUTH_TOKEN_KEY = 'gurudok_auth_token_v1';
 
 export class GuruDokApiClient {
   private baseUrl: string;
@@ -136,13 +139,77 @@ export class GuruDokApiClient {
     return json.data;
   }
 
+  getAuthToken(): string | null {
+    try {
+      return localStorage.getItem(AUTH_TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  setAuthToken(token: string): void {
+    try {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  clearAuthToken(): void {
+    try {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private getAuthHeaders(): Record<string, string> {
+    const token = this.getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  async loginWithGoogle(credential: string): Promise<AuthLoginResponse> {
+    const res = await fetch(`${this.baseUrl}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.detail || json.message || 'Gagal login dengan Google.');
+    }
+    this.setAuthToken(json.data.access_token);
+    return json.data;
+  }
+
+  async getCurrentUser(): Promise<AuthUser | null> {
+    const token = this.getAuthToken();
+    if (!token) return null;
+    try {
+      const res = await fetch(`${this.baseUrl}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        this.clearAuthToken();
+        return null;
+      }
+      const json: ApiEnvelope<AuthUser> = await res.json();
+      return json.data;
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Requests deterministic Word (.docx), Excel (.xlsx), or PDF (.pdf) document generation.
    */
   async generateDocument(payload: DocumentGenerateRequest): Promise<DocumentGenerateResponse> {
     const res = await fetch(`${this.baseUrl}/documents/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders(),
+      },
       body: JSON.stringify(payload),
     });
 
@@ -154,11 +221,41 @@ export class GuruDokApiClient {
   }
 
   /**
+   * Downloads generated document with Bearer JWT authentication.
+   */
+  async downloadAuthenticatedFile(fileUrl: string, filename: string): Promise<void> {
+    const res = await fetch(fileUrl, {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+    if (res.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+    if (!res.ok) {
+      throw new Error('Gagal mengunduh dokumen dari server.');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  /**
    * Fetches generated document history.
    */
   async getHistory(): Promise<HistoryDocumentItem[]> {
     try {
-      const res = await fetch(`${this.baseUrl}/documents/history?limit=100`);
+      const res = await fetch(`${this.baseUrl}/documents/history?limit=100`, {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
       if (!res.ok) throw new Error('Failed to fetch history');
       const json: ApiEnvelope<HistoryDocumentItem[]> = await res.json();
       return Array.isArray(json.data) ? json.data : [];

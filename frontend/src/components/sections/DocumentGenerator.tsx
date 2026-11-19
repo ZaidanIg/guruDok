@@ -1025,8 +1025,25 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </span>
             </div>
 
-            {/* Scrollable Document Sheet Container */}
-            <div className="paper-sheet max-h-[calc(100vh-160px)] overflow-y-auto rounded-lg p-6 sm:p-8 lg:p-10">
+            {/* Scrollable Document Sheet Container (Anti-Select & Anti-Copy-Paste Protected) */}
+            <div
+              onCopy={(e) => e.preventDefault()}
+              onCut={(e) => e.preventDefault()}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+              className="paper-sheet preview-protected relative max-h-[calc(100vh-160px)] select-none overflow-y-auto rounded-lg p-6 sm:p-8 lg:p-10"
+            >
+              {/* Subtle Diagonal Preview Watermark */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-hidden opacity-[0.045]"
+              >
+                <span className="-rotate-30 whitespace-nowrap text-3xl font-black tracking-[0.25em] text-slate-900 sm:text-5xl">
+                  PRATINJAU • GURUDOK.ID
+                </span>
+              </div>
+
+              <div className="pointer-events-none relative z-10">
               {/* 1. KOP SEKOLAH RESMI */}
               <div className="border-b-2 border-slate-900 pb-3 text-center">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-700">
@@ -1855,6 +1872,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   <p className="font-extrabold underline">{teacher.nama_guru || 'Nama Guru Anda'}</p>
                   <p className="text-[11px] text-slate-600">NIP. {teacher.nip_guru || '-'}</p>
                 </div>
+              </div>
               </div>
             </div>
           </div>

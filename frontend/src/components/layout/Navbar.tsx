@@ -1,19 +1,25 @@
 import React from 'react';
-import { BookOpen, UserCheck } from 'lucide-react';
-import { TeacherProfile } from '../../types';
+import { BookOpen, UserCheck, LogOut } from 'lucide-react';
+import { AuthUser, TeacherProfile } from '../../types';
 
 interface NavbarProps {
   teacher: TeacherProfile;
+  authUser?: AuthUser | null;
   activeSection: 'home' | 'katalog' | 'generator' | 'riwayat';
   onNavigate: (section: 'home' | 'katalog' | 'generator' | 'riwayat') => void;
   onOpenProfileModal: () => void;
+  onOpenLoginModal?: () => void;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   teacher,
+  authUser,
   activeSection,
   onNavigate,
   onOpenProfileModal,
+  onOpenLoginModal,
+  onLogout,
 }) => {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -97,6 +103,45 @@ export const Navbar: React.FC<NavbarProps> = ({
               Profil KOP
             </span>
           </button>
+
+          {authUser ? (
+            <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-2 pr-1.5">
+              {authUser.avatar_url ? (
+                <img
+                  src={authUser.avatar_url}
+                  alt={authUser.full_name}
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-700 text-[10px] font-bold text-white">
+                  {authUser.full_name.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span className="hidden max-w-[110px] truncate text-xs font-bold text-slate-700 lg:inline">
+                {authUser.full_name}
+              </span>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  title="Keluar akun Google"
+                  className="rounded-full p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            onOpenLoginModal && (
+              <button
+                type="button"
+                onClick={onOpenLoginModal}
+                className="clay-btn-primary px-3 py-1.5 text-xs font-bold"
+              >
+                Masuk Google
+              </button>
+            )
+          )}
         </div>
       </div>
     </header>
