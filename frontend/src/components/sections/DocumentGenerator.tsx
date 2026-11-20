@@ -129,10 +129,23 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [showAssessmentEditor, setShowAssessmentEditor] = useState<boolean>(false);
   const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState<boolean>(false);
 
-  // Classroom & Student State (Local Browser Storage)
+  // Service Category Helpers
+  const isModulAjar = activeService.id === '08_modul_ajar';
+  const isCpTp = activeService.id === '03_cp_tp';
+  const isAtp = activeService.id === '04_atp';
+  const isProta = activeService.id === '05_prota';
+  const isPromes = activeService.id === '06_promes';
+  const isKktp = activeService.id === '07_kktp';
+  const isLkpd = activeService.id === '09_lkpd';
   const isPresensi = activeService.id === '13_presensi';
   const isDaftarNilai = activeService.id === '15_daftar_nilai';
   const isClassroomService = isPresensi || isDaftarNilai;
+
+  // Form Field Toggles by Service
+  const showChapterSelector = Boolean(activeService.requiresChapter || isModulAjar || isLkpd);
+  const showAlokasiJpBab = isModulAjar;
+  const showPedagogicalModel = isModulAjar;
+  const isAnnualScope = isProta;
 
   const [classrooms, setClassrooms] = useState<ClassroomRombel[]>(() => getClassrooms());
 
@@ -188,10 +201,17 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const asesmenObj = rawTpl.asesmen || {};
 
   // Effective TP list (custom overrides or chapter default)
+  const allTpsFromSubject =
+    selectedSubject?.bab_list && selectedSubject.bab_list.length > 0
+      ? selectedSubject.bab_list.flatMap((b) => b.tujuan_pembelajaran || [])
+      : [];
+
   const defaultTps: CustomTpItem[] = (
-    selectedChapter?.tujuan_pembelajaran ||
-    selectedSubject?.bab_list?.[0]?.tujuan_pembelajaran ||
-    []
+    !showChapterSelector && allTpsFromSubject.length > 0
+      ? allTpsFromSubject
+      : selectedChapter?.tujuan_pembelajaran ||
+        selectedSubject?.bab_list?.[0]?.tujuan_pembelajaran ||
+        []
   ).map((t) => ({
     code: t.code,
     deskripsi: t.deskripsi,
@@ -543,87 +563,107 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 </select>
               </div>
 
-              {/* Semester & Bab */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Semester & Alokasi JP Bab */}
+              <div className={`grid grid-cols-1 gap-3 ${showAlokasiJpBab ? 'sm:grid-cols-2' : ''}`}>
+                {isAnnualScope ? (
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Cakupan Waktu Kurikulum
+                    </label>
+                    <div className="clay-input flex items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-800 bg-blue-50/50">
+                      <span>1 Tahun Ajaran Penuh</span>
+                      <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
+                        Semester 1 &amp; 2
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Semester
+                    </label>
+                    <select
+                      value={semester}
+                      onChange={(e) => onChangeSemester(Number(e.target.value))}
+                      className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
+                    >
+                      <option value={1}>Semester 1 (Ganjil)</option>
+                      <option value={2}>Semester 2 (Genap)</option>
+                    </select>
+                  </div>
+                )}
+
+                {showAlokasiJpBab && (
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Alokasi JP Bab
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={currentAlokasiJp}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          alokasi_jp_bab: Math.max(1, Number(e.target.value) || 2),
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Bab / Materi Pokok (Hanya ditampilkan jika layanan membutuhkan Bab) */}
+              {showChapterSelector && (
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Semester
-                  </label>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Bab / Lingkup Materi Pokok
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddChapterModalOpen(true)}
+                      className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span>Tambah Bab</span>
+                    </button>
+                  </div>
                   <select
-                    value={semester}
-                    onChange={(e) => onChangeSemester(Number(e.target.value))}
+                    value={selectedChapter?.id || ''}
+                    onChange={(e) => onChangeChapter(e.target.value)}
                     className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
                   >
-                    <option value={1}>Semester 1 (Ganjil)</option>
-                    <option value={2}>Semester 2 (Genap)</option>
+                    {chapters.map((ch) => (
+                      <option key={ch.id} value={ch.id}>
+                        Bab {ch.nomor_bab} (Sem {ch.semester}): {ch.judul_bab}
+                      </option>
+                    ))}
                   </select>
                 </div>
+              )}
 
+              {/* Model Pembelajaran (Hanya ditampilkan jika Modul Ajar) */}
+              {showPedagogicalModel && (
                 <div>
                   <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Alokasi JP Bab
+                    Model Pembelajaran Pedagogis
                   </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={120}
-                    value={currentAlokasiJp}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        alokasi_jp_bab: Math.max(1, Number(e.target.value) || 2),
-                      })
-                    }
+                  <select
+                    value={modelPembelajaran}
+                    onChange={(e) => onChangeModelPembelajaran(e.target.value)}
                     className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Bab / Materi Pokok */}
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Bab / Lingkup Materi Pokok
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsAddChapterModalOpen(true)}
-                    className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
                   >
-                    <Plus className="h-3 w-3" />
-                    <span>Tambah Bab</span>
-                  </button>
+                    {PEDAGOGICAL_MODELS.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <select
-                  value={selectedChapter?.id || ''}
-                  onChange={(e) => onChangeChapter(e.target.value)}
-                  className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
-                >
-                  {chapters.map((ch) => (
-                    <option key={ch.id} value={ch.id}>
-                      Bab {ch.nomor_bab} (Sem {ch.semester}): {ch.judul_bab}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Model Pembelajaran */}
-              <div>
-                <label className="mb-1 block text-xs font-bold text-slate-700">
-                  Model Pembelajaran Pedagogis
-                </label>
-                <select
-                  value={modelPembelajaran}
-                  onChange={(e) => onChangeModelPembelajaran(e.target.value)}
-                  className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
-                >
-                  {PEDAGOGICAL_MODELS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              )}
 
               {/* Format Output & Ukuran Kertas */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -689,8 +729,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             </div>
           </div>
 
-          {/* Card 2: Classroom Services vs Lesson Plan Services */}
-          {isClassroomService ? (
+          {/* Card Khusus 1: Layanan Administrasi Kelas (Presensi Siswa / Daftar Nilai) */}
+          {isClassroomService && (
             <div className="clay-card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div>
@@ -812,236 +852,58 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 )}
               </div>
             </div>
-          ) : (
-            <>
-          {/* Card 2: Editor Fleksibel Tujuan Pembelajaran (TP) */}
-          <div className="clay-card p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
-              <div>
-                <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-                  2. Editor Tujuan Pembelajaran (TP)
-                </h2>
-                <p className="text-[11px] font-medium text-slate-500">
-                  Tambah, ubah, atau hapus butir TP sesuai kebutuhan kelas Anda.
-                </p>
+          )}
+
+          {/* Card Khusus 2: Program Tahunan (Prota) */}
+          {isProta && (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    2. Pengaturan Alokasi Jam Tahunan (Prota)
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Distribusi alokasi waktu JP seluruh bab selama 1 tahun ajaran penuh (Semester 1 &amp; 2).
+                  </p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={onResetCustomOverrides}
-                title="Kembalikan ke data standar database"
-                className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-blue-700"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset Default</span>
-              </button>
-            </div>
 
-            <div className="mt-4 space-y-3">
-              {activeTps.map((tp, idx) => (
-                <div key={idx} className="clay-subcard p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={tp.code}
-                        onChange={(e) => handleUpdateTp(idx, 'code', e.target.value)}
-                        aria-label={`Kode TP ${idx + 1}`}
-                        className="clay-input w-24 px-2 py-1 text-xs font-bold text-blue-800"
-                      />
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          min={1}
-                          max={40}
-                          value={tp.alokasi_jp}
-                          onChange={(e) =>
-                            handleUpdateTp(
-                              idx,
-                              'alokasi_jp',
-                              Math.max(1, Number(e.target.value) || 2)
-                            )
-                          }
-                          aria-label={`Alokasi JP TP ${idx + 1}`}
-                          className="clay-input w-14 px-2 py-1 text-center text-xs font-bold text-slate-800"
-                        />
-                        <span className="text-xs font-bold text-slate-500">JP</span>
-                      </div>
-                    </div>
-
-                    {activeTps.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTp(idx)}
-                        title="Hapus butir TP ini"
-                        className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  <textarea
-                    rows={2}
-                    value={tp.deskripsi}
-                    onChange={(e) => handleUpdateTp(idx, 'deskripsi', e.target.value)}
-                    aria-label={`Deskripsi TP ${idx + 1}`}
-                    className="clay-input mt-2 w-full px-2.5 py-1.5 text-xs font-medium text-slate-800"
-                  />
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={handleAddTp}
-                className="clay-btn-white flex w-full items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Tambah Tujuan Pembelajaran (TP) Baru</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Card 3: Editor Konten Pedagogis & Kontekstual Fleksibel */}
-          <div className="clay-card p-5">
-            <button
-              type="button"
-              onClick={() => setShowPedagogicalEditor((v) => !v)}
-              className="flex w-full items-center justify-between text-left"
-            >
-              <div>
-                <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-                  3. Kustomisasi Isi Dokumen &amp; Pedagogis
-                </h2>
-                <p className="text-[11px] font-medium text-slate-500">
-                  Kesiapan murid, topik kontekstual, pertanyaan pemantik &amp; catatan.
-                </p>
-              </div>
-              {showPedagogicalEditor ? (
-                <ChevronUp className="h-4 w-4 text-slate-500" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-slate-500" />
-              )}
-            </button>
-
-            {showPedagogicalEditor && (
-              <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+              <div className="mt-4 space-y-3.5">
                 <div>
                   <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Identifikasi Kesiapan Peserta Didik
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={effectiveKesiapanMurid}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        kesiapan_murid: e.target.value,
-                      })
-                    }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Karakteristik Materi Pelajaran
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={effectiveKarakteristikMateri}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        karakteristik_materi: e.target.value,
-                      })
-                    }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Lintas Disiplin Ilmu yang Relevan
+                    Cadangan Jam Pelajaran Tahunan (JP)
                   </label>
                   <input
-                    type="text"
-                    value={effectiveLintasDisiplin}
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={customOverrides.cadangan_jp ?? 4}
                     onChange={(e) =>
                       onChangeCustomOverrides({
                         ...customOverrides,
-                        lintas_disiplin_ilmu: e.target.value,
+                        cadangan_jp: Math.max(0, Number(e.target.value) || 0),
                       })
                     }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                    className="clay-input w-full px-3 py-2 text-xs font-bold text-slate-800"
                   />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Dialokasikan untuk ujian semester, remedi klasikal, atau jeda kalender sekolah.
+                  </p>
+                </div>
+
+                <div className="rounded-lg bg-blue-50/70 border border-blue-200/80 p-2.5 text-xs text-blue-900">
+                  <span className="font-bold">Total Alokasi JP Tahunan Standar:</span>{' '}
+                  {selectedSubject?.total_alokasi_jp_tahun || 108} JP/Tahun ({jpPerMinggu} JP/Minggu)
                 </div>
 
                 <div>
                   <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Topik Pembelajaran Kontekstual
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={effectiveTopikKontekstual}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        topik_kontekstual: e.target.value,
-                      })
-                    }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Pertanyaan Pemantik (1 baris per pertanyaan)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={effectivePemantik.join('\n')}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        pertanyaan_pemantik: e.target.value
-                          .split('\n')
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                  />
-                </div>
-
-                {activeService.id === '05_prota' && (
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-slate-700">
-                      Cadangan Jam Pelajaran Tahunan (JP)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={60}
-                      value={customOverrides.cadangan_jp ?? 0}
-                      onChange={(e) =>
-                        onChangeCustomOverrides({
-                          ...customOverrides,
-                          cadangan_jp: Math.max(0, Number(e.target.value) || 0),
-                        })
-                      }
-                      className="clay-input w-full px-3 py-2 text-xs font-bold text-slate-800"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Catatan Khusus Penggunaan Dokumen
+                    Catatan Khusus Penggunaan Dokumen Prota
                   </label>
                   <input
                     type="text"
                     value={customOverrides.catatan_khusus || ''}
-                    placeholder="Contoh: Disesuaikan dengan jadwal blok praktikum sekolah..."
+                    placeholder="Contoh: Disesuaikan dengan kalender pendidikan provinsi..."
                     onChange={(e) =>
                       onChangeCustomOverrides({
                         ...customOverrides,
@@ -1052,128 +914,528 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   />
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Card 4: Editor Soal Asesmen & Lampiran */}
-          <div className="clay-card p-5">
-            <button
-              type="button"
-              onClick={() => setShowAssessmentEditor((v) => !v)}
-              className="flex w-full items-center justify-between text-left"
-            >
-              <div>
-                <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-                  4. Editor Soal Asesmen &amp; Lampiran
-                </h2>
-                <p className="text-[11px] font-medium text-slate-500">
-                  Kustomisasi butir soal asesmen awal, proses, akhir, dan lampiran LKPD.
-                </p>
+          {/* Card Khusus 3: Program Semester (Promes) */}
+          {isPromes && (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    2. Pengaturan Matriks Program Semester (Promes)
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Distribusi alokasi mingguan kalender 26 minggu dengan rumus otomatis =SUM.
+                  </p>
+                </div>
               </div>
-              {showAssessmentEditor ? (
-                <ChevronUp className="h-4 w-4 text-slate-500" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-slate-500" />
+
+              <div className="mt-4 space-y-3.5">
+                <div className="rounded-lg bg-emerald-50/70 border border-emerald-200/80 p-3 text-xs text-emerald-900">
+                  <p className="font-bold">Semester {semester} ({semester === 1 ? 'Juli — Desember' : 'Januari — Juni'})</p>
+                  <p className="mt-1 text-[11px] text-emerald-700">
+                    Beban belajar: <strong>{jpPerMinggu} JP/Minggu</strong> (Durasi {durasiMenitJp} menit/JP).
+                  </p>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                    Catatan Khusus Agenda Semester
+                  </label>
+                  <input
+                    type="text"
+                    value={customOverrides.catatan_khusus || ''}
+                    placeholder="Contoh: Termasuk alokasi Asesmen Sumatif Tengah Semester (ASTS)..."
+                    onChange={(e) =>
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        catatan_khusus: e.target.value,
+                      })
+                    }
+                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Card Khusus 4: KKTP (Skala Interval) */}
+          {isKktp && (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    2. Parameter &amp; Rubrik Kriteria Ketuntasan (KKTP)
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Rubrik 4 skala interval nilai &amp; kriteria ketuntasan sesuai PPA Revisi 2025.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3.5">
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                    Nilai Ambang Batas Ketuntasan (KKTP Default)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={50}
+                      max={100}
+                      value={customOverrides.kktp_nilai ?? 75}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          kktp_nilai: Math.max(50, Math.min(100, Number(e.target.value) || 75)),
+                        })
+                      }
+                      className="clay-input w-28 px-3 py-2 text-xs font-bold text-slate-800 sm:text-sm"
+                    />
+                    <span className="text-xs font-bold text-slate-600">Skala 0 - 100</span>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-2.5 text-[11px] space-y-1 text-slate-700">
+                  <p className="font-bold text-slate-800">Pedoman 4 Skala Interval PPA 2025:</p>
+                  <p>• <strong>0 - 40%:</strong> Belum mencapai, remedial di seluruh bagian</p>
+                  <p>• <strong>41 - 65%:</strong> Belum mencapai ketuntasan, remedial di bagian tertentu</p>
+                  <p>• <strong>66 - 85%:</strong> Sudah mencapai ketuntasan, tidak perlu remedial</p>
+                  <p>• <strong>86 - 100%:</strong> Sudah mencapai ketuntasan, perlu tantangan/pengayaan</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Card Khusus 5: LKPD Mandiri (Aktivitas 3M & Tugas Siswa) */}
+          {isLkpd && (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    2. Aktivitas Pembelajaran Mendalam (3M) &amp; Tugas LKPD
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Kustomisasi instruksi lembar kerja siswa siap cetak.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3.5">
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                    Tahap 1: Memahami (Instruksi Aktivitas Konseptual)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={
+                      customOverrides.langkah_inti_memahami?.[0] ||
+                      selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
+                      `Membaca dan memahami konsep inti pada materi ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}.`
+                    }
+                    onChange={(e) =>
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        langkah_inti_memahami: [e.target.value],
+                      })
+                    }
+                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                    Tahap 2: Mengaplikasi (Instruksi Studi Kasus / Praktik)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={
+                      customOverrides.langkah_inti_mengaplikasi?.[0] ||
+                      selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
+                      'Mengerjakan studi kasus atau praktik pemecahan masalah secara terstruktur.'
+                    }
+                    onChange={(e) =>
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        langkah_inti_mengaplikasi: [e.target.value],
+                      })
+                    }
+                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                    Tahap 3: Merefleksi (Refleksi Pemahaman Diri Siswa)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={
+                      customOverrides.langkah_inti_merefleksi?.[0] ||
+                      selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
+                      'Menuliskan kesimpulan dan refleksi pemahaman diri setelah aktivitas.'
+                    }
+                    onChange={(e) =>
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        langkah_inti_merefleksi: [e.target.value],
+                      })
+                    }
+                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Card Khusus 6: Editor Tujuan Pembelajaran (Hanya untuk Layanan yang Memerlukan Editor TP) */}
+          {(isModulAjar || isCpTp || isAtp || isKktp) && (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    {isModulAjar
+                      ? '2. Editor Tujuan Pembelajaran (TP) Bab Terpilih'
+                      : isKktp
+                      ? '3. Editor Butir Tujuan Pembelajaran & KKTP'
+                      : '2. Editor Capaian & Tujuan Pembelajaran (TP)'}
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Tambah, ubah, atau hapus butir TP sesuai kebutuhan kurikulum Anda.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onResetCustomOverrides}
+                  title="Kembalikan ke data standar database"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-blue-700"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reset Default</span>
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {activeTps.map((tp, idx) => (
+                  <div key={idx} className="clay-subcard p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={tp.code}
+                          onChange={(e) => handleUpdateTp(idx, 'code', e.target.value)}
+                          aria-label={`Kode TP ${idx + 1}`}
+                          className="clay-input w-24 px-2 py-1 text-xs font-bold text-blue-800"
+                        />
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={1}
+                            max={40}
+                            value={tp.alokasi_jp}
+                            onChange={(e) =>
+                              handleUpdateTp(
+                                idx,
+                                'alokasi_jp',
+                                Math.max(1, Number(e.target.value) || 2)
+                              )
+                            }
+                            aria-label={`Alokasi JP TP ${idx + 1}`}
+                            className="clay-input w-14 px-2 py-1 text-center text-xs font-bold text-slate-800"
+                          />
+                          <span className="text-xs font-bold text-slate-500">JP</span>
+                        </div>
+                      </div>
+
+                      {activeTps.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTp(idx)}
+                          title="Hapus butir TP ini"
+                          className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <textarea
+                      rows={2}
+                      value={tp.deskripsi}
+                      onChange={(e) => handleUpdateTp(idx, 'deskripsi', e.target.value)}
+                      aria-label={`Deskripsi TP ${idx + 1}`}
+                      className="clay-input mt-2 w-full px-2.5 py-1.5 text-xs font-medium text-slate-800"
+                    />
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={handleAddTp}
+                  className="clay-btn-white flex w-full items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-blue-700"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Tambah Tujuan Pembelajaran (TP) Baru</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Card Khusus 7: Kustomisasi Isi Dokumen & Pedagogis (KHUSUS MODUL AJAR) */}
+          {isModulAjar && (
+            <div className="clay-card p-5">
+              <button
+                type="button"
+                onClick={() => setShowPedagogicalEditor((v) => !v)}
+                className="flex w-full items-center justify-between text-left"
+              >
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    3. Kustomisasi Isi Dokumen &amp; Pedagogis
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Kesiapan murid, topik kontekstual, pertanyaan pemantik &amp; catatan.
+                  </p>
+                </div>
+                {showPedagogicalEditor ? (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                )}
+              </button>
+
+              {showPedagogicalEditor && (
+                <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Identifikasi Kesiapan Peserta Didik
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={effectiveKesiapanMurid}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          kesiapan_murid: e.target.value,
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Karakteristik Materi Pelajaran
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={effectiveKarakteristikMateri}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          karakteristik_materi: e.target.value,
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Lintas Disiplin Ilmu yang Relevan
+                    </label>
+                    <input
+                      type="text"
+                      value={effectiveLintasDisiplin}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          lintas_disiplin_ilmu: e.target.value,
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Topik Pembelajaran Kontekstual
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={effectiveTopikKontekstual}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          topik_kontekstual: e.target.value,
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Pertanyaan Pemantik (1 baris per pertanyaan)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={effectivePemantik.join('\n')}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          pertanyaan_pemantik: e.target.value
+                            .split('\n')
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Catatan Khusus Penggunaan Dokumen
+                    </label>
+                    <input
+                      type="text"
+                      value={customOverrides.catatan_khusus || ''}
+                      placeholder="Contoh: Disesuaikan dengan jadwal blok praktikum sekolah..."
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          catatan_khusus: e.target.value,
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                    />
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
+          )}
 
-            {showAssessmentEditor && (
-              <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+          {/* Card Khusus 8: Editor Soal Asesmen & Lampiran (KHUSUS MODUL AJAR) */}
+          {isModulAjar && (
+            <div className="clay-card p-5">
+              <button
+                type="button"
+                onClick={() => setShowAssessmentEditor((v) => !v)}
+                className="flex w-full items-center justify-between text-left"
+              >
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Soal Asesmen Awal / Diagnostik (1 baris per soal)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={effectiveSoalAwal.join('\n')}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        soal_asesmen_awal: e.target.value
-                          .split('\n')
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                  />
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    4. Editor Soal Asesmen &amp; Lampiran
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Kustomisasi butir soal asesmen awal, proses, akhir, dan lampiran LKPD.
+                  </p>
                 </div>
+                {showAssessmentEditor ? (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                )}
+              </button>
 
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Soal Asesmen Proses / Formatif (1 baris per soal)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={effectiveSoalProses.join('\n')}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        soal_asesmen_proses: e.target.value
-                          .split('\n')
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">
-                    Soal Asesmen Akhir / Sumatif (1 baris per soal)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={effectiveSoalAkhir.join('\n')}
-                    onChange={(e) =>
-                      onChangeCustomOverrides({
-                        ...customOverrides,
-                        soal_asesmen_akhir: e.target.value
-                          .split('\n')
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                  />
-                </div>
-
-                <div className="space-y-1.5 pt-2">
-                  <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={includeLkpd}
-                      onChange={onToggleLkpd}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-700"
+              {showAssessmentEditor && (
+                <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Soal Asesmen Awal / Diagnostik (1 baris per soal)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={effectiveSoalAwal.join('\n')}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          soal_asesmen_awal: e.target.value
+                            .split('\n')
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
                     />
-                    <span>Sertakan Lampiran Lembar Kerja Peserta Didik (LKPD)</span>
-                  </label>
+                  </div>
 
-                  <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={includeAsesmen}
-                      onChange={onToggleAsesmen}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Soal Asesmen Proses / Formatif (1 baris per soal)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={effectiveSoalProses.join('\n')}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          soal_asesmen_proses: e.target.value
+                            .split('\n')
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
                     />
-                    <span>Sertakan Instrumen Asesmen Awal, Proses &amp; Akhir</span>
-                  </label>
+                  </div>
 
-                  <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={includeRubrik}
-                      onChange={onToggleRubrik}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Soal Asesmen Akhir / Sumatif (1 baris per soal)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={effectiveSoalAkhir.join('\n')}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          soal_asesmen_akhir: e.target.value
+                            .split('\n')
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
                     />
-                    <span>Sertakan Rubrik 8 Dimensi Profil Lulusan</span>
-                  </label>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={includeLkpd}
+                        onChange={onToggleLkpd}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                      />
+                      <span>Sertakan Lampiran Lembar Kerja Peserta Didik (LKPD)</span>
+                    </label>
+
+                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={includeAsesmen}
+                        onChange={onToggleAsesmen}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                      />
+                      <span>Sertakan Instrumen Asesmen Awal, Proses &amp; Akhir</span>
+                    </label>
+
+                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={includeRubrik}
+                        onChange={onToggleRubrik}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                      />
+                      <span>Sertakan Rubrik 8 Dimensi Profil Lulusan</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          </>
+              )}
+            </div>
           )}
 
           {/* Primary Generate & Download Button */}
