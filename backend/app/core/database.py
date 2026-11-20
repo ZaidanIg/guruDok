@@ -55,6 +55,12 @@ class DatabaseManager:
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(sql_content)
+                cur.execute(
+                    """
+                    ALTER TABLE curriculum_courses ADD COLUMN IF NOT EXISTS verification_status VARCHAR(30) DEFAULT 'DRAFT';
+                    ALTER TABLE curriculum_courses ADD COLUMN IF NOT EXISTS verification_score SMALLINT DEFAULT 0;
+                    """
+                )
 
     def get_existing_tables(self) -> List[str]:
         """Returns list of table names in the public schema of GuruDocDB."""

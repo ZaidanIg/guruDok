@@ -53,6 +53,8 @@ class CurriculumService:
             tujuan_bskap=getattr(s, "tujuan_bskap", ""),
             karakteristik_bskap=getattr(s, "karakteristik_bskap", ""),
             elemen_cp_resmi=getattr(s, "elemen_cp_resmi", []),
+            verification_status=getattr(s, "verification_status", "DRAFT"),
+            verification_score=getattr(s, "verification_score", 0),
             bab_count=len(s.bab_list),
             bab_list=[self._map_chapter(ch) for ch in s.bab_list] if include_babs else None,
         )

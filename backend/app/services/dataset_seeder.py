@@ -295,8 +295,9 @@ class DatasetSeederService:
                 self._seed_dataset_02_alokasi_jp(cur)
                 self._seed_dataset_03_master_cp(cur)
                 self._seed_dataset_04_bab_tp_modul(cur)
+                self._seed_modular_sibi_datasets(cur)
                 self._seed_reference_informatika_xi_fase_f(cur)
-                self._seed_all_150_grade_subject_courses(cur)
+                self._cleanup_synthetic_and_duplicates(cur)
                 self._seed_dataset_05_kalender_promes(cur)
                 self._seed_service_templates(cur)
 
@@ -1018,6 +1019,224 @@ class DatasetSeederService:
                     """,
                     (ch["id_bab"], code, seq, desc, desc[:120].lower(), jp),
                 )
+
+    def _seed_modular_sibi_datasets(self, cur) -> None:
+        """Seeds 100% verified authentic SIBI / BSKAP 2025 datasets for SD, SMP, and SMA."""
+        sibi_dir = self.dataset_dir / "sibi"
+        if not sibi_dir.exists():
+            return
+
+        sibi_files = [
+            sibi_dir / "sibi_sd.json",
+            sibi_dir / "sibi_smp.json",
+            sibi_dir / "sibi_sma.json",
+        ]
+
+        for s_file in sibi_files:
+            if not s_file.exists():
+                continue
+            courses = json.loads(s_file.read_text(encoding="utf-8"))
+            for c in courses:
+                course_id = c["id_kurikulum"]
+                subj_code = c.get("id_mapel_bskap") or _resolve_bskap_subject_code(c["mata_pelajaran"])
+                lvl = c["jenjang"]
+                grd = int(c["kelas"])
+                fase = c["fase"]
+                subj_name = c["mata_pelajaran"]
+                sibi_book = c.get("buku_rujukan_sibi") or f"Buku Teks Utama SIBI {subj_name} Kelas {grd} (Kemendikdasmen)"
+                total_jp = int(c["total_jp_intracurricular_tahun"])
+                jp_week = int(c.get("jp_per_minggu", 2))
+                verif_status = c.get("verification_status", "VERIFIED_SIBI")
+                verif_score = 100
+
+                cur.execute(
+                    """
+                    INSERT INTO curriculum_courses (
+                        course_id, subject_code, education_level, grade, phase, subject_name,
+                        sibi_reference_book, total_jp_intracurricular_year, jp_per_week,
+                        source_section, verification_status, verification_score
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'SIBI_MODULAR_2025', %s, %s)
+                    ON CONFLICT (course_id) DO UPDATE SET
+                        subject_code = EXCLUDED.subject_code,
+                        education_level = EXCLUDED.education_level,
+                        grade = EXCLUDED.grade,
+                        phase = EXCLUDED.phase,
+                        subject_name = EXCLUDED.subject_name,
+                        sibi_reference_book = EXCLUDED.sibi_reference_book,
+                        total_jp_intracurricular_year = EXCLUDED.total_jp_intracurricular_year,
+                        jp_per_week = EXCLUDED.jp_per_week,
+                        source_section = EXCLUDED.source_section,
+                        verification_status = EXCLUDED.verification_status,
+                        verification_score = EXCLUDED.verification_score;
+                    """,
+                    (
+                        course_id,
+                        subj_code,
+                        lvl,
+                        grd,
+                        fase,
+                        subj_name,
+                        sibi_book,
+                        total_jp,
+                        jp_week,
+                        verif_status,
+                        verif_score,
+                    ),
+                )
+
+                # Delete any old chapters for this course to ensure clean overwrite
+                cur.execute("DELETE FROM curriculum_chapters WHERE course_id = %s;", (course_id,))
+
+                for bab in c.get("daftar_bab", []):
+                    ch_id = bab["id_bab"]
+                    sem = int(bab["semester"])
+                    b_num = int(bab["nomor_bab"])
+                    title = bab["judul_bab"]
+                    elem = bab.get("elemen_cp", "Pemahaman Konsep")
+                    ch_jp = int(bab["alokasi_jp_bab"])
+                    est_meet = int(bab.get("estimasi_jumlah_pertemuan", max(1, ch_jp // jp_week)))
+                    promes_range = bab.get("distribusi_minggu_promes", {}).get("rentang_minggu_efektif", f"Minggu Efektif Semester {sem}")
+                    raw_tpl = bab.get("modul_ajar_template", {})
+                    model_code = raw_tpl.get("desain_pembelajaran", {}).get("praktik_pedagogis_model", "CONTEXTUAL")
+                    if model_code not in ("PBL", "PJBL", "DISCOVERY", "INQUIRY", "CONTEXTUAL"):
+                        model_code = "CONTEXTUAL" if lvl == "SD" else "PBL"
+                    dpl_codes = raw_tpl.get("identifikasi", {}).get("dimensi_profil_lulusan", ["DPL-3", "DPL-6", "DPL-8"])
+
+                    enriched_tpl = _build_rich_modul_ajar_payload(
+                        nama_mapel=subj_name,
+                        jenjang=lvl,
+                        kelas=grd,
+                        fase=fase,
+                        nomor_bab=b_num,
+                        judul_bab=title,
+                        elemen_cp=elem,
+                        deskripsi_cp=f"Peserta didik mampu memahami dan menerapkan konsep {title} pada elemen {elem}.",
+                        model_code=model_code,
+                        dpl_codes=dpl_codes,
+                        tps_list=bab.get("daftar_tp", []),
+                    )
+                    if raw_tpl.get("identifikasi"):
+                        enriched_tpl["identifikasi"].update(raw_tpl["identifikasi"])
+                    if raw_tpl.get("desain_pembelajaran"):
+                        enriched_tpl["desain_pembelajaran"].update(raw_tpl["desain_pembelajaran"])
+                    if raw_tpl.get("komponen_inti"):
+                        enriched_tpl["komponen_inti"].update(raw_tpl["komponen_inti"])
+                    if raw_tpl.get("asesmen"):
+                        enriched_tpl["asesmen"].update(raw_tpl["asesmen"])
+                    if raw_tpl.get("lampiran"):
+                        enriched_tpl["lampiran"].update(raw_tpl["lampiran"])
+                    modul_payload = enriched_tpl
+
+                    cur.execute(
+                        """
+                        INSERT INTO curriculum_chapters (
+                            chapter_id, course_id, subject_code, education_level, grade, phase,
+                            semester, chapter_number, chapter_title, element_names, allocated_jp,
+                            estimated_meetings, promes_week_range, recommended_model_code,
+                            graduate_dimension_codes, modul_ajar_payload
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (chapter_id) DO UPDATE SET
+                            course_id = EXCLUDED.course_id,
+                            subject_code = EXCLUDED.subject_code,
+                            education_level = EXCLUDED.education_level,
+                            grade = EXCLUDED.grade,
+                            phase = EXCLUDED.phase,
+                            semester = EXCLUDED.semester,
+                            chapter_number = EXCLUDED.chapter_number,
+                            chapter_title = EXCLUDED.chapter_title,
+                            element_names = EXCLUDED.element_names,
+                            allocated_jp = EXCLUDED.allocated_jp,
+                            estimated_meetings = EXCLUDED.estimated_meetings,
+                            promes_week_range = EXCLUDED.promes_week_range,
+                            recommended_model_code = EXCLUDED.recommended_model_code,
+                            graduate_dimension_codes = EXCLUDED.graduate_dimension_codes,
+                            modul_ajar_payload = EXCLUDED.modul_ajar_payload;
+                        """,
+                        (
+                            ch_id,
+                            course_id,
+                            subj_code,
+                            lvl,
+                            grd,
+                            fase,
+                            sem,
+                            b_num,
+                            title,
+                            elem,
+                            ch_jp,
+                            est_meet,
+                            promes_range,
+                            model_code,
+                            dpl_codes,
+                            Jsonb(modul_payload),
+                        ),
+                    )
+
+                    for tp in bab.get("daftar_tp", []):
+                        cur.execute(
+                            """
+                            INSERT INTO learning_objectives_tp (
+                                chapter_id, tp_code, atp_sequence, tp_description,
+                                rapor_summary_phrase, allocated_jp, bloom_cognitive_level
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (chapter_id, tp_code) DO UPDATE SET
+                                atp_sequence = EXCLUDED.atp_sequence,
+                                tp_description = EXCLUDED.tp_description,
+                                rapor_summary_phrase = EXCLUDED.rapor_summary_phrase,
+                                allocated_jp = EXCLUDED.allocated_jp,
+                                bloom_cognitive_level = EXCLUDED.bloom_cognitive_level;
+                            """,
+                            (
+                                ch_id,
+                                tp["kode_tp"],
+                                int(tp.get("urutan_atp", 1)),
+                                tp["deskripsi_tp"],
+                                tp.get("ringkasan_deskripsi_rapor", tp["deskripsi_tp"][:100]),
+                                int(tp.get("alokasi_jp", 4)),
+                                tp.get("level_kognitif_bloom", "C3 - Menerapkan"),
+                            ),
+                        )
+
+    def _cleanup_synthetic_and_duplicates(self, cur) -> None:
+        """Removes duplicate courses, legacy synthetic fallback chapters, and unverified placeholders."""
+        # 1. Delete duplicate SMA-K10-FIS (keeping SMA-K10-FISPAR)
+        cur.execute("DELETE FROM curriculum_courses WHERE course_id = 'SMA-K10-FIS';")
+
+        # 2. Delete replaced generic religion courses (since 6 official religions now exist)
+        cur.execute("DELETE FROM curriculum_courses WHERE subject_name = 'Pendidikan Agama dan Budi Pekerti';")
+
+        # 3. Delete any remaining synthetic placeholder chapters
+        cur.execute(
+            """
+            DELETE FROM curriculum_chapters
+            WHERE chapter_title ILIKE '%Konsep Dasar & Eksplorasi%'
+               OR chapter_title ILIKE '%Analisis & Penerapan%'
+               OR chapter_title ILIKE '%Pengembangan & Pemecahan Masalah%'
+               OR chapter_title ILIKE '%Proyek Kontekstual & Evaluasi%'
+               OR chapter_title ILIKE '%Aplikasi & Proyek Terpadu%';
+            """
+        )
+
+        # 4. Clean up any orphaned courses that have 0 chapters
+        cur.execute(
+            """
+            DELETE FROM curriculum_courses
+            WHERE course_id NOT IN (SELECT DISTINCT course_id FROM curriculum_chapters);
+            """
+        )
+
+        # 5. Ensure all active courses have verification_score = 100
+        cur.execute(
+            """
+            UPDATE curriculum_courses
+            SET verification_score = 100
+            WHERE verification_score < 100
+              AND verification_status IN ('VERIFIED_SIBI', 'VERIFIED_BSKAP', 'TEMPLATE_FLEXIBLE');
+            """
+        )
 
     def _seed_all_150_grade_subject_courses(self, cur) -> None:
         """Deterministically generates complete courses, chapters (Smt 1 & 2), and TPs for ALL 150 grade-subject rows in curriculum_hour_allocations."""

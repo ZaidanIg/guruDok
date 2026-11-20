@@ -90,5 +90,7 @@ class SubjectResponse(BaseModel):
     tujuan_bskap: str = ""
     karakteristik_bskap: str = ""
     elemen_cp_resmi: List[Dict[str, str]] = []
+    verification_status: str = "DRAFT"
+    verification_score: int = 0
     bab_count: int
     bab_list: Optional[List[ChapterResponse]] = None

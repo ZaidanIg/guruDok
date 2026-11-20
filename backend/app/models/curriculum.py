@@ -84,11 +84,21 @@ class CurriculumSubject:
     tujuan_bskap: str = ""
     karakteristik_bskap: str = ""
     elemen_cp_resmi: List[Dict[str, str]] = field(default_factory=list)
+    verification_status: str = "DRAFT"
+    verification_score: int = 0
 
     def get_chapter(self, chapter_id: str) -> Optional[ChapterTopic]:
         for ch in self.bab_list:
             if ch.id == chapter_id:
                 return ch
+        # Flexible matching by suffix or alias (e.g. "IPA-K7-B01" vs "SMP-K7-IPA-B01")
+        if "-B" in chapter_id:
+            suffix = chapter_id.split("-B")[-1]
+            for ch in self.bab_list:
+                if ch.id.endswith(f"-B{suffix}"):
+                    return ch
+                if suffix.isdigit() and ch.id.endswith(f"-B{int(suffix):02d}"):
+                    return ch
         return None
 
     def get_chapters_by_semester(self, semester: int) -> List[ChapterTopic]:
@@ -110,6 +120,8 @@ class CurriculumSubject:
             "tujuan_bskap": self.tujuan_bskap,
             "karakteristik_bskap": self.karakteristik_bskap,
             "elemen_cp_resmi": self.elemen_cp_resmi,
+            "verification_status": self.verification_status,
+            "verification_score": self.verification_score,
             "bab_count": len(self.bab_list),
             "bab_list": [ch.to_dict() for ch in self.bab_list],
         }

@@ -159,6 +159,8 @@ class PostgresCurriculumRepository(ICurriculumRepository):
                     tujuan_bskap=master_info.get("aims") or "",
                     karakteristik_bskap=master_info.get("characteristics") or "",
                     elemen_cp_resmi=cp_map.get((subject_code, fase), []),
+                    verification_status=course_row.get("verification_status") or "DRAFT",
+                    verification_score=int(course_row.get("verification_score") or 0),
                     bab_list=chapters_by_course.get(course_id, []),
                 )
             )
@@ -202,9 +204,13 @@ class PostgresCurriculumRepository(ICurriculumRepository):
     def get_raw_modul_template(self, subject_id: str, chapter_id: str) -> Optional[dict]:
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
+                suffix_pat = f"%-B{chapter_id.split('-B')[-1]}" if "-B" in chapter_id else f"%{chapter_id}"
                 cur.execute(
-                    "SELECT modul_ajar_payload FROM curriculum_chapters WHERE course_id = %s AND chapter_id = %s;",
-                    (subject_id, chapter_id),
+                    """
+                    SELECT modul_ajar_payload FROM curriculum_chapters
+                    WHERE course_id = %s AND (chapter_id = %s OR chapter_id LIKE %s);
+                    """,
+                    (subject_id, chapter_id, suffix_pat),
                 )
                 row = cur.fetchone()
                 return row["modul_ajar_payload"] if row else None
