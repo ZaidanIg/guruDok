@@ -222,9 +222,36 @@ export class GuruDokApiClient {
 
   /**
    * Downloads generated document with Bearer JWT authentication.
+   * Supports direct authenticated URL (?token=...) navigation for iOS Safari and mobile devices,
+   * with safe delayed blob URL revocation for desktop browsers.
    */
   async downloadAuthenticatedFile(fileUrl: string, filename: string): Promise<void> {
-    const res = await fetch(fileUrl, {
+    const token = this.getAuthToken();
+    let targetUrl = fileUrl;
+    if (token) {
+      const sep = targetUrl.includes('?') ? '&' : '?';
+      targetUrl = `${targetUrl}${sep}token=${encodeURIComponent(token)}`;
+    }
+
+    const isMobileOrSafari =
+      typeof navigator !== 'undefined' &&
+      (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+        (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')));
+
+    // On iOS Safari and mobile devices, trigger direct link navigation so native download manager handles attachment
+    if (isMobileOrSafari && (targetUrl.startsWith('/api') || targetUrl.startsWith('http'))) {
+      const link = document.createElement('a');
+      link.href = targetUrl;
+      link.setAttribute('download', filename);
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      return;
+    }
+
+    // For desktop browsers, fetch with headers and safely delay blob revocation
+    const res = await fetch(targetUrl, {
       headers: {
         ...this.getAuthHeaders(),
       },
@@ -243,7 +270,14 @@ export class GuruDokApiClient {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    window.URL.revokeObjectURL(url);
+    // Delay revocation by 30 seconds to prevent WebKit / async abort
+    setTimeout(() => {
+      try {
+        window.URL.revokeObjectURL(url);
+      } catch {
+        // ignore
+      }
+    }, 30000);
   }
 
   /**

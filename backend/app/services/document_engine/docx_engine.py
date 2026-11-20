@@ -137,12 +137,10 @@ class DocxDocumentEngine(DocumentEngine):
         run_alamat.font.size = Pt(9)
         run_alamat.font.italic = True
 
-        p_line = doc.add_paragraph()
-        p_line.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p_line.paragraph_format.space_after = Pt(10)
-        r_line = p_line.add_run("―" * 58)
-        r_line.bold = True
-        r_line.font.color.rgb = RGBColor(15, 23, 42)
+        p_pr = p._p.get_or_add_pPr()
+        p_bdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:bottom w:val="double" w:sz="12" w:space="4" w:color="0F172A"/></w:pBdr>')
+        p_pr.append(p_bdr)
+        p.paragraph_format.space_after = Pt(12)
 
     def _add_cp_fase_and_elemen_block(self, doc: Document, subject: CurriculumSubject):
         """Renders the official CAPAIAN PEMBELAJARAN FASE and Fase Berdasarkan Elemen table."""
@@ -152,8 +150,8 @@ class DocxDocumentEngine(DocumentEngine):
         tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
         tbl.rows[0].cells[0].text = "Elemen"
         tbl.rows[0].cells[1].text = "Capaian Pembelajaran"
-        self._format_header_cell(tbl.rows[0].cells[0], width_mm=45)
-        self._format_header_cell(tbl.rows[0].cells[1], width_mm=135)
+        self._format_header_cell(tbl.rows[0].cells[0], width_mm=40)
+        self._format_header_cell(tbl.rows[0].cells[1], width_mm=120)
 
         if elems:
             for e in elems:
@@ -167,7 +165,7 @@ class DocxDocumentEngine(DocumentEngine):
                 rc[0].text = getattr(ch, "elemen_cp", "Pemahaman Konsep")
                 rc[1].text = "; ".join(tp.deskripsi for tp in ch.tujuan_pembelajaran)
                 rc[0].paragraphs[0].runs[0].bold = True
-        self._style_data_table(tbl, [44, 130], has_header_row=True)
+        self._style_data_table(tbl, [40, 120], has_header_row=True)
         doc.add_paragraph()
 
     # =========================================================================
@@ -209,8 +207,8 @@ class DocxDocumentEngine(DocumentEngine):
             rc = id_table.add_row().cells
             rc[0].text = k
             rc[1].text = str(v)
-            self._format_header_cell(rc[0], width_mm=50)
-        self._style_data_table(id_table, [50, 124], has_header_row=False)
+            self._format_header_cell(rc[0], width_mm=45)
+        self._style_data_table(id_table, [45, 115], has_header_row=False)
 
         # 1. Rasional
         self._add_section_heading(doc, f"1. Rasional Mata Pelajaran {subject.nama_mapel}")
@@ -228,14 +226,14 @@ class DocxDocumentEngine(DocumentEngine):
         t_aims.rows[0].cells[0].text = "No"
         t_aims.rows[0].cells[1].text = "Rumusan Tujuan Mata Pelajaran"
         self._format_header_cell(t_aims.rows[0].cells[0], width_mm=12)
-        self._format_header_cell(t_aims.rows[0].cells[1], width_mm=168)
+        self._format_header_cell(t_aims.rows[0].cells[1], width_mm=148)
         for idx, aim_str in enumerate(aims_list, start=1):
             rc = t_aims.add_row().cells
             rc[0].text = str(idx)
             rc[1].text = aim_str
             rc[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
             rc[0].paragraphs[0].runs[0].bold = True
-        self._style_data_table(t_aims, [14, 160], has_header_row=True)
+        self._style_data_table(t_aims, [12, 148], has_header_row=True)
 
         # 3. Karakteristik & 4. Capaian Pembelajaran Fase Berdasarkan Elemen
         self._add_section_heading(doc, f"3. Karakteristik Mata Pelajaran & 4. Capaian Pembelajaran Fase {subject.fase} Berdasarkan Elemen")
@@ -250,15 +248,15 @@ class DocxDocumentEngine(DocumentEngine):
         t_kar.alignment = WD_TABLE_ALIGNMENT.CENTER
         t_kar.rows[0].cells[0].text = "Elemen"
         t_kar.rows[0].cells[1].text = "Deskripsi Capaian Pembelajaran Resmi (BSKAP 046/2025)"
-        self._format_header_cell(t_kar.rows[0].cells[0], width_mm=45)
-        self._format_header_cell(t_kar.rows[0].cells[1], width_mm=135)
+        self._format_header_cell(t_kar.rows[0].cells[0], width_mm=40)
+        self._format_header_cell(t_kar.rows[0].cells[1], width_mm=120)
         if elems:
             for e in elems:
                 rc = t_kar.add_row().cells
                 rc[0].text = str(e.get("nama_elemen", "-"))
                 rc[1].text = str(e.get("deskripsi_cp", "-"))
                 rc[0].paragraphs[0].runs[0].bold = True
-        self._style_data_table(t_kar, [44, 130], has_header_row=True)
+        self._style_data_table(t_kar, [40, 120], has_header_row=True)
 
         # 5. Pemetaan Capaian dan Tujuan Pembelajaran Semester (Tabel KATEGORI | RUMUSAN)
         self._add_section_heading(doc, f"5. Pemetaan Capaian dan Tujuan Pembelajaran Semester {request.semester}")
@@ -278,8 +276,8 @@ class DocxDocumentEngine(DocumentEngine):
             t_bab.alignment = WD_TABLE_ALIGNMENT.CENTER
             t_bab.rows[0].cells[0].text = "KATEGORI"
             t_bab.rows[0].cells[1].text = "RUMUSAN"
-            self._format_header_cell(t_bab.rows[0].cells[0], width_mm=45)
-            self._format_header_cell(t_bab.rows[0].cells[1], width_mm=135)
+            self._format_header_cell(t_bab.rows[0].cells[0], width_mm=40)
+            self._format_header_cell(t_bab.rows[0].cells[1], width_mm=120)
 
             # Row 1: Elemen
             r1 = t_bab.add_row().cells
@@ -310,7 +308,7 @@ class DocxDocumentEngine(DocumentEngine):
             r4[0].paragraphs[0].runs[0].bold = True
             r4[1].paragraphs[0].runs[0].bold = True
 
-            self._style_data_table(t_bab, [44, 130], has_header_row=True)
+            self._style_data_table(t_bab, [40, 120], has_header_row=True)
 
         if request.custom_overrides and request.custom_overrides.catatan_khusus:
             self._add_section_heading(doc, "Catatan Khusus Pemetaan")
@@ -367,7 +365,7 @@ class DocxDocumentEngine(DocumentEngine):
             hdr_cell = table.add_row().cells
             hdr_cell[0].merge(hdr_cell[1])
             hdr_cell[0].text = f"BAB {bab.nomor_bab}: {bab.judul_bab.upper()} (SEMESTER {bab.semester})"
-            self._format_header_cell(hdr_cell[0], width_mm=180)
+            self._format_header_cell(hdr_cell[0], width_mm=160)
 
             # Block Rows
             tp_list_str = "\n".join(f"{i}. {t.code}: {t.deskripsi} ({t.alokasi_jp} JP)" for i, t in enumerate(bab_tps, start=1))
@@ -391,9 +389,9 @@ class DocxDocumentEngine(DocumentEngine):
                 rc = table.add_row().cells
                 rc[0].text = k
                 rc[1].text = str(v)
-                self._format_header_cell(rc[0], width_mm=52)
+                self._format_header_cell(rc[0], width_mm=45)
 
-            self._style_data_table(table, [52, 122], has_header_row=True)
+            self._style_data_table(table, [45, 115], has_header_row=True)
             doc.add_paragraph()
 
         # Rasional & Catatan Khusus ATP
@@ -471,8 +469,8 @@ class DocxDocumentEngine(DocumentEngine):
             rc = id_table.add_row().cells
             rc[0].text = k
             rc[1].text = str(v)
-            self._format_header_cell(rc[0], width_mm=50)
-        self._style_data_table(id_table, [50, 124], has_header_row=False)
+            self._format_header_cell(rc[0], width_mm=45)
+        self._style_data_table(id_table, [45, 115], has_header_row=False)
 
         # B. Identifikasi Kesiapan Peserta Didik
         self._add_section_heading(doc, "B. Identifikasi Kesiapan Peserta Didik")
@@ -498,14 +496,14 @@ class DocxDocumentEngine(DocumentEngine):
         d_table.alignment = WD_TABLE_ALIGNMENT.CENTER
         d_table.rows[0].cells[0].text = "Dimensi Profil Lulusan"
         d_table.rows[0].cells[1].text = "Implementasi pada Pembelajaran Bab Ini"
-        self._format_header_cell(d_table.rows[0].cells[0], width_mm=50)
-        self._format_header_cell(d_table.rows[0].cells[1], width_mm=130)
+        self._format_header_cell(d_table.rows[0].cells[0], width_mm=45)
+        self._format_header_cell(d_table.rows[0].cells[1], width_mm=115)
         for dim in active_dimensions:
             rc = d_table.add_row().cells
             rc[0].text = dim
             rc[1].text = f"Dikembangkan melalui aktivitas diskusi, eksplorasi konsep {ch.judul_bab if ch else subject.nama_mapel}, dan refleksi pemecahan masalah."
             rc[0].paragraphs[0].runs[0].bold = True
-        self._style_data_table(d_table, [50, 124], has_header_row=True)
+        self._style_data_table(d_table, [45, 115], has_header_row=True)
 
         # DESAIN PEMBELAJARAN
         self._add_section_heading(doc, "DESAIN PEMBELAJARAN")
@@ -520,8 +518,8 @@ class DocxDocumentEngine(DocumentEngine):
         rc_cp = des_table.add_row().cells
         rc_cp[0].text = "A. Capaian Pembelajaran (CP)"
         rc_cp[1].text = f"Elemen {elemen_name}: {cp_bab_str}"
-        self._format_header_cell(rc_cp[0], width_mm=50)
-        rc_cp[1].width = Mm(130)
+        self._format_header_cell(rc_cp[0], width_mm=45)
+        rc_cp[1].width = Mm(115)
 
         # B. Lintas Disiplin Ilmu
         lintas_txt = (ov.lintas_disiplin_ilmu if (ov and ov.lintas_disiplin_ilmu) else None) or desain.get(
@@ -531,16 +529,16 @@ class DocxDocumentEngine(DocumentEngine):
         rc_ld = des_table.add_row().cells
         rc_ld[0].text = "B. LINTAS DISIPLIN ILMU YANG RELEVAN"
         rc_ld[1].text = lintas_txt
-        self._format_header_cell(rc_ld[0], width_mm=50)
-        rc_ld[1].width = Mm(130)
+        self._format_header_cell(rc_ld[0], width_mm=45)
+        rc_ld[1].width = Mm(115)
 
         # C. Tujuan Pembelajaran (TP)
         tp_lines = "\n".join(f"{idx}. Pertemuan {idx} [{tp.code}]: {tp.deskripsi} ({tp.alokasi_jp} JP)" for idx, tp in enumerate(tps_effective, start=1))
         rc_tp = des_table.add_row().cells
         rc_tp[0].text = "C. Tujuan Pembelajaran (TP)"
         rc_tp[1].text = tp_lines
-        self._format_header_cell(rc_tp[0], width_mm=50)
-        rc_tp[1].width = Mm(130)
+        self._format_header_cell(rc_tp[0], width_mm=45)
+        rc_tp[1].width = Mm(115)
 
         # D. Topik Pembelajaran Kontekstual
         topik_txt = (ov.topik_kontekstual if (ov and ov.topik_kontekstual) else None) or desain.get(
@@ -550,8 +548,8 @@ class DocxDocumentEngine(DocumentEngine):
         rc_tk = des_table.add_row().cells
         rc_tk[0].text = "D. TOPIK PEMBELAJARAN KONTEKSTUAL"
         rc_tk[1].text = topik_txt
-        self._format_header_cell(rc_tk[0], width_mm=50)
-        rc_tk[1].width = Mm(130)
+        self._format_header_cell(rc_tk[0], width_mm=45)
+        rc_tk[1].width = Mm(115)
 
         # E. Kerangka Pembelajaran
         pemantik_list = (ov.pertanyaan_pemantik if (ov and ov.pertanyaan_pemantik) else None) or inti.get("pertanyaan_pemantik", [
@@ -561,8 +559,8 @@ class DocxDocumentEngine(DocumentEngine):
         rc_kp = des_table.add_row().cells
         rc_kp[0].text = "E. Kerangka Pembelajaran"
         rc_kp[1].text = f"Model Pedagogis: {model_pedagogis}\nPertanyaan Pemantik: {' | '.join(pemantik_list)}"
-        self._format_header_cell(rc_kp[0], width_mm=50)
-        self._style_data_table(des_table, [50, 124], has_header_row=False)
+        self._format_header_cell(rc_kp[0], width_mm=45)
+        self._style_data_table(des_table, [45, 115], has_header_row=False)
 
         # F. Langkah-Langkah Pembelajaran Berdiferensiasi (Deep Learning 3M)
         self._add_section_heading(doc, "F. LANGKAH-LANGKAH PEMBELAJARAN BERDIFERENSIASI (PENDEKATAN DEEP LEARNING 3M)")
@@ -584,7 +582,7 @@ class DocxDocumentEngine(DocumentEngine):
             hdr = t_step.add_row().cells
             hdr[0].merge(hdr[1])
             hdr[0].text = f"PERTEMUAN {idx + 1} — Fokus TP: [{tp.code}] {tp.deskripsi} ({tp.alokasi_jp} JP)"
-            self._format_header_cell(hdr[0], width_mm=180)
+            self._format_header_cell(hdr[0], width_mm=160)
 
             # Row 1: Pendahuluan
             r_pend = t_step.add_row().cells
@@ -593,8 +591,8 @@ class DocxDocumentEngine(DocumentEngine):
                 f"Guru membuka kelas dengan salam, doa, presensi, apersepsi mengaitkan pengalaman nyata siswa "
                 f"dengan topik {ch.judul_bab if ch else subject.nama_mapel}, serta menyampaikan pertanyaan pemantik: \"{q_pemantik}\"."
             )
-            self._format_header_cell(r_pend[0], width_mm=50)
-            r_pend[1].width = Mm(130)
+            self._format_header_cell(r_pend[0], width_mm=45)
+            r_pend[1].width = Mm(115)
 
             # Row 2: Inti 3M
             r_inti = t_step.add_row().cells
@@ -604,8 +602,8 @@ class DocxDocumentEngine(DocumentEngine):
                 f"• Mengaplikasi (Meaningful Learning): {step_a}\n"
                 f"• Merefleksi (Joyful Learning): {step_r}"
             )
-            self._format_header_cell(r_inti[0], width_mm=50)
-            r_inti[1].width = Mm(130)
+            self._format_header_cell(r_inti[0], width_mm=45)
+            r_inti[1].width = Mm(115)
 
             # Row 3: Penutup
             r_pen = t_step.add_row().cells
@@ -614,9 +612,9 @@ class DocxDocumentEngine(DocumentEngine):
                 f"Peserta didik bersama guru menyimpulkan poin penting pertemuan {idx + 1}, "
                 f"melakukan refleksi singkat, dan menerima informasi materi pertemuan berikutnya."
             )
-            self._format_header_cell(r_pen[0], width_mm=48)
+            self._format_header_cell(r_pen[0], width_mm=45)
 
-            self._style_data_table(t_step, [48, 126], has_header_row=True)
+            self._style_data_table(t_step, [45, 115], has_header_row=True)
             doc.add_paragraph()
 
         # G. Asesmen Pembelajaran & Butir Soal
@@ -626,8 +624,8 @@ class DocxDocumentEngine(DocumentEngine):
             t_as.alignment = WD_TABLE_ALIGNMENT.CENTER
             t_as.rows[0].cells[0].text = "Jenis Asesmen"
             t_as.rows[0].cells[1].text = "Teknik & Butir Soal Instrumen"
-            self._format_header_cell(t_as.rows[0].cells[0], width_mm=50)
-            self._format_header_cell(t_as.rows[0].cells[1], width_mm=130)
+            self._format_header_cell(t_as.rows[0].cells[0], width_mm=45)
+            self._format_header_cell(t_as.rows[0].cells[1], width_mm=115)
 
             soal_awal = (ov.soal_asesmen_awal if (ov and ov.soal_asesmen_awal) else None) or asesmen.get("soal_asesmen_awal", [
                 f"Apa yang kamu ketahui mengenai konsep {ch.judul_bab if ch else subject.nama_mapel}?",
@@ -657,7 +655,7 @@ class DocxDocumentEngine(DocumentEngine):
             r_a3[1].text = "Soal Asesmen Akhir Bab:\n" + "\n".join(f"{i}. {s}" for i, s in enumerate(soal_akhir, start=1))
             r_a3[0].paragraphs[0].runs[0].bold = True
 
-            self._style_data_table(t_as, [48, 126], has_header_row=True)
+            self._style_data_table(t_as, [45, 115], has_header_row=True)
 
         # H. Lampiran (LKPD, Glosarium & Bahan Bacaan)
         lampiran = tpl.get("lampiran", {})
@@ -716,7 +714,7 @@ class DocxDocumentEngine(DocumentEngine):
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
         headers = ["SEMESTER", "NO", "MATERI POKOK / JUDUL BAB & TUJUAN PEMBELAJARAN", "ALOKASI (JP)", "KETERANGAN"]
-        widths = [24, 12, 94, 22, 28]
+        widths = [20, 10, 84, 22, 24]
         for i, (h, w) in enumerate(zip(headers, widths)):
             table.rows[0].cells[i].text = h
             self._format_header_cell(table.rows[0].cells[i], width_mm=w)
@@ -780,7 +778,7 @@ class DocxDocumentEngine(DocumentEngine):
         rc_tot[2].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
         rc_tot[3].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
         rc_tot[4].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        self._style_data_table(table, [24, 12, 90, 22, 26], has_header_row=True)
+        self._style_data_table(table, [20, 10, 84, 22, 24], has_header_row=True)
 
     # =========================================================================
     # 5. SERVICE 06: PROGRAM SEMESTER / PROMES (1:1 with Live Preview)
@@ -863,7 +861,7 @@ class DocxDocumentEngine(DocumentEngine):
                 r_tp[2].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                 r_tp[-1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        self._style_data_table(table, [12, 74, 12, 10, 10, 10, 10, 10, 10, 16], has_header_row=True)
+        self._style_data_table(table, [10, 68, 12, 10, 10, 10, 10, 10, 10, 10], has_header_row=True)
 
     def _add_doc_title(self, doc: Document, title: str, subtitle: str) -> None:
         p = doc.add_paragraph()
@@ -907,7 +905,7 @@ class DocxDocumentEngine(DocumentEngine):
             for p in id_table.rows[idx].cells[0].paragraphs:
                 for r in p.runs:
                     r.bold = True
-        self._style_data_table(id_table, [54, 120], has_header_row=False)
+        self._style_data_table(id_table, [45, 115], has_header_row=False)
 
         # A. Interval Nilai 4 Skala PPA Revisi 2025
         self._add_section_heading(doc, "A. Pendekatan Interval Nilai (4 Skala PPA Revisi 2025)")
@@ -926,7 +924,7 @@ class DocxDocumentEngine(DocumentEngine):
             int_tbl.rows[idx].cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
             int_tbl.rows[idx].cells[1].text = pred
             int_tbl.rows[idx].cells[2].text = tl
-        self._style_data_table(int_tbl, [34, 48, 92], has_header_row=True)
+        self._style_data_table(int_tbl, [30, 44, 86], has_header_row=True)
 
         # B. Rubrik Kriteria Ketercapaian per Tujuan Pembelajaran (TP)
         self._add_section_heading(doc, "B. Rubrik Kriteria Ketercapaian per Tujuan Pembelajaran (TP)")
@@ -955,7 +953,7 @@ class DocxDocumentEngine(DocumentEngine):
             rub_tbl.rows[idx].cells[2].text = "Mampu menjelaskan konsep dasar namun belum konsisten."
             rub_tbl.rows[idx].cells[3].text = "Mampu menerapkan konsep secara mandiri dan tepat (Tuntas)."
             rub_tbl.rows[idx].cells[4].text = "Mampu menganalisis, mengevaluasi, dan memecahkan kasus kompleks."
-        self._style_data_table(rub_tbl, [54, 30, 30, 30, 30], has_header_row=True)
+        self._style_data_table(rub_tbl, [44, 29, 29, 29, 29], has_header_row=True)
 
     def _build_lkpd(
         self,
@@ -991,7 +989,7 @@ class DocxDocumentEngine(DocumentEngine):
             for p in stu_tbl.rows[idx].cells[0].paragraphs:
                 for r in p.runs:
                     r.bold = True
-        self._style_data_table(stu_tbl, [54, 120], has_header_row=False)
+        self._style_data_table(stu_tbl, [45, 115], has_header_row=False)
 
         # A. Tujuan Pembelajaran
         self._add_section_heading(doc, "A. Tujuan Pembelajaran")
@@ -1007,7 +1005,7 @@ class DocxDocumentEngine(DocumentEngine):
         else:
             tp_tbl.rows[1].cells[0].text = "TP.1"
             tp_tbl.rows[1].cells[1].text = f"Peserta didik mampu memahami dan menerapkan materi {bab_title}."
-        self._style_data_table(tp_tbl, [28, 146], has_header_row=True)
+        self._style_data_table(tp_tbl, [25, 135], has_header_row=True)
 
         # B. Petunjuk Pengerjaan & Aktivitas 3M
         self._add_section_heading(doc, "B. Petunjuk Belajar & Langkah Aktivitas (3M)")
@@ -1031,7 +1029,7 @@ class DocxDocumentEngine(DocumentEngine):
         for idx, step in enumerate(lkpd_steps, start=2):
             act_tbl.rows[idx].cells[0].text = f"Langkah {idx - 1}"
             act_tbl.rows[idx].cells[1].text = f"{step}\n\nJawaban / Catatan Siswa:\n............................................................................................"
-        self._style_data_table(act_tbl, [44, 130], has_header_row=True)
+        self._style_data_table(act_tbl, [40, 120], has_header_row=True)
 
         # C. Soal Latihan / Asesmen Mandiri
         self._add_section_heading(doc, "C. Pertanyaan Pemahaman & Latihan Mandiri")
@@ -1048,7 +1046,7 @@ class DocxDocumentEngine(DocumentEngine):
             soal_tbl.rows[idx].cells[0].text = str(idx)
             soal_tbl.rows[idx].cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
             soal_tbl.rows[idx].cells[1].text = f"{q}\nJawaban: ......................................................................................."
-        self._style_data_table(soal_tbl, [16, 158], has_header_row=True)
+        self._style_data_table(soal_tbl, [14, 146], has_header_row=True)
 
     def _add_section_heading(self, doc: Document, title: str):
         p = doc.add_paragraph()
@@ -1079,7 +1077,7 @@ class DocxDocumentEngine(DocumentEngine):
         table.rows[2].cells[1].text = f"{pengesahan['nama_guru']}\n{pengesahan['nip_guru']}"
         for row in table.rows:
             for c_idx, cell in enumerate(row.cells):
-                cell.width = Mm(87)
+                cell.width = Mm(78)
                 for p in cell.paragraphs:
                     p.paragraph_format.space_before = Pt(0)
                     p.paragraph_format.space_after = Pt(2)

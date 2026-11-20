@@ -571,26 +571,33 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   <label className="mb-1 block text-xs font-bold text-slate-700">
                     Format File Output
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(
+                  {(() => {
+                    const supported = (activeService.formats || ['DOCX', 'PDF']).map((f) => f.toLowerCase() as OutputFormat);
+                    const formatOptions = (
                       [
                         { id: 'docx', label: 'DOCX' },
                         { id: 'xlsx', label: 'XLSX' },
                         { id: 'pdf', label: 'PDF' },
                       ] as { id: OutputFormat; label: string }[]
-                    ).map((fmt) => (
-                      <button
-                        key={fmt.id}
-                        type="button"
-                        onClick={() => onChangeOutputFormat(fmt.id)}
-                        className={`py-2 text-xs font-bold ${
-                          outputFormat === fmt.id ? 'clay-btn-primary' : 'clay-btn-white'
-                        }`}
-                      >
-                        {fmt.label}
-                      </button>
-                    ))}
-                  </div>
+                    ).filter((fmt) => supported.includes(fmt.id));
+
+                    return (
+                      <div className={`grid gap-1.5 ${formatOptions.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                        {formatOptions.map((fmt) => (
+                          <button
+                            key={fmt.id}
+                            type="button"
+                            onClick={() => onChangeOutputFormat(fmt.id)}
+                            className={`py-2 text-xs font-bold ${
+                              outputFormat === fmt.id ? 'clay-btn-primary' : 'clay-btn-white'
+                            }`}
+                          >
+                            {fmt.label}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div>
@@ -1031,7 +1038,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               onCut={(e) => e.preventDefault()}
               onContextMenu={(e) => e.preventDefault()}
               onDragStart={(e) => e.preventDefault()}
-              className="paper-sheet preview-protected relative max-h-[calc(100vh-160px)] select-none overflow-y-auto rounded-lg p-6 sm:p-8 lg:p-10"
+              className="paper-sheet preview-protected relative max-h-[calc(100vh-160px)] min-w-0 max-w-full select-none overflow-auto rounded-lg p-6 sm:p-8 lg:p-10"
             >
               {/* Subtle Diagonal Preview Watermark */}
               <div
@@ -1039,7 +1046,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-hidden opacity-[0.045]"
               >
                 <span className="-rotate-30 whitespace-nowrap text-3xl font-black tracking-[0.25em] text-slate-900 sm:text-5xl">
-                  PRATINJAU • GURUDOK.ID
+                  PREVIEW DOKUMEN
                 </span>
               </div>
 
@@ -1071,33 +1078,35 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </div>
 
                   {/* Identitas Dokumen */}
-                  <table className="paper-table">
-                    <tbody>
-                      <tr>
-                        <th className="w-1/3 text-left">Mata Pelajaran</th>
-                        <td>{selectedSubject?.nama_mapel}</td>
-                      </tr>
-                      <tr>
-                        <th className="text-left">Jenjang / Fase / Kelas</th>
-                        <td>
-                          {jenjang} / {faseLabel} / Kelas {kelas}
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="text-left">Alokasi Waktu</th>
-                        <td>
-                          {selectedSubject?.total_alokasi_jp_tahun || 108} JP/Tahun ({jpPerMinggu}{' '}
-                          JP/Minggu × {durasiMenitJp} Menit)
-                        </td>
-                      </tr>
-                      <tr>
-                        <th className="text-left">Dasar Hukum</th>
-                        <td>
-                          Kepka BSKAP Kemendikdasmen No. 046/H/KR/2025 &amp; Permendikdasmen No. 13/2025
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div className="paper-table-container">
+                    <table className="paper-table">
+                      <tbody>
+                        <tr>
+                          <th className="w-1/3 text-left">Mata Pelajaran</th>
+                          <td>{selectedSubject?.nama_mapel}</td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Jenjang / Fase / Kelas</th>
+                          <td>
+                            {jenjang} / {faseLabel} / Kelas {kelas}
+                          </td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Alokasi Waktu</th>
+                          <td>
+                            {selectedSubject?.total_alokasi_jp_tahun || 108} JP/Tahun ({jpPerMinggu}{' '}
+                            JP/Minggu × {durasiMenitJp} Menit)
+                          </td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Dasar Hukum</th>
+                          <td>
+                            Kepka BSKAP Kemendikdasmen No. 046/H/KR/2025 &amp; Permendikdasmen No. 13/2025
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
 
                   {/* 1. Rasional */}
                   <div>
@@ -1115,32 +1124,34 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <h3 className="font-extrabold text-slate-900">
                       2. Tujuan Mata Pelajaran {selectedSubject?.nama_mapel}
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-10 text-center">No</th>
-                          <th>Rumusan Tujuan Mata Pelajaran</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(selectedSubject?.tujuan_bskap
-                          ? selectedSubject.tujuan_bskap
-                              .split(';')
-                              .map((s) => s.trim())
-                              .filter(Boolean)
-                          : [
-                              `Menguasai konsep dan prinsip esensial ${selectedSubject?.nama_mapel} pada ${faseLabel}.`,
-                              `Mengembangkan keterampilan inkuiri, penalaran kritis, dan kolaborasi dalam memecahkan persoalan kontekstual.`,
-                              `Menumbuhkan karakter mandiri, kreatif, dan bertanggung jawab sesuai 8 Dimensi Profil Lulusan.`,
-                            ]
-                        ).map((tuj, idx) => (
-                          <tr key={idx}>
-                            <td className="text-center font-bold">{idx + 1}</td>
-                            <td>{tuj}</td>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-10 text-center">No</th>
+                            <th>Rumusan Tujuan Mata Pelajaran</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {(selectedSubject?.tujuan_bskap
+                            ? selectedSubject.tujuan_bskap
+                                .split(';')
+                                .map((s) => s.trim())
+                                .filter(Boolean)
+                            : [
+                                `Menguasai konsep dan prinsip esensial ${selectedSubject?.nama_mapel} pada ${faseLabel}.`,
+                                `Mengembangkan keterampilan inkuiri, penalaran kritis, dan kolaborasi dalam memecahkan persoalan kontekstual.`,
+                                `Menumbuhkan karakter mandiri, kreatif, dan bertanggung jawab sesuai 8 Dimensi Profil Lulusan.`,
+                              ]
+                          ).map((tuj, idx) => (
+                            <tr key={idx}>
+                              <td className="text-center font-bold">{idx + 1}</td>
+                              <td>{tuj}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* 3. Karakteristik & 4. CP Fase Berdasarkan Elemen */}
@@ -1151,22 +1162,24 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <p className="mt-1 text-slate-800">
                       {selectedSubject?.karakteristik_bskap || effectiveKarakteristikMateri}
                     </p>
-                    <table className="paper-table mt-2">
-                      <thead>
-                        <tr>
-                          <th className="w-1/4">Elemen</th>
-                          <th>Deskripsi Capaian Pembelajaran Resmi (BSKAP 046/2025)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {officialElements.map((el, i) => (
-                          <tr key={i}>
-                            <td className="font-bold">{el.nama_elemen}</td>
-                            <td>{el.deskripsi_cp}</td>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-2">
+                        <thead>
+                          <tr>
+                            <th className="w-1/4">Elemen</th>
+                            <th>Deskripsi Capaian Pembelajaran Resmi (BSKAP 046/2025)</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {officialElements.map((el, i) => (
+                            <tr key={i}>
+                              <td className="font-bold">{el.nama_elemen}</td>
+                              <td>{el.deskripsi_cp}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* 5. Pemetaan CP & TP Per Bab */}
@@ -1183,44 +1196,46 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                           <p className="font-bold text-blue-900">
                             BAB {bab.nomor_bab}: {bab.judul_bab.toUpperCase()} (Semester {bab.semester})
                           </p>
-                          <table className="paper-table mt-1">
-                            <thead>
-                              <tr>
-                                <th className="w-1/4">KATEGORI</th>
-                                <th>RUMUSAN</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td className="font-bold">Elemen</td>
-                                <td>{bab.elemen_cp || officialElements[0]?.nama_elemen}</td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Kalimat CP</td>
-                                <td>
-                                  Peserta didik mampu menguasai konsep {bab.judul_bab} pada elemen{' '}
-                                  {bab.elemen_cp || officialElements[0]?.nama_elemen} serta
-                                  menerapkannya secara kontekstual.
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Tujuan Pembelajaran</td>
-                                <td>
-                                  <ol className="list-decimal pl-4 space-y-1">
-                                    {babTps.map((t, idx) => (
-                                      <li key={idx}>
-                                        <strong>[{t.code}]</strong> {t.deskripsi} ({t.alokasi_jp} JP)
-                                      </li>
-                                    ))}
-                                  </ol>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Alokasi Waktu</td>
-                                <td className="font-bold">{babJp} Jam Pelajaran (JP)</td>
-                              </tr>
-                            </tbody>
-                          </table>
+                          <div className="paper-table-container">
+                            <table className="paper-table mt-1">
+                              <thead>
+                                <tr>
+                                  <th className="w-1/4">KATEGORI</th>
+                                  <th>RUMUSAN</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="font-bold">Elemen</td>
+                                  <td>{bab.elemen_cp || officialElements[0]?.nama_elemen}</td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Kalimat CP</td>
+                                  <td>
+                                    Peserta didik mampu menguasai konsep {bab.judul_bab} pada elemen{' '}
+                                    {bab.elemen_cp || officialElements[0]?.nama_elemen} serta
+                                    menerapkannya secara kontekstual.
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Tujuan Pembelajaran</td>
+                                  <td>
+                                    <ol className="list-decimal pl-4 space-y-1">
+                                      {babTps.map((t, idx) => (
+                                        <li key={idx}>
+                                          <strong>[{t.code}]</strong> {t.deskripsi} ({t.alokasi_jp} JP)
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Alokasi Waktu</td>
+                                  <td className="font-bold">{babJp} Jam Pelajaran (JP)</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       );
                     })}
@@ -1244,22 +1259,24 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <h3 className="font-extrabold uppercase text-slate-900">
                       CAPAIAN PEMBELAJARAN FASE {faseCode} BERDASARKAN ELEMEN
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-1/4">Elemen</th>
-                          <th>Capaian Pembelajaran</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {officialElements.map((el, i) => (
-                          <tr key={i}>
-                            <td className="font-bold">{el.nama_elemen}</td>
-                            <td>{el.deskripsi_cp}</td>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-1/4">Elemen</th>
+                            <th>Capaian Pembelajaran</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {officialElements.map((el, i) => (
+                            <tr key={i}>
+                              <td className="font-bold">{el.nama_elemen}</td>
+                              <td>{el.deskripsi_cp}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* Per-Bab Structured Block Table matching ATP_-_Informatika_11.docx */}
@@ -1273,71 +1290,73 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       const babJp = isCurrentSelected ? currentAlokasiJp : bab.alokasi_jp;
                       return (
                         <div key={bab.id} className="mt-3">
-                          <table className="paper-table">
-                            <thead>
-                              <tr>
-                                <th colSpan={2} className="text-left">
-                                  BAB {bab.nomor_bab}: {bab.judul_bab.toUpperCase()} (SEMESTER {bab.semester})
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td className="w-1/3 font-bold">Elemen</td>
-                                <td>{bab.elemen_cp || officialElements[0]?.nama_elemen}</td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Capaian Pembelajaran Pertahun</td>
-                                <td>
-                                  Memahami, menerapkan, dan mengevaluasi konsep {bab.judul_bab} pada{' '}
-                                  {selectedSubject?.nama_mapel} Kelas {kelas}.
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">
-                                  Fase {faseCode} / Alur Tujuan Pembelajaran
-                                </td>
-                                <td>
-                                  <ol className="list-decimal pl-4 space-y-1">
-                                    {babTps.map((t, i) => (
-                                      <li key={i}>
-                                        <strong>{t.code}:</strong> {t.deskripsi} ({t.alokasi_jp} JP)
-                                      </li>
-                                    ))}
-                                  </ol>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Jumlah Jam</td>
-                                <td className="font-bold">
-                                  {babJp} JP ({Math.max(1, Math.round(babJp / jpPerMinggu))} Pertemuan)
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Kata Kunci</td>
-                                <td>
-                                  {bab.judul_bab}, {bab.elemen_cp || 'Konsep Inti'}, Analisis Kontekstual
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Topik / Konten Inti</td>
-                                <td>
-                                  {isCurrentSelected ? effectiveTopikKontekstual : bab.judul_bab}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Glosarium</td>
-                                <td>
-                                  {bab.judul_bab}: Lingkup kompetensi utama pada mata pelajaran{' '}
-                                  {selectedSubject?.nama_mapel} Kelas {kelas}.
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">Dimensi Profil Lulusan</td>
-                                <td>{(bab.dimensi_profil_lulusan || activeDimensions).join(', ')}</td>
-                              </tr>
-                            </tbody>
-                          </table>
+                          <div className="paper-table-container">
+                            <table className="paper-table">
+                              <thead>
+                                <tr>
+                                  <th colSpan={2} className="text-left">
+                                    BAB {bab.nomor_bab}: {bab.judul_bab.toUpperCase()} (SEMESTER {bab.semester})
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="w-1/3 font-bold">Elemen</td>
+                                  <td>{bab.elemen_cp || officialElements[0]?.nama_elemen}</td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Capaian Pembelajaran Pertahun</td>
+                                  <td>
+                                    Memahami, menerapkan, dan mengevaluasi konsep {bab.judul_bab} pada{' '}
+                                    {selectedSubject?.nama_mapel} Kelas {kelas}.
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">
+                                    Fase {faseCode} / Alur Tujuan Pembelajaran
+                                  </td>
+                                  <td>
+                                    <ol className="list-decimal pl-4 space-y-1">
+                                      {babTps.map((t, i) => (
+                                        <li key={i}>
+                                          <strong>{t.code}:</strong> {t.deskripsi} ({t.alokasi_jp} JP)
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Jumlah Jam</td>
+                                  <td className="font-bold">
+                                    {babJp} JP ({Math.max(1, Math.round(babJp / jpPerMinggu))} Pertemuan)
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Kata Kunci</td>
+                                  <td>
+                                    {bab.judul_bab}, {bab.elemen_cp || 'Konsep Inti'}, Analisis Kontekstual
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Topik / Konten Inti</td>
+                                  <td>
+                                    {isCurrentSelected ? effectiveTopikKontekstual : bab.judul_bab}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Glosarium</td>
+                                  <td>
+                                    {bab.judul_bab}: Lingkup kompetensi utama pada mata pelajaran{' '}
+                                    {selectedSubject?.nama_mapel} Kelas {kelas}.
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="font-bold">Dimensi Profil Lulusan</td>
+                                  <td>{(bab.dimensi_profil_lulusan || activeDimensions).join(', ')}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       );
                     })}
@@ -1375,50 +1394,52 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   {/* A. Identitas Modul */}
                   <div>
                     <h3 className="font-extrabold uppercase text-slate-900">A. Identitas Modul</h3>
-                    <table className="paper-table mt-1.5">
-                      <tbody>
-                        <tr>
-                          <th className="w-1/3 text-left">Nama Penyusun</th>
-                          <td>
-                            {teacher.nama_guru || 'Nama Guru Anda'} (NIP. {teacher.nip_guru || '-'})
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Institusi / Sekolah</th>
-                          <td>{teacher.nama_sekolah || 'Nama Sekolah Anda'}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Tahun Penyusunan / Semester</th>
-                          <td>
-                            Tahun Ajaran 2025/2026 / Semester {semester} (
-                            {semester === 1 ? 'Ganjil' : 'Genap'})
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Jenjang / Fase / Kelas</th>
-                          <td>
-                            {jenjang} / {faseLabel} / Kelas {kelas}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Mata Pelajaran</th>
-                          <td>{selectedSubject?.nama_mapel}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Bab / Materi Pokok</th>
-                          <td>
-                            Bab {selectedChapter?.nomor_bab || 1}: {selectedChapter?.judul_bab}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Alokasi Waktu</th>
-                          <td>
-                            {currentAlokasiJp} JP ({pertemuanCount} Pertemuan × {jpPerMinggu} JP @{' '}
-                            {durasiMenitJp} Menit)
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <tbody>
+                          <tr>
+                            <th className="w-1/3 text-left">Nama Penyusun</th>
+                            <td>
+                              {teacher.nama_guru || 'Nama Guru Anda'} (NIP. {teacher.nip_guru || '-'})
+                            </td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Institusi / Sekolah</th>
+                            <td>{teacher.nama_sekolah || 'Nama Sekolah Anda'}</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Tahun Penyusunan / Semester</th>
+                            <td>
+                              Tahun Ajaran 2025/2026 / Semester {semester} (
+                              {semester === 1 ? 'Ganjil' : 'Genap'})
+                            </td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Jenjang / Fase / Kelas</th>
+                            <td>
+                              {jenjang} / {faseLabel} / Kelas {kelas}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Mata Pelajaran</th>
+                            <td>{selectedSubject?.nama_mapel}</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Bab / Materi Pokok</th>
+                            <td>
+                              Bab {selectedChapter?.nomor_bab || 1}: {selectedChapter?.judul_bab}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Alokasi Waktu</th>
+                            <td>
+                              {currentAlokasiJp} JP ({pertemuanCount} Pertemuan × {jpPerMinggu} JP @{' '}
+                              {durasiMenitJp} Menit)
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* B. Identifikasi Kesiapan Peserta Didik & C. Karakteristik Materi */}
@@ -1442,25 +1463,27 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <h3 className="font-extrabold uppercase text-slate-900">
                       D. Dimensi Profil Lulusan Pembelajaran
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-1/3">Dimensi Profil Lulusan</th>
-                          <th>Implementasi pada Pembelajaran Bab Ini</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeDimensions.map((dim, i) => (
-                          <tr key={i}>
-                            <td className="font-bold">{dim}</td>
-                            <td>
-                              Dikembangkan melalui aktivitas diskusi, eksplorasi konsep{' '}
-                              {selectedChapter?.judul_bab}, dan refleksi pemecahan masalah.
-                            </td>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-1/3">Dimensi Profil Lulusan</th>
+                            <th>Implementasi pada Pembelajaran Bab Ini</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {activeDimensions.map((dim, i) => (
+                            <tr key={i}>
+                              <td className="font-bold">{dim}</td>
+                              <td>
+                                Dikembangkan melalui aktivitas diskusi, eksplorasi konsep{' '}
+                                {selectedChapter?.judul_bab}, dan refleksi pemecahan masalah.
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* DESAIN PEMBELAJARAN */}
@@ -1469,52 +1492,54 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       DESAIN PEMBELAJARAN
                     </h3>
 
-                    <table className="paper-table">
-                      <tbody>
-                        <tr>
-                          <th className="w-1/3 text-left">A. Capaian Pembelajaran (CP)</th>
-                          <td>
-                            <strong>
-                              Elemen {selectedChapter?.elemen_cp || officialElements[0]?.nama_elemen}:
-                            </strong>{' '}
-                            {officialElements[0]?.deskripsi_cp}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">B. Lintas Disiplin Ilmu</th>
-                          <td>{effectiveLintasDisiplin}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">C. Tujuan Pembelajaran (TP)</th>
-                          <td>
-                            <ol className="list-decimal pl-4 space-y-1">
-                              {activeTps.map((tp, idx) => (
-                                <li key={idx}>
-                                  <strong>Pertemuan {idx + 1} [{tp.code}]:</strong> {tp.deskripsi} (
-                                  {tp.alokasi_jp} JP)
-                                </li>
-                              ))}
-                            </ol>
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">D. Topik Pembelajaran Kontekstual</th>
-                          <td>{effectiveTopikKontekstual}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">E. Kerangka Pembelajaran</th>
-                          <td>
-                            <p>
-                              <strong>Model Pedagogis:</strong> {modelPembelajaran}
-                            </p>
-                            <p className="mt-1">
-                              <strong>Pertanyaan Pemantik:</strong>{' '}
-                              {effectivePemantik.join(' | ')}
-                            </p>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="paper-table-container">
+                      <table className="paper-table">
+                        <tbody>
+                          <tr>
+                            <th className="w-1/3 text-left">A. Capaian Pembelajaran (CP)</th>
+                            <td>
+                              <strong>
+                                Elemen {selectedChapter?.elemen_cp || officialElements[0]?.nama_elemen}:
+                              </strong>{' '}
+                              {officialElements[0]?.deskripsi_cp}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">B. Lintas Disiplin Ilmu</th>
+                            <td>{effectiveLintasDisiplin}</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">C. Tujuan Pembelajaran (TP)</th>
+                            <td>
+                              <ol className="list-decimal pl-4 space-y-1">
+                                {activeTps.map((tp, idx) => (
+                                  <li key={idx}>
+                                    <strong>Pertemuan {idx + 1} [{tp.code}]:</strong> {tp.deskripsi} (
+                                    {tp.alokasi_jp} JP)
+                                  </li>
+                                ))}
+                              </ol>
+                            </td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">D. Topik Pembelajaran Kontekstual</th>
+                            <td>{effectiveTopikKontekstual}</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">E. Kerangka Pembelajaran</th>
+                            <td>
+                              <p>
+                                <strong>Model Pedagogis:</strong> {modelPembelajaran}
+                              </p>
+                              <p className="mt-1">
+                                <strong>Pertanyaan Pemantik:</strong>{' '}
+                                {effectivePemantik.join(' | ')}
+                              </p>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
 
                     {/* F. Langkah-Langkah Pembelajaran Berdiferensiasi */}
                     <div>
@@ -1522,58 +1547,60 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                         F. Langkah-Langkah Pembelajaran Berdiferensiasi (Pendekatan Deep Learning 3M)
                       </h4>
                       {activeTps.map((tp, idx) => (
-                        <table key={idx} className="paper-table mt-2">
-                          <thead>
-                            <tr>
-                              <th colSpan={2} className="text-left">
-                                PERTEMUAN {idx + 1} — Fokus TP: [{tp.code}] {tp.deskripsi} (
-                                {tp.alokasi_jp} JP)
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="w-1/4 font-bold">1. Kegiatan Pendahuluan (15%)</td>
-                              <td>
-                                Guru membuka kelas dengan salam, doa, presensi, apersepsi mengaitkan
-                                pengalaman nyata siswa dengan topik {selectedChapter?.judul_bab},
-                                serta menyampaikan pertanyaan pemantik:{' '}
-                                <em>&ldquo;{effectivePemantik[idx % effectivePemantik.length]}&rdquo;</em>.
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="font-bold">
-                                2. Kegiatan Inti — Memahami, Mengaplikasi, Merefleksi (70%)
-                              </td>
-                              <td>
-                                <ul className="list-disc pl-4 space-y-1">
-                                  <li>
-                                    <strong>Memahami (Mindful Learning):</strong> Peserta didik
-                                    mengeksplorasi konsep dan literatur terkait {tp.deskripsi}.
-                                  </li>
-                                  <li>
-                                    <strong>Mengaplikasi (Meaningful Learning):</strong> Peserta
-                                    didik bekerja dalam kelompok mengerjakan studi kasus / LKPD
-                                    tentang {selectedChapter?.judul_bab}.
-                                  </li>
-                                  <li>
-                                    <strong>Merefleksi (Joyful Learning):</strong> Kelompok
-                                    mempresentasikan hasil karya dan melakukan evaluasi pemahaman
-                                    bersama guru.
-                                  </li>
-                                </ul>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="font-bold">3. Kegiatan Penutup (15%)</td>
-                              <td>
-                                Peserta didik bersama guru menyimpulkan poin penting pertemuan{' '}
-                                {idx + 1}, melakukan refleksi singkat, dan menerima informasi materi
-                                pertemuan berikutnya.
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div key={idx} className="paper-table-container">
+                          <table className="paper-table mt-2">
+                            <thead>
+                              <tr>
+                                <th colSpan={2} className="text-left">
+                                  PERTEMUAN {idx + 1} — Fokus TP: [{tp.code}] {tp.deskripsi} (
+                                  {tp.alokasi_jp} JP)
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="w-1/4 font-bold">1. Kegiatan Pendahuluan (15%)</td>
+                                <td>
+                                  Guru membuka kelas dengan salam, doa, presensi, apersepsi mengaitkan
+                                  pengalaman nyata siswa dengan topik {selectedChapter?.judul_bab},
+                                  serta menyampaikan pertanyaan pemantik:{' '}
+                                  <em>&ldquo;{effectivePemantik[idx % effectivePemantik.length]}&rdquo;</em>.
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="font-bold">
+                                  2. Kegiatan Inti — Memahami, Mengaplikasi, Merefleksi (70%)
+                                </td>
+                                <td>
+                                  <ul className="list-disc pl-4 space-y-1">
+                                    <li>
+                                      <strong>Memahami (Mindful Learning):</strong> Peserta didik
+                                      mengeksplorasi konsep dan literatur terkait {tp.deskripsi}.
+                                    </li>
+                                    <li>
+                                      <strong>Mengaplikasi (Meaningful Learning):</strong> Peserta
+                                      didik bekerja dalam kelompok mengerjakan studi kasus / LKPD
+                                      tentang {selectedChapter?.judul_bab}.
+                                    </li>
+                                    <li>
+                                      <strong>Merefleksi (Joyful Learning):</strong> Kelompok
+                                      mempresentasikan hasil karya dan melakukan evaluasi pemahaman
+                                      bersama guru.
+                                    </li>
+                                  </ul>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="font-bold">3. Kegiatan Penutup (15%)</td>
+                                <td>
+                                  Peserta didik bersama guru menyimpulkan poin penting pertemuan{' '}
+                                  {idx + 1}, melakukan refleksi singkat, dan menerima informasi materi
+                                  pertemuan berikutnya.
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       ))}
                     </div>
 
@@ -1583,49 +1610,51 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                         <h4 className="font-extrabold uppercase text-slate-900">
                           G. Asesmen Pembelajaran &amp; Butir Soal
                         </h4>
-                        <table className="paper-table mt-1.5">
-                          <thead>
-                            <tr>
-                              <th className="w-1/4">Jenis Asesmen</th>
-                              <th>Teknik &amp; Butir Soal Instrumen</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="font-bold">1. Asesmen Awal (Diagnostik)</td>
-                              <td>
-                                <p className="font-semibold">Soal Asesmen Awal:</p>
-                                <ol className="list-decimal pl-4">
-                                  {effectiveSoalAwal.map((s, i) => (
-                                    <li key={i}>{s}</li>
-                                  ))}
-                                </ol>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="font-bold">2. Asesmen Proses (Formatif)</td>
-                              <td>
-                                <p className="font-semibold">Soal / Tugas Asesmen Proses:</p>
-                                <ol className="list-decimal pl-4">
-                                  {effectiveSoalProses.map((s, i) => (
-                                    <li key={i}>{s}</li>
-                                  ))}
-                                </ol>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="font-bold">3. Asesmen Akhir (Sumatif)</td>
-                              <td>
-                                <p className="font-semibold">Soal Asesmen Akhir Bab:</p>
-                                <ol className="list-decimal pl-4">
-                                  {effectiveSoalAkhir.map((s, i) => (
-                                    <li key={i}>{s}</li>
-                                  ))}
-                                </ol>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div className="paper-table-container">
+                          <table className="paper-table mt-1.5">
+                            <thead>
+                              <tr>
+                                <th className="w-1/4">Jenis Asesmen</th>
+                                <th>Teknik &amp; Butir Soal Instrumen</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="font-bold">1. Asesmen Awal (Diagnostik)</td>
+                                <td>
+                                  <p className="font-semibold">Soal Asesmen Awal:</p>
+                                  <ol className="list-decimal pl-4">
+                                    {effectiveSoalAwal.map((s, i) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ol>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="font-bold">2. Asesmen Proses (Formatif)</td>
+                                <td>
+                                  <p className="font-semibold">Soal / Tugas Asesmen Proses:</p>
+                                  <ol className="list-decimal pl-4">
+                                    {effectiveSoalProses.map((s, i) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ol>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="font-bold">3. Asesmen Akhir (Sumatif)</td>
+                                <td>
+                                  <p className="font-semibold">Soal Asesmen Akhir Bab:</p>
+                                  <ol className="list-decimal pl-4">
+                                    {effectiveSoalAkhir.map((s, i) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ol>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1649,22 +1678,24 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <h3 className="font-extrabold uppercase text-slate-900">
                       CAPAIAN PEMBELAJARAN FASE {faseCode} BERDASARKAN ELEMEN
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-1/4">Elemen</th>
-                          <th>Capaian Pembelajaran</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {officialElements.map((el, i) => (
-                          <tr key={i}>
-                            <td className="font-bold">{el.nama_elemen}</td>
-                            <td>{el.deskripsi_cp}</td>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-1/4">Elemen</th>
+                            <th>Capaian Pembelajaran</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {officialElements.map((el, i) => (
+                            <tr key={i}>
+                              <td className="font-bold">{el.nama_elemen}</td>
+                              <td>{el.deskripsi_cp}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* Tabel Distribusi Alokasi Waktu Tahunan */}
@@ -1672,72 +1703,74 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <h3 className="font-extrabold uppercase text-slate-900">
                       DISTRIBUSI ALOKASI WAKTU TAHUNAN (SEMESTER 1 &amp; SEMESTER 2)
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-24 text-center">SEMESTER</th>
-                          <th className="w-12 text-center">NO</th>
-                          <th>MATERI POKOK / JUDUL BAB &amp; TUJUAN PEMBELAJARAN</th>
-                          <th className="w-24 text-center">ALOKASI (JP)</th>
-                          <th className="w-28 text-center">KETERANGAN</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allSubjectChapters.map((bab, idx) => {
-                          const isCurrent = bab.id === selectedChapter?.id;
-                          const babJp = isCurrent ? currentAlokasiJp : bab.alokasi_jp;
-                          const babTps = isCurrent ? activeTps : bab.tujuan_pembelajaran;
-                          return (
-                            <tr key={bab.id}>
-                              <td className="text-center font-bold">
-                                SEMESTER {bab.semester}
-                              </td>
-                              <td className="text-center font-bold">{idx + 1}</td>
-                              <td>
-                                <p className="font-bold">
-                                  Bab {bab.nomor_bab}: {bab.judul_bab}
-                                </p>
-                                <ul className="mt-1 list-disc pl-4 text-[11px] text-slate-700">
-                                  {babTps.map((t, i) => (
-                                    <li key={i}>
-                                      [{t.code}] {t.deskripsi} ({t.alokasi_jp} JP)
-                                    </li>
-                                  ))}
-                                </ul>
-                              </td>
-                              <td className="text-center font-bold">{babJp} JP</td>
-                              <td className="text-center">
-                                {Math.max(1, Math.round(babJp / jpPerMinggu))} Pertemuan
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        <tr>
-                          <td colSpan={3} className="text-right font-bold">
-                            Cadangan Jam Pelajaran
-                          </td>
-                          <td className="text-center font-bold">
-                            {customOverrides.cadangan_jp ?? 0} JP
-                          </td>
-                          <td className="text-center">Pengayaan / STS / SAS</td>
-                        </tr>
-                        <tr className="bg-slate-100">
-                          <td colSpan={3} className="text-right font-extrabold">
-                            Jumlah Jam Pelajaran Tahunan
-                          </td>
-                          <td className="text-center font-extrabold">
-                            {allSubjectChapters.reduce(
-                              (acc, b) =>
-                                acc +
-                                (b.id === selectedChapter?.id ? currentAlokasiJp : b.alokasi_jp),
-                              0
-                            ) + (customOverrides.cadangan_jp ?? 0)}{' '}
-                            JP
-                          </td>
-                          <td className="text-center font-bold">1 Tahun Ajaran</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-24 text-center">SEMESTER</th>
+                            <th className="w-12 text-center">NO</th>
+                            <th>MATERI POKOK / JUDUL BAB &amp; TUJUAN PEMBELAJARAN</th>
+                            <th className="w-24 text-center">ALOKASI (JP)</th>
+                            <th className="w-28 text-center">KETERANGAN</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allSubjectChapters.map((bab, idx) => {
+                            const isCurrent = bab.id === selectedChapter?.id;
+                            const babJp = isCurrent ? currentAlokasiJp : bab.alokasi_jp;
+                            const babTps = isCurrent ? activeTps : bab.tujuan_pembelajaran;
+                            return (
+                              <tr key={bab.id}>
+                                <td className="text-center font-bold">
+                                  SEMESTER {bab.semester}
+                                </td>
+                                <td className="text-center font-bold">{idx + 1}</td>
+                                <td>
+                                  <p className="font-bold">
+                                    Bab {bab.nomor_bab}: {bab.judul_bab}
+                                  </p>
+                                  <ul className="mt-1 list-disc pl-4 text-[11px] text-slate-700">
+                                    {babTps.map((t, i) => (
+                                      <li key={i}>
+                                        [{t.code}] {t.deskripsi} ({t.alokasi_jp} JP)
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </td>
+                                <td className="text-center font-bold">{babJp} JP</td>
+                                <td className="text-center">
+                                  {Math.max(1, Math.round(babJp / jpPerMinggu))} Pertemuan
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr>
+                            <td colSpan={3} className="text-right font-bold">
+                              Cadangan Jam Pelajaran
+                            </td>
+                            <td className="text-center font-bold">
+                              {customOverrides.cadangan_jp ?? 0} JP
+                            </td>
+                            <td className="text-center">Pengayaan / STS / SAS</td>
+                          </tr>
+                          <tr className="bg-slate-100">
+                            <td colSpan={3} className="text-right font-extrabold">
+                              Jumlah Jam Pelajaran Tahunan
+                            </td>
+                            <td className="text-center font-extrabold">
+                              {allSubjectChapters.reduce(
+                                (acc, b) =>
+                                  acc +
+                                  (b.id === selectedChapter?.id ? currentAlokasiJp : b.alokasi_jp),
+                                0
+                              ) + (customOverrides.cadangan_jp ?? 0)}{' '}
+                              JP
+                            </td>
+                            <td className="text-center font-bold">1 Tahun Ajaran</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1760,26 +1793,28 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <h3 className="font-extrabold uppercase text-slate-900">
                       CAPAIAN PEMBELAJARAN FASE {faseCode} BERDASARKAN ELEMEN
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-1/4">Elemen</th>
-                          <th>Capaian Pembelajaran</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {officialElements.map((el, i) => (
-                          <tr key={i}>
-                            <td className="font-bold">{el.nama_elemen}</td>
-                            <td>{el.deskripsi_cp}</td>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-1/4">Elemen</th>
+                            <th>Capaian Pembelajaran</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {officialElements.map((el, i) => (
+                            <tr key={i}>
+                              <td className="font-bold">{el.nama_elemen}</td>
+                              <td>{el.deskripsi_cp}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* Matriks 6 Bulan Semester */}
-                  <div className="overflow-x-auto">
+                  <div className="paper-table-container">
                     <h3 className="font-extrabold uppercase text-slate-900">
                       MATRIKS DISTRIBUSI MINGGU EFEKTIF SEMESTER {semester}
                     </h3>
@@ -1864,89 +1899,95 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
                   <div>
                     <h3 className="font-extrabold uppercase text-slate-900">Identitas Dokumen</h3>
-                    <table className="paper-table mt-1.5">
-                      <tbody>
-                        <tr>
-                          <th className="w-1/3 text-left">Mata Pelajaran</th>
-                          <td>{selectedSubject?.nama_mapel}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Jenjang / Kelas / Fase</th>
-                          <td>
-                            {selectedSubject?.jenjang} / Kelas {selectedSubject?.kelas} / Fase {selectedSubject?.fase}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Semester / Tahun Ajaran</th>
-                          <td>Semester {semester} / 2025/2026</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Materi / Bab</th>
-                          <td>{selectedChapter?.judul_bab || 'Semua Bab'}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <tbody>
+                          <tr>
+                            <th className="w-1/3 text-left">Mata Pelajaran</th>
+                            <td>{selectedSubject?.nama_mapel}</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Jenjang / Kelas / Fase</th>
+                            <td>
+                              {selectedSubject?.jenjang} / Kelas {selectedSubject?.kelas} / Fase {selectedSubject?.fase}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Semester / Tahun Ajaran</th>
+                            <td>Semester {semester} / 2025/2026</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Materi / Bab</th>
+                            <td>{selectedChapter?.judul_bab || 'Semua Bab'}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div>
                     <h3 className="font-extrabold uppercase text-slate-900">
                       A. Skala Interval Nilai KKTP (4 Interval — PPA Revisi 2025)
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-24 text-center">Interval</th>
-                          <th className="w-40 text-left">Kriteria</th>
-                          <th className="text-left">Tindak Lanjut / Intervensi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="text-center font-bold">0 - 40%</td>
-                          <td>Belum Mencapai</td>
-                          <td>Remedial di seluruh bagian</td>
-                        </tr>
-                        <tr>
-                          <td className="text-center font-bold">41 - 65%</td>
-                          <td>Belum Mencapai Ketuntasan</td>
-                          <td>Remedial di bagian yang diperlukan</td>
-                        </tr>
-                        <tr>
-                          <td className="text-center font-bold">66 - 85%</td>
-                          <td>Sudah Mencapai Ketuntasan</td>
-                          <td>Tidak perlu remedial</td>
-                        </tr>
-                        <tr>
-                          <td className="text-center font-bold">86 - 100%</td>
-                          <td>Sudah Mencapai Ketuntasan</td>
-                          <td>Perlu pengayaan atau tantangan lebih</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-24 text-center">Interval</th>
+                            <th className="w-40 text-left">Kriteria</th>
+                            <th className="text-left">Tindak Lanjut / Intervensi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="text-center font-bold">0 - 40%</td>
+                            <td>Belum Mencapai</td>
+                            <td>Remedial di seluruh bagian</td>
+                          </tr>
+                          <tr>
+                            <td className="text-center font-bold">41 - 65%</td>
+                            <td>Belum Mencapai Ketuntasan</td>
+                            <td>Remedial di bagian yang diperlukan</td>
+                          </tr>
+                          <tr>
+                            <td className="text-center font-bold">66 - 85%</td>
+                            <td>Sudah Mencapai Ketuntasan</td>
+                            <td>Tidak perlu remedial</td>
+                          </tr>
+                          <tr>
+                            <td className="text-center font-bold">86 - 100%</td>
+                            <td>Sudah Mencapai Ketuntasan</td>
+                            <td>Perlu pengayaan atau tantangan lebih</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div>
                     <h3 className="font-extrabold uppercase text-slate-900">
                       B. Rubrik Ketercapaian Tujuan Pembelajaran (TP)
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-20 text-center">Kode TP</th>
-                          <th className="text-left">Tujuan Pembelajaran & Indikator Ketercapaian</th>
-                          <th className="w-16 text-center">JP</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeTps.map((tp, idx) => (
-                          <tr key={`${tp.code}-${idx}`}>
-                            <td className="text-center font-bold">{tp.code}</td>
-                            <td>{tp.deskripsi}</td>
-                            <td className="text-center">{tp.alokasi_jp}</td>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-20 text-center">Kode TP</th>
+                            <th className="text-left">Tujuan Pembelajaran & Indikator Ketercapaian</th>
+                            <th className="w-16 text-center">JP</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {activeTps.map((tp, idx) => (
+                            <tr key={`${tp.code}-${idx}`}>
+                              <td className="text-center font-bold">{tp.code}</td>
+                              <td>{tp.deskripsi}</td>
+                              <td className="text-center">{tp.alokasi_jp}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1964,22 +2005,24 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
                   <div>
                     <h3 className="font-extrabold uppercase text-slate-900">Identitas Peserta Didik</h3>
-                    <table className="paper-table mt-1.5">
-                      <tbody>
-                        <tr>
-                          <th className="w-1/3 text-left">Nama Peserta Didik</th>
-                          <td>............................................................</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Kelas / No. Absen</th>
-                          <td>Kelas {selectedSubject?.kelas} / ........</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Topik / Materi Pokok</th>
-                          <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <tbody>
+                          <tr>
+                            <th className="w-1/3 text-left">Nama Peserta Didik</th>
+                            <td>............................................................</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Kelas / No. Absen</th>
+                            <td>Kelas {selectedSubject?.kelas} / ........</td>
+                          </tr>
+                          <tr>
+                            <th className="text-left">Topik / Materi Pokok</th>
+                            <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div>
@@ -1997,37 +2040,39 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     <h3 className="font-extrabold uppercase text-slate-900">
                       B. Langkah Aktivitas Pembelajaran Mendalam (3M)
                     </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-32 text-left">Tahap 3M</th>
-                          <th className="text-left">Panduan Aktivitas Mandiri / Kelompok</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="font-bold">1. Memahami</td>
-                          <td>
-                            {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
-                              `Membaca dan memahami konsep inti pada materi ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}.`}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="font-bold">2. Mengaplikasi</td>
-                          <td>
-                            {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
-                              'Mengerjakan studi kasus atau praktik pemecahan masalah secara terstruktur.'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="font-bold">3. Merefleksi</td>
-                          <td>
-                            {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
-                              'Menuliskan kesimpulan dan refleksi pemahaman diri setelah aktivitas.'}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="paper-table-container">
+                      <table className="paper-table mt-1.5">
+                        <thead>
+                          <tr>
+                            <th className="w-32 text-left">Tahap 3M</th>
+                            <th className="text-left">Panduan Aktivitas Mandiri / Kelompok</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="font-bold">1. Memahami</td>
+                            <td>
+                              {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
+                                `Membaca dan memahami konsep inti pada materi ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}.`}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold">2. Mengaplikasi</td>
+                            <td>
+                              {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
+                                'Mengerjakan studi kasus atau praktik pemecahan masalah secara terstruktur.'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="font-bold">3. Merefleksi</td>
+                            <td>
+                              {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
+                                'Menuliskan kesimpulan dan refleksi pemahaman diri setelah aktivitas.'}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div>

@@ -161,7 +161,12 @@ export const App: React.FC = () => {
   // Select Service from Home or Katalog -> Opens dedicated Generator Page
   const handleSelectService = (serviceId: ServiceId) => {
     setSelectedServiceId(serviceId);
-    setOutputFormat(serviceId === '06_promes' ? 'xlsx' : 'docx');
+    const targetService = CORE_SERVICES.find((s) => s.id === serviceId);
+    const allowed = (targetService?.formats || ['DOCX', 'PDF']).map((f) => f.toLowerCase() as OutputFormat);
+    setOutputFormat((prev) => {
+      if (allowed.includes(prev)) return prev;
+      return serviceId === '06_promes' ? 'xlsx' : (allowed[0] || 'docx');
+    });
     setErrorMsg(null);
     handleNavigate('generator');
   };
