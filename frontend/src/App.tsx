@@ -30,6 +30,7 @@ import { DocumentHistory } from './components/sections/DocumentHistory';
 import { SchoolProfileModal } from './components/modals/SchoolProfileModal';
 import { SuccessDownloadModal } from './components/modals/SuccessDownloadModal';
 import { GoogleLoginModal } from './components/modals/GoogleLoginModal';
+import { ClassroomManagementModal } from './components/modals/ClassroomManagementModal';
 
 const STORAGE_KEY_TEACHER = 'gurudok_teacher_profile_v2';
 
@@ -37,6 +38,9 @@ export const App: React.FC = () => {
   // Multi-Page Navigation State: 'home' | 'katalog' | 'generator' | 'riwayat'
   const [activeSection, setActiveSection] = useState<'home' | 'katalog' | 'generator' | 'riwayat'>('home');
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('08_modul_ajar');
+
+  // Classroom Management Modal State
+  const [isClassroomModalOpen, setIsClassroomModalOpen] = useState<boolean>(false);
 
   // Katalog Filter State
   const [quickJenjang, setQuickJenjang] = useState<Jenjang | 'ALL'>('ALL');
@@ -381,6 +385,7 @@ export const App: React.FC = () => {
           activeSection={activeSection}
           onNavigate={handleNavigate}
           onOpenProfileModal={() => setIsProfileModalOpen(true)}
+          onOpenClassroomModal={() => setIsClassroomModalOpen(true)}
           onOpenLoginModal={() => setIsLoginModalOpen(true)}
           onLogout={handleLogout}
         />
@@ -496,6 +501,12 @@ export const App: React.FC = () => {
           setPendingAction(null);
         }}
         onSuccess={handleGoogleLoginSuccess}
+      />
+
+      {/* Modal 4: Kelola Data Kelas & Rombel Siswa (Client-Side Storage) */}
+      <ClassroomManagementModal
+        isOpen={isClassroomModalOpen}
+        onClose={() => setIsClassroomModalOpen(false)}
       />
     </div>
   );

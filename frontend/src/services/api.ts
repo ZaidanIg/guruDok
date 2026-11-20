@@ -298,6 +298,69 @@ export class GuruDokApiClient {
       return INITIAL_HISTORY_ITEMS;
     }
   }
+
+  /**
+   * Uploads and parses teacher student roster Excel file statelessly.
+   */
+  async parseClassroomExcel(file: File): Promise<{
+    detected_header_row: number;
+    column_mappings: Record<string, number | null>;
+    total_rows: number;
+    students: Array<{
+      nomor_absen: number;
+      nisn: string;
+      nama_lengkap: string;
+      jenis_kelamin: 'L' | 'P';
+    }>;
+    warnings: string[];
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${this.baseUrl}/classrooms/parse-excel`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let errorMsg = 'Gagal memproses file Excel.';
+      try {
+        const errorJson = await res.json();
+        if (errorJson.detail) errorMsg = errorJson.detail;
+      } catch {
+        // ignore
+      }
+      throw new Error(errorMsg);
+    }
+
+    const json = await res.json();
+    return json.data;
+  }
+
+  /**
+   * Downloads the official GuruDok student template .xlsx file.
+   */
+  async downloadStudentTemplate(): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/classrooms/template-excel`);
+    if (!res.ok) {
+      throw new Error('Gagal mengunduh format template Excel.');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'Format_Data_Siswa_GuruDok.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => {
+      try {
+        window.URL.revokeObjectURL(url);
+      } catch {
+        // ignore
+      }
+    }, 30000);
+  }
 }
 
 export const apiClient = new GuruDokApiClient();

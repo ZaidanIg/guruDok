@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BookOpen, UserCheck, LogIn, LogOut, ChevronDown, School } from 'lucide-react';
+import { BookOpen, UserCheck, LogIn, LogOut, ChevronDown, School, Users } from 'lucide-react';
 import { AuthUser, TeacherProfile } from '../../types';
 
 interface NavbarProps {
@@ -8,6 +8,7 @@ interface NavbarProps {
   activeSection: 'home' | 'katalog' | 'generator' | 'riwayat';
   onNavigate: (section: 'home' | 'katalog' | 'generator' | 'riwayat') => void;
   onOpenProfileModal: () => void;
+  onOpenClassroomModal?: () => void;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
 }
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeSection,
   onNavigate,
   onOpenProfileModal,
+  onOpenClassroomModal,
   onOpenLoginModal,
   onLogout,
 }) => {
@@ -169,14 +171,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               {/* Menu Item: Profil KOP Sekolah */}
-              <div className="py-2">
+              <div className="py-1">
                 <button
                   type="button"
                   onClick={() => {
                     setIsDropdownOpen(false);
                     onOpenProfileModal();
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition hover:bg-slate-100"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
                     <School className="h-4 w-4" />
@@ -189,6 +191,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {teacher.nama_sekolah
                         ? `${teacher.nama_guru || 'Guru'} • ${teacher.nama_sekolah}`
                         : 'Belum diisi (Opsional)'}
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Menu Item: Data Kelas & Siswa */}
+              <div className="py-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    if (onOpenClassroomModal) onOpenClassroomModal();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition hover:bg-slate-100"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800">
+                      Data Kelas & Siswa
+                    </p>
+                    <p className="truncate text-[11px] font-medium text-slate-500">
+                      Kelola Rombel & Upload Excel
                     </p>
                   </div>
                 </button>
