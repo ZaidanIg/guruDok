@@ -144,11 +144,31 @@ export const App: React.FC = () => {
     };
   }, [selectedSubject?.id, semester]);
 
-  // Load Google Auth Session & History on mount
+  // Load Google Auth Session & History on mount, and enforce session protection on shared file links
   useEffect(() => {
     apiClient.getCurrentUser().then((user) => {
       setAuthUser(user);
       apiClient.getHistory().then(setHistory);
+
+      // Check URL query parameters for shared file download: ?download_file=... or ?download=...
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetFile = urlParams.get('download_file') || urlParams.get('download');
+      if (targetFile) {
+        // Clean URL parameter from address bar
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        const fileUrl = `/api/v1/documents/${encodeURIComponent(targetFile)}/download`;
+        if (user) {
+          // User has active session -> initiate authenticated download
+          apiClient.downloadAuthenticatedFile(fileUrl, targetFile).catch(() => {
+            setErrorMsg('Gagal mengunduh berkas tautan. Berkas mungkin tidak ditemukan di server.');
+          });
+        } else {
+          // User has NO SESSION -> BLOCK DOWNLOAD & REQUIRE GOOGLE LOGIN
+          setPendingAction({ type: 'download', fileUrl, filename: targetFile });
+          setIsLoginModalOpen(true);
+        }
+      }
     });
   }, []);
 

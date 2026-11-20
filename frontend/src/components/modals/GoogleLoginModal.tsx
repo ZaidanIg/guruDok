@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ShieldCheck, Lock, X, AlertCircle } from 'lucide-react';
+import { Lock, X, AlertCircle } from 'lucide-react';
 import { apiClient } from '../../services/api';
 import { AuthUser } from '../../types';
 
@@ -77,7 +77,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
         size: 'large',
         shape: 'pill',
         text: 'signin_with',
-        width: 300,
+        width: 280,
       });
     };
 
@@ -91,28 +91,26 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="clay-card relative w-full max-w-md p-6 sm:p-7">
+      <div className="clay-card relative w-full max-w-sm p-6 text-center sm:p-7">
         <button
           type="button"
           onClick={onClose}
-          className="clay-btn-white absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-lg"
+          className="clay-btn-white absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:text-slate-800"
           aria-label="Tutup modal login"
         >
-          <X className="h-4 w-4 text-slate-600" />
+          <X className="h-4 w-4" />
         </button>
 
-        <div className="flex flex-col items-center text-center">
+        <div className="flex flex-col items-center">
           <div className="clay-icon-blue flex h-12 w-12 items-center justify-center rounded-2xl shadow-md">
             <Lock className="h-6 w-6 text-white" />
           </div>
 
-          <h2 className="mt-4 text-xl font-extrabold text-slate-900">
-            Masuk dengan Google untuk Mengunduh
+          <h2 className="mt-4 text-lg font-extrabold text-slate-900 sm:text-xl">
+            Masuk untuk Mengunduh Dokumen
           </h2>
-          <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
-            Anda bebas menyusun dan melihat pratinjau dokumen tanpa batas. Masuk 1-klik dengan akun
-            Google untuk mengunduh berkas <strong>Word / Excel / PDF</strong> dan menyimpan riwayat
-            pribadi Anda.
+          <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">
+            Silakan masuk dengan akun Google untuk mengunduh dokumen dan menyimpan riwayat berkas Anda.
           </p>
         </div>
 
@@ -129,12 +127,11 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
               <p className="font-bold">Konfigurasi Google Client ID Diperlukan</p>
               <p className="mt-1">
                 Variabel <code className="font-mono font-bold">VITE_GOOGLE_CLIENT_ID</code> belum
-                diatur pada build frontend. Tambahkan OAuth Client ID di environment Coolify lalu
-                redeploy.
+                diatur pada file .env frontend.
               </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-2.5">
               <div ref={buttonContainerRef} className="min-h-[44px]" />
               {isLoading && (
                 <p className="text-xs font-bold text-blue-700">
@@ -143,13 +140,6 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
               )}
             </div>
           )}
-        </div>
-
-        <div className="mt-5 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[11px] font-semibold text-emerald-800">
-          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>
-            100% Gratis. Data profil KOP Sekolah tetap tersimpan aman hanya di browser Anda.
-          </span>
         </div>
       </div>
     </div>
