@@ -999,14 +999,12 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Menyusun Dokumen {formatExtLabel}...</span>
+                <span>Menyusun Dokumen...</span>
               </>
             ) : (
               <>
                 <FileDown className="h-4 w-4" />
-                <span>
-                  Unduh {activeService.shortTitle} ({formatExtLabel} • {paperSize})
-                </span>
+                <span>Download Dokumen</span>
               </>
             )}
           </button>

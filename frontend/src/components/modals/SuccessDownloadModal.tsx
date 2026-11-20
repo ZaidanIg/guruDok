@@ -121,7 +121,7 @@ export const SuccessDownloadModal: React.FC<SuccessDownloadModalProps> = ({
             className="clay-btn-primary flex w-full items-center justify-center gap-2.5 py-3.5 text-xs font-extrabold sm:text-sm"
           >
             <Download className="h-4 w-4" />
-            <span>Download File {formatLabel} Siap Print &amp; Edit</span>
+            <span>Download Dokumen</span>
           </button>
 
           <button
