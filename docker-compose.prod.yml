@@ -1,0 +1,83 @@
+# ==============================================================================
+# GuruDok Production — Coolify + Hostinger DNS (gurudok.guru)
+# ==============================================================================
+# Cara pakai di Coolify:
+# 1. Resource Type: Docker Compose
+# 2. Arahkan Compose File ke: docker-compose.prod.yml
+# 3. Branch Git: main
+# 4. Domains pada service 'frontend': https://gurudok.guru, https://www.gurudok.guru
+# 5. Isi Environment Variables produksi (DB_PASSWORD, JWT_SECRET_KEY, dll.)
+# ==============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-GuruDocDB}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gurudok_prod_super_secret_change_me}
+    volumes:
+      - gurudok_prod_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-GuruDocDB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gurudok_prod_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      DEBUG: "False"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-GuruDocDB}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-gurudok_prod_super_secret_change_me}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-gurudok_prod_super_secret_change_me}@db:5432/${DB_NAME:-GuruDocDB}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://gurudok.guru,https://www.gurudok.guru}
+      DATASET_PATH: /app/backend/dataset
+      GENERATED_DIR: /app/backend/generated_docs
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-gurudok_prod_jwt_secret_key_change_me}
+      AUTH_REQUIRED_FOR_DOWNLOAD: ${AUTH_REQUIRED_FOR_DOWNLOAD:-True}
+    volumes:
+      - gurudok_prod_docs:/app/backend/generated_docs
+    expose:
+      - "8000"
+    networks:
+      - gurudok_prod_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "80"
+    networks:
+      - gurudok_prod_net
+
+volumes:
+  gurudok_prod_pgdata:
+  gurudok_prod_docs:
+
+networks:
+  gurudok_prod_net:
+    driver: bridge
