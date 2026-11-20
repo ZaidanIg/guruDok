@@ -229,10 +229,7 @@ export const ClassroomManagementModal: React.FC<ClassroomManagementModalProps> =
                 <Users className="w-5 h-5 text-teal-600" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 text-lg">Data Kelas & Rombel Siswa</h3>
-                <p className="text-xs text-slate-400">
-                  Tersimpan di browser lokal (Sesuai UU PDP No. 27/2022 — Zero Server Storage)
-                </p>
+                <h3 className="font-bold text-slate-800 text-lg">Data Kelas</h3>
               </div>
             </div>
             <button

@@ -31,6 +31,7 @@ import { SchoolProfileModal } from './components/modals/SchoolProfileModal';
 import { SuccessDownloadModal } from './components/modals/SuccessDownloadModal';
 import { GoogleLoginModal } from './components/modals/GoogleLoginModal';
 import { ClassroomManagementModal } from './components/modals/ClassroomManagementModal';
+import { getClassrooms, getActiveClassroom, StudentItem } from './services/classroomStorage';
 
 const STORAGE_KEY_TEACHER = 'gurudok_teacher_profile_v2';
 
@@ -188,8 +189,11 @@ export const App: React.FC = () => {
     const targetService = CORE_SERVICES.find((s) => s.id === serviceId);
     const allowed = (targetService?.formats || ['DOCX', 'PDF']).map((f) => f.toLowerCase() as OutputFormat);
     setOutputFormat((prev) => {
+      if (serviceId === '06_promes' || serviceId === '13_presensi' || serviceId === '15_daftar_nilai') {
+        return 'xlsx';
+      }
       if (allowed.includes(prev)) return prev;
-      return serviceId === '06_promes' ? 'xlsx' : (allowed[0] || 'docx');
+      return allowed[0] || 'docx';
     });
     setErrorMsg(null);
     handleNavigate('generator');
@@ -266,7 +270,36 @@ export const App: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      const hasCustomOverrides = Object.keys(customOverrides).length > 0;
+      let finalOverrides: CustomDocumentOverrides = { ...customOverrides };
+
+      // Automatic Student and Rombel injection for Classroom Services
+      if (selectedServiceId === '13_presensi' || selectedServiceId === '15_daftar_nilai') {
+        const activeRombel = getActiveClassroom() || getClassrooms()[0];
+        if (activeRombel) {
+          if (!finalOverrides.students || finalOverrides.students.length === 0) {
+            finalOverrides.students = (activeRombel.students || []).map((s: StudentItem) => ({
+              nomor_absen: s.nomor_absen,
+              nisn: s.nisn,
+              nama_lengkap: s.nama_lengkap,
+              jenis_kelamin: s.jenis_kelamin,
+            }));
+          }
+          if (!finalOverrides.nama_rombel) {
+            finalOverrides.nama_rombel = activeRombel.nama_rombel;
+          }
+          if (!finalOverrides.wali_kelas) {
+            finalOverrides.wali_kelas = activeRombel.wali_kelas;
+          }
+        }
+        if (selectedServiceId === '13_presensi' && !finalOverrides.bulan_presensi) {
+          finalOverrides.bulan_presensi = 'Agustus';
+        }
+        if (selectedServiceId === '15_daftar_nilai' && !finalOverrides.kktp_nilai) {
+          finalOverrides.kktp_nilai = 75;
+        }
+      }
+
+      const hasCustomOverrides = Object.keys(finalOverrides).length > 0;
       const hasCompleteProfile = Boolean(
         teacher.nama_guru.trim() &&
           teacher.nama_sekolah.trim() &&
@@ -289,7 +322,7 @@ export const App: React.FC = () => {
         include_lkpd: includeLkpd,
         include_asesmen: includeAsesmen,
         include_rubrik: includeRubrik,
-        custom_overrides: hasCustomOverrides ? customOverrides : undefined,
+        custom_overrides: hasCustomOverrides ? finalOverrides : undefined,
       });
 
       setLastResult(response);
@@ -454,6 +487,7 @@ export const App: React.FC = () => {
               onChangeCustomOverrides={setCustomOverrides}
               onResetCustomOverrides={() => setCustomOverrides({})}
               onOpenProfileModal={() => setIsProfileModalOpen(true)}
+              onOpenClassroomModal={() => setIsClassroomModalOpen(true)}
               onBackToCatalog={() => handleNavigate('katalog')}
               onGenerate={handleGenerateDocument}
               onChapterCreated={handleChapterCreated}

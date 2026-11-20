@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Loader2,
@@ -12,6 +12,10 @@ import {
   Sliders,
   ChevronDown,
   ChevronUp,
+  Users,
+  FileSpreadsheet,
+  CheckCircle2,
+  Calculator,
 } from 'lucide-react';
 import {
   ChapterTopic,
@@ -23,6 +27,7 @@ import {
   PaperSize,
   ServiceCatalogItem,
   ServiceId,
+  StudentOverrideItem,
   TeacherProfile,
 } from '../../types';
 import {
@@ -32,6 +37,13 @@ import {
   PEDAGOGICAL_MODELS,
 } from '../../constants/services';
 import { AddChapterModal } from '../modals/AddChapterModal';
+import {
+  getClassrooms,
+  getActiveClassroom,
+  setActiveClassroomId,
+  ClassroomRombel,
+  StudentItem,
+} from '../../services/classroomStorage';
 
 interface DocumentGeneratorProps {
   activeService: ServiceCatalogItem;
@@ -67,6 +79,7 @@ interface DocumentGeneratorProps {
   onChangeCustomOverrides: (next: CustomDocumentOverrides) => void;
   onResetCustomOverrides: () => void;
   onOpenProfileModal: () => void;
+  onOpenClassroomModal?: () => void;
   onBackToCatalog: () => void;
   onGenerate: () => void;
   onChapterCreated: (newChapter: ChapterTopic) => void;
@@ -106,6 +119,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   onChangeCustomOverrides,
   onResetCustomOverrides,
   onOpenProfileModal,
+  onOpenClassroomModal,
   onBackToCatalog,
   onGenerate,
   onChapterCreated,
@@ -114,6 +128,52 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [showPedagogicalEditor, setShowPedagogicalEditor] = useState<boolean>(true);
   const [showAssessmentEditor, setShowAssessmentEditor] = useState<boolean>(false);
   const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState<boolean>(false);
+
+  // Classroom & Student State (Local Browser Storage)
+  const isPresensi = activeService.id === '13_presensi';
+  const isDaftarNilai = activeService.id === '15_daftar_nilai';
+  const isClassroomService = isPresensi || isDaftarNilai;
+
+  const [classrooms, setClassrooms] = useState<ClassroomRombel[]>(() => getClassrooms());
+
+  // Reload classrooms when props or focus change
+  useEffect(() => {
+    setClassrooms(getClassrooms());
+  }, [activeService.id]);
+
+  const activeClassroom =
+    classrooms.find((c) => c.nama_rombel === customOverrides.nama_rombel) ||
+    getActiveClassroom() ||
+    classrooms[0] ||
+    null;
+
+  const effectiveStudents: StudentOverrideItem[] =
+    customOverrides.students && customOverrides.students.length > 0
+      ? customOverrides.students
+      : (activeClassroom?.students || []).map((s: StudentItem) => ({
+          nomor_absen: s.nomor_absen,
+          nisn: s.nisn,
+          nama_lengkap: s.nama_lengkap,
+          jenis_kelamin: s.jenis_kelamin,
+        }));
+
+  const handleSelectRombel = (rombelId: string) => {
+    const found = classrooms.find((c) => c.id === rombelId);
+    if (found) {
+      setActiveClassroomId(found.id);
+      onChangeCustomOverrides({
+        ...customOverrides,
+        nama_rombel: found.nama_rombel,
+        wali_kelas: found.wali_kelas,
+        students: found.students.map((s: StudentItem) => ({
+          nomor_absen: s.nomor_absen,
+          nisn: s.nisn,
+          nama_lengkap: s.nama_lengkap,
+          jenis_kelamin: s.jenis_kelamin,
+        })),
+      });
+    }
+  };
 
   const grades = GRADES_BY_JENJANG[jenjang];
   const faseCode = selectedSubject
@@ -629,6 +689,131 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             </div>
           </div>
 
+          {/* Card 2: Classroom Services vs Lesson Plan Services */}
+          {isClassroomService ? (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    2. Data Rombel &amp; Siswa (Lokal Browser)
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Pilih rombel aktif atau upload spreadsheet Excel data siswa kelas Anda.
+                  </p>
+                </div>
+                {onOpenClassroomModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenClassroomModal}
+                    className="clay-btn-white inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-blue-700"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    <span>Kelola / Upload Siswa</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-3.5">
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">
+                    Pilih Rombel / Kelas Aktif
+                  </label>
+                  <select
+                    value={activeClassroom?.id || ''}
+                    onChange={(e) => handleSelectRombel(e.target.value)}
+                    className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
+                  >
+                    {classrooms.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nama_rombel} — {c.students?.length || 0} Siswa ({c.jenjang} Kelas {c.tingkat_kelas})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg bg-blue-50/70 border border-blue-200/80 p-2.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-blue-700" />
+                    <span className="font-bold text-blue-900">
+                      {effectiveStudents.length} Siswa Terdaftar
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-blue-700">
+                    L: {effectiveStudents.filter((s: StudentOverrideItem) => s.jenis_kelamin === 'L').length} | P:{' '}
+                    {effectiveStudents.filter((s: StudentOverrideItem) => s.jenis_kelamin === 'P').length}
+                  </span>
+                </div>
+
+                {isPresensi && (
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Bulan Pelaksanaan Presensi
+                    </label>
+                    <select
+                      value={customOverrides.bulan_presensi || 'Agustus'}
+                      onChange={(e) =>
+                        onChangeCustomOverrides({
+                          ...customOverrides,
+                          bulan_presensi: e.target.value,
+                        })
+                      }
+                      className="clay-input w-full px-3 py-2.5 text-xs font-bold text-slate-800 sm:text-sm"
+                    >
+                      {[
+                        'Juli',
+                        'Agustus',
+                        'September',
+                        'Oktober',
+                        'November',
+                        'Desember',
+                        'Januari',
+                        'Februari',
+                        'Maret',
+                        'April',
+                        'Mei',
+                        'Juni',
+                      ].map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Kolom tanggal 1 s.d. 31 dilengkapi formula aktif <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700 font-bold">=COUNTIF</code> untuk rekap otomatis Hadir (H), Sakit (S), Izin (I), Alpa (A), serta persentase kehadiran kelas.
+                    </p>
+                  </div>
+                )}
+
+                {isDaftarNilai && (
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-slate-700">
+                      Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={50}
+                        max={100}
+                        value={customOverrides.kktp_nilai ?? 75}
+                        onChange={(e) =>
+                          onChangeCustomOverrides({
+                            ...customOverrides,
+                            kktp_nilai: Math.max(50, Math.min(100, Number(e.target.value) || 75)),
+                          })
+                        }
+                        className="clay-input w-28 px-3 py-2 text-xs font-bold text-slate-800 sm:text-sm"
+                      />
+                      <span className="text-xs font-bold text-slate-600">Nilai Ambang Batas Ketuntasan</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Formula aktif <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700 font-bold">=AVERAGE</code> menghitung rata-rata formatif, pembobotan sumatif STS &amp; SAS, serta formula logika <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700 font-bold">=IF(NA&gt;=KKTP,"TUNTAS","BELUM TUNTAS")</code> dan statistik kelas otomatis.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Card 2: Editor Fleksibel Tujuan Pembelajaran (TP) */}
           <div className="clay-card p-5">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
@@ -988,6 +1173,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
             )}
           </div>
+          </>
+          )}
 
           {/* Primary Generate & Download Button */}
           <button
@@ -2088,6 +2275,225 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       </li>
                     </ol>
                   </div>
+                </div>
+              )}
+
+              {/* Service 13: Live Preview Presensi Siswa Bulanan */}
+              {activeService.id === '13_presensi' && (
+                <div className="mt-5 space-y-5 text-xs leading-relaxed">
+                  <div className="text-center">
+                    <h2 className="text-base font-extrabold uppercase text-slate-900">
+                      PRESENSI DAN KEHADIRAN PESERTA DIDIK
+                    </h2>
+                    <p className="font-bold uppercase text-slate-700">
+                      TAHUN AJARAN 2026/2027 — SEMESTER {semester}
+                    </p>
+                  </div>
+
+                  {/* Identitas Metadata */}
+                  <div className="paper-table-container">
+                    <table className="paper-table">
+                      <tbody>
+                        <tr>
+                          <th className="w-1/4 text-left">Mata Pelajaran</th>
+                          <td className="w-1/4 font-semibold">{selectedSubject?.nama_mapel}</td>
+                          <th className="w-1/4 text-left">Guru Pengampu</th>
+                          <td className="w-1/4 font-semibold">{teacher.nama_guru || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Kelas / Rombel</th>
+                          <td className="font-semibold">{customOverrides.nama_rombel || activeClassroom?.nama_rombel || `Kelas ${kelas}`}</td>
+                          <th className="text-left">Bulan Presensi</th>
+                          <td className="font-semibold text-blue-700">{customOverrides.bulan_presensi || 'Agustus'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Tabel Presensi Siswa */}
+                  <div className="paper-table-container">
+                    <table className="paper-table text-[11px]">
+                      <thead>
+                        <tr>
+                          <th rowSpan={2} className="w-8 text-center">No</th>
+                          <th rowSpan={2} className="w-20 text-center">NISN</th>
+                          <th rowSpan={2} className="text-left min-w-[140px]">Nama Lengkap Siswa</th>
+                          <th rowSpan={2} className="w-8 text-center">L/P</th>
+                          <th colSpan={15} className="text-center bg-teal-700 text-white">
+                            Tanggal Presensi Bulan {customOverrides.bulan_presensi || 'Agustus'} (Sampel Tgl 1 - 15)
+                          </th>
+                          <th colSpan={5} className="text-center bg-teal-800 text-white">
+                            Rekapitulasi Kehadiran
+                          </th>
+                        </tr>
+                        <tr>
+                          {Array.from({ length: 15 }, (_, i) => (
+                            <th key={i + 1} className="w-5 text-center font-mono text-[10px] bg-teal-600 text-white">
+                              {i + 1}
+                            </th>
+                          ))}
+                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Hadir (Formula =COUNTIF)">H</th>
+                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Sakit (Formula =COUNTIF)">S</th>
+                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Izin (Formula =COUNTIF)">I</th>
+                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Alpa (Formula =COUNTIF)">A</th>
+                          <th className="w-10 text-center font-bold bg-teal-800 text-white" title="Persentase Kehadiran">%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {effectiveStudents.slice(0, 15).map((s: StudentOverrideItem, idx: number) => (
+                          <tr key={idx}>
+                            <td className="text-center font-bold">{s.nomor_absen || idx + 1}</td>
+                            <td className="text-center font-mono text-[10px] text-slate-500">{s.nisn || '-'}</td>
+                            <td className="font-semibold text-slate-900">{s.nama_lengkap}</td>
+                            <td className="text-center font-bold">{s.jenis_kelamin || 'L'}</td>
+                            {Array.from({ length: 15 }, (_, dayIdx) => (
+                              <td key={dayIdx} className="text-center font-mono text-[10px] text-teal-800">
+                                {dayIdx % 7 === 5 || dayIdx % 7 === 6 ? '•' : 'H'}
+                              </td>
+                            ))}
+                            <td className="text-center font-mono font-bold text-teal-700">11</td>
+                            <td className="text-center font-mono text-slate-500">0</td>
+                            <td className="text-center font-mono text-slate-500">0</td>
+                            <td className="text-center font-mono text-slate-500">0</td>
+                            <td className="text-center font-mono font-bold text-teal-900 bg-teal-50">100%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-slate-100 font-bold border-t-2 border-slate-400">
+                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Total Rekapitulasi Kelas (Formula Excel)</td>
+                          <td colSpan={15} className="text-center text-[10px] text-slate-500 italic">Formula Aktif =COUNTIF(E10:AI10, "H") per baris</td>
+                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
+                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
+                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
+                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
+                          <td className="text-center font-mono font-extrabold text-teal-900 bg-teal-100">=AVERAGE</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <p className="text-[11px] text-slate-500 italic">
+                    * Dokumen unduhan (.xlsx) mencakup seluruh 31 hari penuh dengan formula aktif live, dapat dibuka dan dihitung otomatis di Microsoft Excel maupun Google Sheets.
+                  </p>
+                </div>
+              )}
+
+              {/* Service 15: Live Preview Buku Pengolahan Daftar Nilai */}
+              {activeService.id === '15_daftar_nilai' && (
+                <div className="mt-5 space-y-5 text-xs leading-relaxed">
+                  <div className="text-center">
+                    <h2 className="text-base font-extrabold uppercase text-slate-900">
+                      BUKU DAFTAR NILAI PESERTA DIDIK
+                    </h2>
+                    <p className="font-bold uppercase text-slate-700">
+                      KURIKULUM MERDEKA — TAHUN AJARAN 2026/2027 (SEMESTER {semester})
+                    </p>
+                  </div>
+
+                  {/* Identitas Metadata */}
+                  <div className="paper-table-container">
+                    <table className="paper-table">
+                      <tbody>
+                        <tr>
+                          <th className="w-1/4 text-left">Mata Pelajaran</th>
+                          <td className="w-1/4 font-semibold">{selectedSubject?.nama_mapel}</td>
+                          <th className="w-1/4 text-left">Guru Pengampu</th>
+                          <td className="w-1/4 font-semibold">{teacher.nama_guru || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th className="text-left">Kelas / Rombel</th>
+                          <td className="font-semibold">{customOverrides.nama_rombel || activeClassroom?.nama_rombel || `Kelas ${kelas}`}</td>
+                          <th className="text-left">KKTP Minimum</th>
+                          <td className="font-semibold text-blue-700">{customOverrides.kktp_nilai || 75} (Tuntas &ge; {customOverrides.kktp_nilai || 75})</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Tabel Daftar Nilai */}
+                  <div className="paper-table-container">
+                    <table className="paper-table text-[11px]">
+                      <thead>
+                        <tr>
+                          <th rowSpan={2} className="w-8 text-center">No</th>
+                          <th rowSpan={2} className="w-20 text-center">NISN</th>
+                          <th rowSpan={2} className="text-left min-w-[140px]">Nama Lengkap Siswa</th>
+                          <th rowSpan={2} className="w-8 text-center">L/P</th>
+                          <th colSpan={5} className="text-center bg-blue-900 text-white">
+                            Asesmen Formatif (Lingkup TP)
+                          </th>
+                          <th colSpan={3} className="text-center bg-blue-800 text-white">
+                            Asesmen Sumatif
+                          </th>
+                          <th colSpan={3} className="text-center bg-teal-800 text-white">
+                            Hasil Akhir &amp; Keterangan
+                          </th>
+                        </tr>
+                        <tr>
+                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 1</th>
+                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 2</th>
+                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 3</th>
+                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 4</th>
+                          <th className="w-12 text-center font-bold font-mono text-[10px] bg-blue-700 text-white" title="=AVERAGE">Rata F</th>
+                          <th className="w-10 text-center font-mono text-[10px] bg-blue-700 text-white">STS</th>
+                          <th className="w-10 text-center font-mono text-[10px] bg-blue-700 text-white">SAS</th>
+                          <th className="w-12 text-center font-bold font-mono text-[10px] bg-blue-600 text-white" title="=AVERAGE">Rata S</th>
+                          <th className="w-12 text-center font-bold font-mono text-[10px] bg-teal-700 text-white" title="=ROUND((RataF*50% + RataS*50%),0)">NA</th>
+                          <th className="w-16 text-center font-bold bg-teal-800 text-white" title="=IF(NA>=KKTP)">Status</th>
+                          <th className="min-w-[100px] text-left text-[10px] bg-teal-900 text-white">Capaian Kompetensi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {effectiveStudents.slice(0, 15).map((s: StudentOverrideItem, idx: number) => (
+                          <tr key={idx}>
+                            <td className="text-center font-bold">{s.nomor_absen || idx + 1}</td>
+                            <td className="text-center font-mono text-[10px] text-slate-500">{s.nisn || '-'}</td>
+                            <td className="font-semibold text-slate-900">{s.nama_lengkap}</td>
+                            <td className="text-center font-bold">{s.jenis_kelamin || 'L'}</td>
+                            <td className="text-center font-mono text-slate-700">85</td>
+                            <td className="text-center font-mono text-slate-700">80</td>
+                            <td className="text-center font-mono text-slate-700">88</td>
+                            <td className="text-center font-mono text-slate-700">82</td>
+                            <td className="text-center font-mono font-bold text-blue-800 bg-blue-50">83.8</td>
+                            <td className="text-center font-mono text-slate-700">80</td>
+                            <td className="text-center font-mono text-slate-700">85</td>
+                            <td className="text-center font-mono font-bold text-blue-800 bg-blue-50">82.5</td>
+                            <td className="text-center font-mono font-extrabold text-teal-800 bg-teal-50">83</td>
+                            <td className="text-center font-bold text-[10px] text-emerald-700 bg-emerald-50">TUNTAS</td>
+                            <td className="text-[10px] text-slate-600">Menunjukkan penguasaan optimal</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-slate-100 font-bold border-t border-slate-300">
+                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Nilai Tertinggi Kelas</td>
+                          <td colSpan={8} className="text-center text-[10px] text-slate-400 italic">Formula Excel Otomatis</td>
+                          <td className="text-center font-mono text-teal-800">=MAX</td>
+                          <td colSpan={2} className="text-[10px] text-slate-500">Capaian tertinggi rombel</td>
+                        </tr>
+                        <tr className="bg-slate-100 font-bold">
+                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Nilai Terendah Kelas</td>
+                          <td colSpan={8} className="text-center text-[10px] text-slate-400 italic">Formula Excel Otomatis</td>
+                          <td className="text-center font-mono text-teal-800">=MIN</td>
+                          <td colSpan={2} className="text-[10px] text-slate-500">Batas bawah evaluasi</td>
+                        </tr>
+                        <tr className="bg-slate-100 font-bold">
+                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Rata-rata Kelas</td>
+                          <td colSpan={8} className="text-center text-[10px] text-slate-400 italic">Formula Excel Otomatis</td>
+                          <td className="text-center font-mono text-teal-800">=AVERAGE</td>
+                          <td colSpan={2} className="text-[10px] text-slate-500">Mean nilai akhir</td>
+                        </tr>
+                        <tr className="bg-teal-50 font-bold border-t-2 border-teal-600 text-teal-900">
+                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Ketuntasan Klasikal (%)</td>
+                          <td colSpan={8} className="text-center text-[10px] text-teal-700 italic">Formula =COUNTIF(Status, "TUNTAS")/Total</td>
+                          <td colSpan={3} className="text-center font-mono font-extrabold text-teal-900">=ROUND((COUNTIF/COUNT)*100, 1)%</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <p className="text-[11px] text-slate-500 italic">
+                    * Dokumen unduhan (.xlsx) mencakup formula aktif live: rata-rata formatif, pembobotan sumatif (STS/SAS), Nilai Akhir (NA), status KKTP, dan statistik kelas.
+                  </p>
                 </div>
               )}
 

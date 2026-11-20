@@ -1,7 +1,14 @@
 export type Jenjang = 'SD' | 'SMP' | 'SMA';
 export type PaperSize = 'F4' | 'A4';
 export type OutputFormat = 'docx' | 'xlsx' | 'pdf';
-export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd';
+export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '13_presensi' | '15_daftar_nilai';
+
+export interface StudentOverrideItem {
+  nomor_absen?: number;
+  nisn?: string;
+  nama_lengkap: string;
+  jenis_kelamin?: 'L' | 'P';
+}
 
 export interface LearningObjective {
   code: string;
@@ -101,6 +108,13 @@ export interface CustomDocumentOverrides {
   soal_asesmen_akhir?: string[];
   catatan_khusus?: string;
   cadangan_jp?: number;
+  students?: StudentOverrideItem[];
+  nama_rombel?: string;
+  wali_kelas?: string;
+  bulan_presensi?: string;
+  kktp_nilai?: number;
+  daftar_asesmen_bab?: string[];
+  bobot_nilai?: Record<string, number>;
 }
 
 export interface DocumentGenerateRequest {

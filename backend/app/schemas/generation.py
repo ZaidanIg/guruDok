@@ -14,6 +14,8 @@ class ServiceIdEnum(str, Enum):
     KKTP = "07_kktp"
     MODUL_AJAR = "08_modul_ajar"
     LKPD = "09_lkpd"
+    PRESENSI = "13_presensi"
+    DAFTAR_NILAI = "15_daftar_nilai"
 
 
 class OutputFormatEnum(str, Enum):
@@ -22,8 +24,16 @@ class OutputFormatEnum(str, Enum):
     PDF = "pdf"
 
 
+class StudentItemInput(BaseModel):
+    """Pydantic model for student input in Presensi and Daftar Nilai."""
+    nomor_absen: Optional[int] = Field(None, ge=1)
+    nisn: Optional[str] = Field("-", max_length=30)
+    nama_lengkap: str = Field(..., max_length=200)
+    jenis_kelamin: Optional[str] = Field("L", max_length=10)
+
+
 class CustomDocumentOverrides(BaseModel):
-    """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, and assessments."""
+    """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, assessments, and classroom rosters."""
     custom_tps: Optional[List[CustomTpItem]] = None
     tujuan_pembelajaran_custom: Optional[List[CustomTpItem]] = None
     custom_alokasi_jp: Optional[int] = Field(None, ge=1, le=200)
@@ -51,6 +61,14 @@ class CustomDocumentOverrides(BaseModel):
     glosarium: Optional[str] = Field(None, max_length=2000)
     cadangan_jp: Optional[int] = Field(0, ge=0, le=60)
     catatan_khusus: Optional[str] = Field(None, max_length=2000)
+    # Fase 2A: Classroom & Assessment Overrides
+    students: Optional[List[StudentItemInput]] = None
+    nama_rombel: Optional[str] = Field(None, max_length=100)
+    wali_kelas: Optional[str] = Field(None, max_length=150)
+    bulan_presensi: Optional[str] = Field(None, max_length=50)
+    kktp_nilai: Optional[int] = Field(75, ge=1, le=100)
+    daftar_asesmen_bab: Optional[List[str]] = None
+    bobot_nilai: Optional[dict] = None
 
     @model_validator(mode="after")
     def sync_and_sanitize(self):

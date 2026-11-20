@@ -120,6 +120,16 @@ export const getActiveClassroomId = (): string => {
   }
 };
 
+export const getActiveClassroom = (): ClassroomRombel | null => {
+  try {
+    const current = getClassrooms();
+    const activeId = getActiveClassroomId();
+    return current.find((c) => c.id === activeId) || current[0] || null;
+  } catch {
+    return null;
+  }
+};
+
 export const setActiveClassroomId = (id: string): void => {
   try {
     localStorage.setItem(ACTIVE_CLASSROOM_KEY, id);

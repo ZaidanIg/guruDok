@@ -58,6 +58,10 @@ class XlsxDocumentEngine(DocumentEngine):
                 return self._generate_promes_xlsx(request, subject, teacher, raw_template)
             if request.service_id == ServiceIdEnum.KKTP:
                 return self._generate_kktp_xlsx(request, subject, chapter, teacher)
+            if request.service_id == ServiceIdEnum.PRESENSI:
+                return self._generate_presensi_xlsx(request, subject, teacher)
+            if request.service_id == ServiceIdEnum.DAFTAR_NILAI:
+                return self._generate_daftar_nilai_xlsx(request, subject, chapter, teacher)
             return self._generate_structured_curriculum_xlsx(request, subject, chapter, teacher, raw_template)
         except Exception as e:
             raise DocumentGenerationError(f"Failed to generate Excel document: {str(e)}")
@@ -417,6 +421,475 @@ class XlsxDocumentEngine(DocumentEngine):
         ws.column_dimensions["D"].width = 20
         ws.column_dimensions["E"].width = 24
         ws.column_dimensions["F"].width = 28
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def _generate_presensi_xlsx(
+        self,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> bytes:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Presensi Siswa"
+
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+        title_font = Font(name="Calibri", size=13, bold=True, color="0F172A")
+        sub_font = Font(name="Calibri", size=10, italic=True, color="475569")
+        meta_label_font = Font(name="Calibri", size=10, bold=True, color="1E293B")
+        meta_val_font = Font(name="Calibri", size=10, color="334155")
+        th_font = Font(name="Calibri", size=9, bold=True, color="FFFFFF")
+        td_font = Font(name="Calibri", size=9, color="0F172A")
+        td_bold = Font(name="Calibri", size=9, bold=True, color="0F172A")
+
+        th_fill = PatternFill(start_color="0D9488", end_color="0D9488", fill_type="solid")
+        th_rekap_fill = PatternFill(start_color="0F766E", end_color="0F766E", fill_type="solid")
+        summary_fill = PatternFill(start_color="F0FDFA", end_color="F0FDFA", fill_type="solid")
+
+        thin_side = Side(border_style="thin", color="CBD5E1")
+        cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left_align = Alignment(horizontal="left", vertical="center")
+
+        # 1. Title Block
+        tahun_ajaran = (request.teacher_profile.tahun_ajaran if request.teacher_profile and hasattr(request.teacher_profile, "tahun_ajaran") else None) or "2026/2027"
+        ws["A1"] = "PRESENSI DAN KEHADIRAN PESERTA DIDIK"
+        ws["A1"].font = title_font
+        ws["A2"] = f"SEKOLAH: {teacher.nama_sekolah.upper() if teacher.nama_sekolah else 'GURUDOK SCHOOL'}"
+        ws["A2"].font = title_font
+        ws["A3"] = f"TAHUN AJARAN {tahun_ajaran} — SEMESTER {request.semester or 1}"
+        ws["A3"].font = sub_font
+
+        # 2. Metadata Block
+        ov = request.custom_overrides
+        rombel_name = (ov.nama_rombel if ov and ov.nama_rombel else None) or f"{subject.jenjang} Kelas {request.kelas}"
+        bulan_name = (ov.bulan_presensi if ov and ov.bulan_presensi else None) or "Bulan Berjalan"
+
+        ws["A5"] = "Mata Pelajaran"
+        ws["A5"].font = meta_label_font
+        ws["B5"] = f": {subject.nama_mapel}"
+        ws["B5"].font = meta_val_font
+
+        ws["A6"] = "Kelas / Rombel"
+        ws["A6"].font = meta_label_font
+        ws["B6"] = f": {rombel_name}"
+        ws["B6"].font = meta_val_font
+
+        ws["N5"] = "Guru Pengampu"
+        ws["N5"].font = meta_label_font
+        ws["O5"] = f": {teacher.nama_guru or '-'}"
+        ws["O5"].font = meta_val_font
+
+        ws["N6"] = "Bulan Presensi"
+        ws["N6"].font = meta_label_font
+        ws["O6"] = f": {bulan_name}"
+        ws["O6"].font = meta_val_font
+
+        # 3. Table Headers (Row 8 & 9)
+        headers_merged = [
+            ("A8", "A9", "No"),
+            ("B8", "B9", "NISN"),
+            ("C8", "C9", "Nama Lengkap Siswa"),
+            ("D8", "D9", "L/P"),
+            ("E8", "AI8", f"Tanggal Pelaksanaan Presensi ({bulan_name})"),
+            ("AJ8", "AN8", "Rekapitulasi Kehadiran"),
+        ]
+        for top_left, bottom_right, text in headers_merged:
+            ws.merge_cells(f"{top_left}:{bottom_right}")
+            cell = ws[top_left]
+            cell.value = text
+            cell.font = th_font
+            cell.fill = th_rekap_fill if "Rekap" in text else th_fill
+            cell.alignment = center_align
+
+        # Sub-headers for Dates 1-31 (Row 9, Cols E s.d. AI -> col 5 s.d. 35)
+        for day in range(1, 32):
+            col_letter = get_column_letter(4 + day)
+            cell = ws[f"{col_letter}9"]
+            cell.value = day
+            cell.font = th_font
+            cell.fill = th_fill
+            cell.alignment = center_align
+
+        # Sub-headers for Rekap (Row 9, Cols AJ s.d. AN -> col 36 s.d. 40)
+        rekap_labels = [("AJ9", "H"), ("AK9", "S"), ("AL9", "I"), ("AM9", "A"), ("AN9", "%")]
+        for pos, lbl in rekap_labels:
+            cell = ws[pos]
+            cell.value = lbl
+            cell.font = th_font
+            cell.fill = th_rekap_fill
+            cell.alignment = center_align
+
+        # Apply borders to header rows (8 & 9)
+        for r in (8, 9):
+            for c in range(1, 41):
+                col_letter = get_column_letter(c)
+                ws[f"{col_letter}{r}"].border = cell_border
+
+        # 4. Student Data Rows (Starting Row 10)
+        students_input = (ov.students if ov and ov.students else None) or []
+        if not students_input:
+            students_input = [
+                type("obj", (), {"nomor_absen": 1, "nisn": "-", "nama_lengkap": "Ahmad Fauzi", "jenis_kelamin": "L"}),
+                type("obj", (), {"nomor_absen": 2, "nisn": "-", "nama_lengkap": "Budi Santoso", "jenis_kelamin": "L"}),
+                type("obj", (), {"nomor_absen": 3, "nisn": "-", "nama_lengkap": "Citra Lestari", "jenis_kelamin": "P"}),
+                type("obj", (), {"nomor_absen": 4, "nisn": "-", "nama_lengkap": "Dewi Sartika", "jenis_kelamin": "P"}),
+                type("obj", (), {"nomor_absen": 5, "nisn": "-", "nama_lengkap": "Eko Prasetyo", "jenis_kelamin": "L"}),
+            ]
+
+        curr_row = 10
+        for idx, st in enumerate(students_input, start=1):
+            s_name = getattr(st, "nama_lengkap", "") or ""
+            while s_name and s_name[0] in ("=", "+", "-", "@"):
+                s_name = s_name[1:].strip()
+
+            s_nisn = getattr(st, "nisn", "-") or "-"
+            s_gender = getattr(st, "jenis_kelamin", "L") or "L"
+            s_no = getattr(st, "nomor_absen", idx) or idx
+
+            ws.cell(row=curr_row, column=1, value=s_no).alignment = center_align
+            ws.cell(row=curr_row, column=2, value=s_nisn).alignment = center_align
+            ws.cell(row=curr_row, column=3, value=s_name).alignment = left_align
+            ws.cell(row=curr_row, column=4, value=s_gender).alignment = center_align
+
+            # Dates 1-31 (cols 5 to 35)
+            for c in range(5, 36):
+                cell = ws.cell(row=curr_row, column=c, value="")
+                cell.alignment = center_align
+
+            # Active Formulas for Attendance Summary
+            ws.cell(row=curr_row, column=36, value=f'=COUNTIF(E{curr_row}:AI{curr_row}, "H")').alignment = center_align
+            ws.cell(row=curr_row, column=37, value=f'=COUNTIF(E{curr_row}:AI{curr_row}, "S")').alignment = center_align
+            ws.cell(row=curr_row, column=38, value=f'=COUNTIF(E{curr_row}:AI{curr_row}, "I")').alignment = center_align
+            ws.cell(row=curr_row, column=39, value=f'=COUNTIF(E{curr_row}:AI{curr_row}, "A")').alignment = center_align
+            ws.cell(
+                row=curr_row,
+                column=40,
+                value=f'=IF((AJ{curr_row}+AK{curr_row}+AL{curr_row}+AM{curr_row})>0, ROUND((AJ{curr_row}/(AJ{curr_row}+AK{curr_row}+AL{curr_row}+AM{curr_row}))*100, 1), 100)'
+            ).alignment = center_align
+
+            for c in range(1, 41):
+                cell = ws.cell(row=curr_row, column=c)
+                cell.font = td_font
+                cell.border = cell_border
+
+            curr_row += 1
+
+        last_data_row = curr_row - 1
+
+        # 5. Class Summary Row
+        ws.merge_cells(f"A{curr_row}:D{curr_row}")
+        sum_label = ws[f"A{curr_row}"]
+        sum_label.value = "TOTAL REKAPITULASI KELAS"
+        sum_label.font = td_bold
+        sum_label.alignment = Alignment(horizontal="right", vertical="center")
+
+        ws.cell(row=curr_row, column=36, value=f"=SUM(AJ10:AJ{last_data_row})").alignment = center_align
+        ws.cell(row=curr_row, column=37, value=f"=SUM(AK10:AK{last_data_row})").alignment = center_align
+        ws.cell(row=curr_row, column=38, value=f"=SUM(AL10:AL{last_data_row})").alignment = center_align
+        ws.cell(row=curr_row, column=39, value=f"=SUM(AM10:AM{last_data_row})").alignment = center_align
+        ws.cell(row=curr_row, column=40, value=f"=ROUND(AVERAGE(AN10:AN{last_data_row}), 1)").alignment = center_align
+
+        for c in range(1, 41):
+            cell = ws.cell(row=curr_row, column=c)
+            cell.font = td_bold
+            cell.fill = summary_fill
+            cell.border = cell_border
+
+        # Column Widths
+        ws.column_dimensions["A"].width = 5
+        ws.column_dimensions["B"].width = 15
+        ws.column_dimensions["C"].width = 28
+        ws.column_dimensions["D"].width = 6
+        for c in range(5, 36):
+            ws.column_dimensions[get_column_letter(c)].width = 3.6
+        for c in range(36, 40):
+            ws.column_dimensions[get_column_letter(c)].width = 5.5
+        ws.column_dimensions["AN"].width = 8
+
+        # 6. Signature Block
+        sig_row = curr_row + 3
+        city = teacher.kabupaten_kota or "Surabaya"
+        ws.cell(row=sig_row, column=3, value="Mengetahui,")
+        ws.cell(row=sig_row + 1, column=3, value="Kepala Sekolah")
+        ws.cell(row=sig_row + 5, column=3, value=f"({teacher.nama_kepala_sekolah or '................................'})").font = td_bold
+        ws.cell(row=sig_row + 6, column=3, value=f"NIP. {teacher.nip_kepala_sekolah or '-'}")
+
+        ws.cell(row=sig_row, column=32, value=f"{city}, ....................")
+        ws.cell(row=sig_row + 1, column=32, value="Guru Mata Pelajaran")
+        ws.cell(row=sig_row + 5, column=32, value=f"({teacher.nama_guru or '................................'})").font = td_bold
+        ws.cell(row=sig_row + 6, column=32, value=f"NIP. {teacher.nip_guru or '-'}")
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def _generate_daftar_nilai_xlsx(
+        self,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+    ) -> bytes:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Daftar Nilai"
+
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+        title_font = Font(name="Calibri", size=13, bold=True, color="0F172A")
+        sub_font = Font(name="Calibri", size=10, italic=True, color="475569")
+        meta_label_font = Font(name="Calibri", size=10, bold=True, color="1E293B")
+        meta_val_font = Font(name="Calibri", size=10, color="334155")
+        th_font = Font(name="Calibri", size=9, bold=True, color="FFFFFF")
+        td_font = Font(name="Calibri", size=9, color="0F172A")
+        td_bold = Font(name="Calibri", size=9, bold=True, color="0F172A")
+
+        th_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+        th_sumatif_fill = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
+        th_final_fill = PatternFill(start_color="0D9488", end_color="0D9488", fill_type="solid")
+        summary_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+
+        thin_side = Side(border_style="thin", color="CBD5E1")
+        cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left_align = Alignment(horizontal="left", vertical="center")
+
+        ov = request.custom_overrides
+        rombel_name = (ov.nama_rombel if ov and ov.nama_rombel else None) or f"{subject.jenjang} Kelas {request.kelas}"
+        kktp_val = (ov.kktp_nilai if ov and ov.kktp_nilai else None) or 75
+
+        # 1. Title Block
+        tahun_ajaran = (request.teacher_profile.tahun_ajaran if request.teacher_profile and hasattr(request.teacher_profile, "tahun_ajaran") else None) or "2026/2027"
+        ws["A1"] = "BUKU DAFTAR NILAI PESERTA DIDIK"
+        ws["A1"].font = title_font
+        ws["A2"] = f"SEKOLAH: {teacher.nama_sekolah.upper() if teacher.nama_sekolah else 'GURUDOK SCHOOL'}"
+        ws["A2"].font = title_font
+        ws["A3"] = f"KURIKULUM MERDEKA — TAHUN AJARAN {tahun_ajaran} (SEMESTER {request.semester or 1})"
+        ws["A3"].font = sub_font
+
+        # 2. Metadata Block
+        ws["A5"] = "Mata Pelajaran"
+        ws["A5"].font = meta_label_font
+        ws["B5"] = f": {subject.nama_mapel}"
+        ws["B5"].font = meta_val_font
+
+        ws["A6"] = "Kelas / Rombel"
+        ws["A6"].font = meta_label_font
+        ws["B6"] = f": {rombel_name}"
+        ws["B6"].font = meta_val_font
+
+        ws["H5"] = "KKTP Sekolah"
+        ws["H5"].font = meta_label_font
+        ws["I5"] = f": {kktp_val}"
+        ws["I5"].font = meta_val_font
+
+        ws["H6"] = "Guru Pengampu"
+        ws["H6"].font = meta_label_font
+        ws["I6"] = f": {teacher.nama_guru or '-'}"
+        ws["I6"].font = meta_val_font
+
+        # 3. Table Headers (Row 8 & 9)
+        headers_merged = [
+            ("A8", "A9", "No", th_fill),
+            ("B8", "B9", "NISN", th_fill),
+            ("C8", "C9", "Nama Lengkap Siswa", th_fill),
+            ("D8", "D9", "L/P", th_fill),
+            ("E8", "H8", "Asesmen Formatif (Tujuan Pembelajaran)", th_fill),
+            ("I8", "I9", "Rata-rata\nFormatif", th_fill),
+            ("J8", "K8", "Asesmen Sumatif", th_sumatif_fill),
+            ("L8", "L9", "Nilai Akhir\n(NA)", th_final_fill),
+            ("M8", "M9", f"Ketercapaian\n(KKTP {kktp_val})", th_final_fill),
+        ]
+
+        for top_left, bottom_right, text, fill_color in headers_merged:
+            ws.merge_cells(f"{top_left}:{bottom_right}")
+            cell = ws[top_left]
+            cell.value = text
+            cell.font = th_font
+            cell.fill = fill_color
+            cell.alignment = center_align
+
+        # Sub-headers row 9
+        sub_headers = [
+            ("E9", "TP 1", th_fill),
+            ("F9", "TP 2", th_fill),
+            ("G9", "TP 3", th_fill),
+            ("H9", "TP 4", th_fill),
+            ("J9", "STS", th_sumatif_fill),
+            ("K9", "SAS", th_sumatif_fill),
+        ]
+        for pos, lbl, fill_c in sub_headers:
+            cell = ws[pos]
+            cell.value = lbl
+            cell.font = th_font
+            cell.fill = fill_c
+            cell.alignment = center_align
+
+        for r in (8, 9):
+            for c in range(1, 14):
+                col_letter = get_column_letter(c)
+                ws[f"{col_letter}{r}"].border = cell_border
+
+        # 4. Student Data Rows (Starting Row 10)
+        students_input = (ov.students if ov and ov.students else None) or []
+        if not students_input:
+            students_input = [
+                type("obj", (), {"nomor_absen": 1, "nisn": "-", "nama_lengkap": "Ahmad Fauzi", "jenis_kelamin": "L"}),
+                type("obj", (), {"nomor_absen": 2, "nisn": "-", "nama_lengkap": "Budi Santoso", "jenis_kelamin": "L"}),
+                type("obj", (), {"nomor_absen": 3, "nisn": "-", "nama_lengkap": "Citra Lestari", "jenis_kelamin": "P"}),
+                type("obj", (), {"nomor_absen": 4, "nisn": "-", "nama_lengkap": "Dewi Sartika", "jenis_kelamin": "P"}),
+                type("obj", (), {"nomor_absen": 5, "nisn": "-", "nama_lengkap": "Eko Prasetyo", "jenis_kelamin": "L"}),
+            ]
+
+        curr_row = 10
+        for idx, st in enumerate(students_input, start=1):
+            s_name = getattr(st, "nama_lengkap", "") or ""
+            while s_name and s_name[0] in ("=", "+", "-", "@"):
+                s_name = s_name[1:].strip()
+
+            s_nisn = getattr(st, "nisn", "-") or "-"
+            s_gender = getattr(st, "jenis_kelamin", "L") or "L"
+            s_no = getattr(st, "nomor_absen", idx) or idx
+
+            ws.cell(row=curr_row, column=1, value=s_no).alignment = center_align
+            ws.cell(row=curr_row, column=2, value=s_nisn).alignment = center_align
+            ws.cell(row=curr_row, column=3, value=s_name).alignment = left_align
+            ws.cell(row=curr_row, column=4, value=s_gender).alignment = center_align
+
+            # Sample Initial Formatif Scores
+            ws.cell(row=curr_row, column=5, value=78).alignment = center_align
+            ws.cell(row=curr_row, column=6, value=82).alignment = center_align
+            ws.cell(row=curr_row, column=7, value=80).alignment = center_align
+            ws.cell(row=curr_row, column=8, value=85).alignment = center_align
+
+            # Col 9 (I): Rata-rata Formatif =ROUND(AVERAGE(E{curr_row}:H{curr_row}), 1)
+            ws.cell(row=curr_row, column=9, value=f"=ROUND(AVERAGE(E{curr_row}:H{curr_row}), 1)").alignment = center_align
+
+            # Sumatif: STS (Col 10/J) and SAS (Col 11/K)
+            ws.cell(row=curr_row, column=10, value=80).alignment = center_align
+            ws.cell(row=curr_row, column=11, value=82).alignment = center_align
+
+            # Col 12 (L): Nilai Akhir (NA) =ROUND((I{curr_row}*0.4)+(J{curr_row}*0.3)+(K{curr_row}*0.3), 0)
+            ws.cell(
+                row=curr_row,
+                column=12,
+                value=f"=ROUND((I{curr_row}*0.4)+(J{curr_row}*0.3)+(K{curr_row}*0.3), 0)"
+            ).alignment = center_align
+
+            # Col 13 (M): Status Ketercapaian =IF(L{curr_row}>={kktp_val}, "TUNTAS", "BELUM TUNTAS")
+            ws.cell(
+                row=curr_row,
+                column=13,
+                value=f'=IF(L{curr_row}>={kktp_val}, "TUNTAS", "BELUM TUNTAS")'
+            ).alignment = center_align
+
+            for c in range(1, 14):
+                cell = ws.cell(row=curr_row, column=c)
+                cell.font = td_font
+                cell.border = cell_border
+
+            curr_row += 1
+
+        last_data_row = curr_row - 1
+
+        # 5. Class Statistics Summary Rows (at bottom)
+        stat_rows = [
+            ("RATA-RATA KELAS", "AVERAGE"),
+            ("NILAI TERTINGGI", "MAX"),
+            ("NILAI TERENDAH", "MIN"),
+        ]
+
+        for label, fn in stat_rows:
+            ws.merge_cells(f"A{curr_row}:D{curr_row}")
+            ws[f"A{curr_row}"].value = label
+            ws[f"A{curr_row}"].font = td_bold
+            ws[f"A{curr_row}"].alignment = Alignment(horizontal="right", vertical="center")
+
+            for c in range(5, 13):
+                col_letter = get_column_letter(c)
+                if fn == "AVERAGE":
+                    ws.cell(row=curr_row, column=c, value=f"=ROUND(AVERAGE({col_letter}10:{col_letter}{last_data_row}), 1)").alignment = center_align
+                else:
+                    ws.cell(row=curr_row, column=c, value=f"={fn}({col_letter}10:{col_letter}{last_data_row})").alignment = center_align
+
+            ws.cell(row=curr_row, column=13, value="").alignment = center_align
+
+            for c in range(1, 14):
+                cell = ws.cell(row=curr_row, column=c)
+                cell.font = td_bold
+                cell.fill = summary_fill
+                cell.border = cell_border
+            curr_row += 1
+
+        # Summary Row: Jumlah Siswa Tuntas
+        ws.merge_cells(f"A{curr_row}:L{curr_row}")
+        ws[f"A{curr_row}"].value = f"JUMLAH SISWA TUNTAS (KKTP ≥ {kktp_val})"
+        ws[f"A{curr_row}"].font = td_bold
+        ws[f"A{curr_row}"].alignment = Alignment(horizontal="right", vertical="center")
+        ws.cell(row=curr_row, column=13, value=f'=COUNTIF(M10:M{last_data_row}, "TUNTAS")').alignment = center_align
+
+        for c in range(1, 14):
+            cell = ws.cell(row=curr_row, column=c)
+            cell.font = td_bold
+            cell.fill = summary_fill
+            cell.border = cell_border
+        curr_row += 1
+
+        # Summary Row: Persentase Ketuntasan
+        ws.merge_cells(f"A{curr_row}:L{curr_row}")
+        ws[f"A{curr_row}"].value = "PERSENTASE KETUNTASAN KLASIKAL"
+        ws[f"A{curr_row}"].font = td_bold
+        ws[f"A{curr_row}"].alignment = Alignment(horizontal="right", vertical="center")
+        ws.cell(
+            row=curr_row,
+            column=13,
+            value=f'=ROUND((COUNTIF(M10:M{last_data_row}, "TUNTAS")/COUNTA(C10:C{last_data_row}))*100, 1)'
+        ).alignment = center_align
+
+        for c in range(1, 14):
+            cell = ws.cell(row=curr_row, column=c)
+            cell.font = td_bold
+            cell.fill = summary_fill
+            cell.border = cell_border
+
+        # 6. Column Widths
+        ws.column_dimensions["A"].width = 5
+        ws.column_dimensions["B"].width = 15
+        ws.column_dimensions["C"].width = 28
+        ws.column_dimensions["D"].width = 6
+        for c in range(5, 9):
+            ws.column_dimensions[get_column_letter(c)].width = 9
+        ws.column_dimensions["I"].width = 14
+        ws.column_dimensions["J"].width = 10
+        ws.column_dimensions["K"].width = 10
+        ws.column_dimensions["L"].width = 13
+        ws.column_dimensions["M"].width = 18
+
+        # 7. Signature Block
+        sig_row = curr_row + 3
+        city = teacher.kabupaten_kota or "Surabaya"
+        ws.cell(row=sig_row, column=3, value="Mengetahui,")
+        ws.cell(row=sig_row + 1, column=3, value="Kepala Sekolah")
+        ws.cell(row=sig_row + 5, column=3, value=f"({teacher.nama_kepala_sekolah or '................................'})").font = td_bold
+        ws.cell(row=sig_row + 6, column=3, value=f"NIP. {teacher.nip_kepala_sekolah or '-'}")
+
+        ws.cell(row=sig_row, column=10, value=f"{city}, ....................")
+        ws.cell(row=sig_row + 1, column=10, value="Guru Mata Pelajaran")
+        ws.cell(row=sig_row + 5, column=10, value=f"({teacher.nama_guru or '................................'})").font = td_bold
+        ws.cell(row=sig_row + 6, column=10, value=f"NIP. {teacher.nip_guru or '-'}")
 
         buffer = io.BytesIO()
         wb.save(buffer)

@@ -24,6 +24,8 @@ class DocumentGenerationService:
         ServiceIdEnum.KKTP: "Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)",
         ServiceIdEnum.MODUL_AJAR: "Modul Ajar / RPP Lengkap (Deep Learning 3M)",
         ServiceIdEnum.LKPD: "Lembar Kerja Peserta Didik Mandiri (LKPD)",
+        ServiceIdEnum.PRESENSI: "Presensi Siswa Bulanan",
+        ServiceIdEnum.DAFTAR_NILAI: "Buku Pengolahan Daftar Nilai Siswa",
     }
 
     def __init__(
