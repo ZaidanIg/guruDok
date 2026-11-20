@@ -8,14 +8,22 @@ from app.repositories.postgres_teacher_repo import PostgresTeacherRepository
 from app.services.auth_service import AuthService
 from app.services.curriculum_service import CurriculumService
 from app.services.teacher_service import TeacherService
-from app.services.storage_service import LocalStorageService
+from app.services.storage_service import IStorageService, LocalStorageService, R2StorageService
 from app.services.generation_service import DocumentGenerationService
+from app.core.config import settings
+
+def _init_storage_service() -> IStorageService:
+    driver = settings.storage_driver.lower()
+    if driver in ("r2", "s3"):
+        if settings.r2_account_id and settings.r2_access_key_id and settings.r2_secret_access_key:
+            return R2StorageService()
+    return LocalStorageService()
 
 # Global Singleton Instances Backed by PostgreSQL (GuruDocDB)
 _db_manager = get_db_manager()
 _curriculum_repo = PostgresCurriculumRepository(_db_manager, auto_seed=True)
 _teacher_repo = PostgresTeacherRepository(_db_manager)
-_storage_service = LocalStorageService()
+_storage_service: IStorageService = _init_storage_service()
 _auth_service = AuthService(_db_manager)
 _curriculum_service = CurriculumService(_curriculum_repo)
 _teacher_service = TeacherService(_teacher_repo)
@@ -30,7 +38,7 @@ def get_teacher_repo() -> ITeacherRepository:
     return _teacher_repo
 
 
-def get_storage_service() -> LocalStorageService:
+def get_storage_service() -> IStorageService:
     return _storage_service
 
 
