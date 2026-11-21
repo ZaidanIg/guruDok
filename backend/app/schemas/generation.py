@@ -45,6 +45,14 @@ class CustomChapterItem(BaseModel):
     tujuan_pembelajaran: Optional[List[CustomTpItem]] = None
 
 
+class CustomRubrikDplItem(BaseModel):
+    """Pydantic model representing an editable item in the 8 Dimensi Profil Lulusan Rubric (Permendikdasmen No. 10/2025)."""
+    no: int = Field(..., ge=1, le=8)
+    nama_dimensi: str = Field(..., min_length=2, max_length=150)
+    indikator: str = Field(..., min_length=2, max_length=1500)
+    is_active: bool = Field(True)
+
+
 class CustomDocumentOverrides(BaseModel):
     """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, assessments, and classroom rosters."""
     custom_chapters: Optional[List[CustomChapterItem]] = None
@@ -71,7 +79,13 @@ class CustomDocumentOverrides(BaseModel):
     soal_asesmen_proses: Optional[List[str]] = None
     soal_asesmen_akhir: Optional[List[str]] = None
     judul_lkpd: Optional[str] = Field(None, max_length=500)
+    tujuan_lkpd: Optional[str] = Field(None, max_length=1500)
+    petunjuk_lkpd: Optional[str] = Field(None, max_length=2000)
+    tugas_lkpd_memahami: Optional[str] = Field(None, max_length=2000)
+    tugas_lkpd_mengaplikasi: Optional[str] = Field(None, max_length=2000)
+    tugas_lkpd_merefleksi: Optional[str] = Field(None, max_length=2000)
     langkah_lkpd: Optional[List[str]] = None
+    custom_rubrik_dpl: Optional[List[CustomRubrikDplItem]] = None
     glosarium: Optional[str] = Field(None, max_length=2000)
     cadangan_jp: Optional[int] = Field(0, ge=0, le=60)
     catatan_khusus: Optional[str] = Field(None, max_length=2000)
@@ -123,6 +137,11 @@ class CustomDocumentOverrides(BaseModel):
             "pemahaman_bermakna",
             "sarana_prasarana",
             "judul_lkpd",
+            "tujuan_lkpd",
+            "petunjuk_lkpd",
+            "tugas_lkpd_memahami",
+            "tugas_lkpd_mengaplikasi",
+            "tugas_lkpd_merefleksi",
             "glosarium",
             "catatan_khusus",
         ]
@@ -156,7 +175,13 @@ class CustomDocumentOverrides(BaseModel):
                 ]
                 setattr(self, lf, cleaned_list)
 
-        # 5. Sanitize custom_chapters
+        # 5. Sanitize custom_rubrik_dpl
+        if self.custom_rubrik_dpl:
+            for r_item in self.custom_rubrik_dpl:
+                r_item.nama_dimensi = InputSanitizer.sanitize_text(r_item.nama_dimensi, max_length=150)
+                r_item.indikator = InputSanitizer.sanitize_text(r_item.indikator, max_length=1500)
+
+        # 6. Sanitize custom_chapters
         if self.custom_chapters:
             for ch in self.custom_chapters:
                 ch.judul_bab = InputSanitizer.sanitize_text(ch.judul_bab, max_length=300)

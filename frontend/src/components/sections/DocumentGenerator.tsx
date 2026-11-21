@@ -27,6 +27,7 @@ import {
   CurriculumSubject,
   CustomChapterItem,
   CustomDocumentOverrides,
+  CustomRubrikDplItem,
   CustomTpItem,
   GenerationMode,
   Jenjang,
@@ -145,6 +146,57 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [showPedagogicalEditor, setShowPedagogicalEditor] = useState<boolean>(true);
   const [showAssessmentEditor, setShowAssessmentEditor] = useState<boolean>(false);
   const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState<boolean>(false);
+
+  // Sub-editor accordions for Modul Ajar instruments
+  const [openLkpdEditor, setOpenLkpdEditor] = useState<boolean>(false);
+  const [openAsesmenEditor, setOpenAsesmenEditor] = useState<boolean>(false);
+  const [openRubrikEditor, setOpenRubrikEditor] = useState<boolean>(false);
+
+  // Initialize or read custom rubrik dpl
+  const effectiveRubrikDpl: CustomRubrikDplItem[] =
+    customOverrides.custom_rubrik_dpl && customOverrides.custom_rubrik_dpl.length > 0
+      ? customOverrides.custom_rubrik_dpl
+      : DELAPAN_DIMENSI_PROFIL_LULUSAN.map((d, i) => ({
+          no: i + 1,
+          nama_dimensi: d.nama,
+          indikator: d.indikator,
+          is_active: true,
+        }));
+
+  const handleUpdateDplIndicator = (index: number, newIndikator: string) => {
+    const updated = effectiveRubrikDpl.map((item, idx) =>
+      idx === index ? { ...item, indikator: newIndikator } : item
+    );
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_rubrik_dpl: updated,
+    });
+  };
+
+  const handleToggleDplActive = (index: number) => {
+    const updated = effectiveRubrikDpl.map((item, idx) =>
+      idx === index ? { ...item, is_active: !item.is_active } : item
+    );
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_rubrik_dpl: updated,
+    });
+  };
+
+  const handleResetDplDefault = () => {
+    const standardDpl: CustomRubrikDplItem[] = DELAPAN_DIMENSI_PROFIL_LULUSAN.map((d, i) => ({
+      no: i + 1,
+      nama_dimensi: d.nama,
+      indikator: d.indikator,
+      is_active: true,
+    }));
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_rubrik_dpl: standardDpl,
+    });
+  };
+
+  const activeDplList = effectiveRubrikDpl.filter((d) => d.is_active);
 
   // Dual-Mode & Chapter Management State (Alternatif 1 + 4 & Crash-Safe Cache)
   const [isChapterEditorOpen, setIsChapterEditorOpen] = useState<boolean>(false);
@@ -1683,7 +1735,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             </div>
           )}
 
-          {/* Card Khusus 8: Editor Soal Asesmen & Lampiran (KHUSUS MODUL AJAR) */}
+          {/* Card Khusus 4: Editor Soal Asesmen & Lampiran (KHUSUS MODUL AJAR) */}
           {isModulAjar && (
             <div className="clay-card p-5">
               <button
@@ -1693,10 +1745,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               >
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-                    4. Editor Soal Asesmen &amp; Lampiran
+                    4. Lampiran, Asesmen &amp; Rubrik 8 Dimensi
                   </h2>
                   <p className="text-[11px] font-medium text-slate-500">
-                    Kustomisasi butir soal asesmen awal, proses, akhir, dan lampiran LKPD.
+                    Atur dan kustomisasi isi LKPD 3M, butir soal asesmen, serta indikator Rubrik 8 DPL.
                   </p>
                 </div>
                 {showAssessmentEditor ? (
@@ -1707,97 +1759,334 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </button>
 
               {showAssessmentEditor && (
-                <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-slate-700">
-                      Soal Asesmen Awal / Diagnostik (1 baris per soal)
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={effectiveSoalAwal.join('\n')}
-                      onChange={(e) =>
-                        onChangeCustomOverrides({
-                          ...customOverrides,
-                          soal_asesmen_awal: e.target.value
-                            .split('\n')
-                            .map((s) => s.trim())
-                            .filter(Boolean),
-                        })
-                      }
-                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                    />
+                <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
+                  {/* 1. SEKSI ASESMEN */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-800">
+                        <input
+                          type="checkbox"
+                          checked={includeAsesmen}
+                          onChange={onToggleAsesmen}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                        />
+                        <span>Sertakan Instrumen Asesmen Awal, Proses &amp; Akhir</span>
+                      </label>
+                      {includeAsesmen && (
+                        <button
+                          type="button"
+                          onClick={() => setOpenAsesmenEditor(!openAsesmenEditor)}
+                          className="text-[11px] font-bold text-blue-700 hover:underline flex items-center gap-1"
+                        >
+                          {openAsesmenEditor ? 'Tutup Editor ▲' : 'Edit Butir Soal ▼'}
+                        </button>
+                      )}
+                    </div>
+
+                    {includeAsesmen && openAsesmenEditor && (
+                      <div className="mt-3 space-y-3 pt-2 border-t border-slate-200">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-slate-700">
+                            Soal Asesmen Awal / Diagnostik (1 baris per butir)
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={effectiveSoalAwal.join('\n')}
+                            onChange={(e) =>
+                              onChangeCustomOverrides({
+                                ...customOverrides,
+                                soal_asesmen_awal: e.target.value
+                                  .split('\n')
+                                  .map((s) => s.trim())
+                                  .filter(Boolean),
+                              })
+                            }
+                            className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-slate-700">
+                            Soal Asesmen Proses / Formatif (1 baris per butir)
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={effectiveSoalProses.join('\n')}
+                            onChange={(e) =>
+                              onChangeCustomOverrides({
+                                ...customOverrides,
+                                soal_asesmen_proses: e.target.value
+                                  .split('\n')
+                                  .map((s) => s.trim())
+                                  .filter(Boolean),
+                              })
+                            }
+                            className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-slate-700">
+                            Soal Asesmen Akhir / Sumatif (1 baris per butir)
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={effectiveSoalAkhir.join('\n')}
+                            onChange={(e) =>
+                              onChangeCustomOverrides({
+                                ...customOverrides,
+                                soal_asesmen_akhir: e.target.value
+                                  .split('\n')
+                                  .map((s) => s.trim())
+                                  .filter(Boolean),
+                              })
+                            }
+                            className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-slate-700">
-                      Soal Asesmen Proses / Formatif (1 baris per soal)
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={effectiveSoalProses.join('\n')}
-                      onChange={(e) =>
-                        onChangeCustomOverrides({
-                          ...customOverrides,
-                          soal_asesmen_proses: e.target.value
-                            .split('\n')
-                            .map((s) => s.trim())
-                            .filter(Boolean),
-                        })
-                      }
-                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                    />
+                  {/* 2. SEKSI LKPD 3M */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-800">
+                        <input
+                          type="checkbox"
+                          checked={includeLkpd}
+                          onChange={onToggleLkpd}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                        />
+                        <span>Sertakan Lampiran Lembar Kerja Peserta Didik (LKPD)</span>
+                      </label>
+                      {includeLkpd && (
+                        <button
+                          type="button"
+                          onClick={() => setOpenLkpdEditor(!openLkpdEditor)}
+                          className="text-[11px] font-bold text-blue-700 hover:underline flex items-center gap-1"
+                        >
+                          {openLkpdEditor ? 'Tutup Editor ▲' : 'Edit Konten LKPD ▼'}
+                        </button>
+                      )}
+                    </div>
+
+                    {includeLkpd && openLkpdEditor && (
+                      <div className="mt-3 space-y-3 pt-2 border-t border-slate-200">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-slate-700">
+                            Judul LKPD
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              customOverrides.judul_lkpd ??
+                              selectedChapter?.modul_ajar_template?.lampiran?.lkpd?.judul_lkpd ??
+                              `LKPD: ${selectedChapter?.judul_bab || 'Materi Pokok'} (Deep Learning 3M)`
+                            }
+                            onChange={(e) =>
+                              onChangeCustomOverrides({
+                                ...customOverrides,
+                                judul_lkpd: e.target.value,
+                              })
+                            }
+                            className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-slate-700">
+                            Tujuan Aktivitas LKPD
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              customOverrides.tujuan_lkpd ??
+                              selectedChapter?.modul_ajar_template?.lampiran?.lkpd?.tujuan_aktivitas ??
+                              `Mengembangkan penguasaan konsep dan pemecahan masalah materi ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel || ''}.`
+                            }
+                            onChange={(e) =>
+                              onChangeCustomOverrides({
+                                ...customOverrides,
+                                tujuan_lkpd: e.target.value,
+                              })
+                            }
+                            className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-slate-700">
+                            Petunjuk Pengerjaan
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={
+                              customOverrides.petunjuk_lkpd ??
+                              "1. Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.\n2. Bacalah dengan cermat instruksi pemecahan masalah dan bahan ajar yang diberikan.\n3. Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu."
+                            }
+                            onChange={(e) =>
+                              onChangeCustomOverrides({
+                                ...customOverrides,
+                                petunjuk_lkpd: e.target.value,
+                              })
+                            }
+                            className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                          />
+                        </div>
+
+                        <div className="space-y-2 pt-1">
+                          <p className="text-[11px] font-extrabold uppercase text-slate-700">
+                            Tugas Pembelajaran Mendalam (Deep Learning 3M):
+                          </p>
+                          <div>
+                            <label className="mb-0.5 block text-[10px] font-bold text-slate-600">
+                              1. Tahap Memahami (Eksplorasi Konsep Inti)
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={
+                                customOverrides.tugas_lkpd_memahami ??
+                                customOverrides.langkah_inti_memahami?.[0] ??
+                                selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ??
+                                `Pahamilah konsep dasar mengenai ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}. Tuliskan intisari pengertian dan prinsip utamanya!`
+                              }
+                              onChange={(e) =>
+                                onChangeCustomOverrides({
+                                  ...customOverrides,
+                                  tugas_lkpd_memahami: e.target.value,
+                                })
+                              }
+                              className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-0.5 block text-[10px] font-bold text-slate-600">
+                              2. Tahap Mengaplikasi (Praktik / Kasus Kontekstual)
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={
+                                customOverrides.tugas_lkpd_mengaplikasi ??
+                                customOverrides.langkah_inti_mengaplikasi?.[0] ??
+                                selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ??
+                                `Diskusikan bersama kelompok studi kasus kontekstual penerapan ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}. Tuliskan langkah-langkah solusinya!`
+                              }
+                              onChange={(e) =>
+                                onChangeCustomOverrides({
+                                  ...customOverrides,
+                                  tugas_lkpd_mengaplikasi: e.target.value,
+                                })
+                              }
+                              className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-0.5 block text-[10px] font-bold text-slate-600">
+                              3. Tahap Merefleksi (Evaluasi Diri &amp; Kesimpulan)
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={
+                                customOverrides.tugas_lkpd_merefleksi ??
+                                customOverrides.langkah_inti_merefleksi?.[0] ??
+                                selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ??
+                                "Simpulkan manfaat pembelajaran hari ini dan hal apa yang masih perlu diperdalam pada pertemuan selanjutnya!"
+                              }
+                              onChange={(e) =>
+                                onChangeCustomOverrides({
+                                  ...customOverrides,
+                                  tugas_lkpd_merefleksi: e.target.value,
+                                })
+                              }
+                              className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-slate-700">
-                      Soal Asesmen Akhir / Sumatif (1 baris per soal)
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={effectiveSoalAkhir.join('\n')}
-                      onChange={(e) =>
-                        onChangeCustomOverrides({
-                          ...customOverrides,
-                          soal_asesmen_akhir: e.target.value
-                            .split('\n')
-                            .map((s) => s.trim())
-                            .filter(Boolean),
-                        })
-                      }
-                      className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
-                    />
-                  </div>
+                  {/* 3. SEKSI RUBRIK 8 DIMENSI PROFIL LULUSAN */}
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-800">
+                        <input
+                          type="checkbox"
+                          checked={includeRubrik}
+                          onChange={onToggleRubrik}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-700"
+                        />
+                        <span>Sertakan Rubrik 8 Dimensi Profil Lulusan</span>
+                      </label>
+                      {includeRubrik && (
+                        <button
+                          type="button"
+                          onClick={() => setOpenRubrikEditor(!openRubrikEditor)}
+                          className="text-[11px] font-bold text-blue-700 hover:underline flex items-center gap-1"
+                        >
+                          {openRubrikEditor ? 'Tutup Editor ▲' : 'Edit Indikator Rubrik ▼'}
+                        </button>
+                      )}
+                    </div>
 
-                  <div className="space-y-1.5 pt-2">
-                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={includeLkpd}
-                        onChange={onToggleLkpd}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-700"
-                      />
-                      <span>Sertakan Lampiran Lembar Kerja Peserta Didik (LKPD)</span>
-                    </label>
+                    {includeRubrik && openRubrikEditor && (
+                      <div className="mt-3 space-y-3 pt-2 border-t border-slate-200">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">
+                            Pilih dimensi &amp; sesuaikan indikator perilaku amatan:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleResetDplDefault}
+                            className="font-bold text-blue-700 hover:underline flex items-center gap-1"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            <span>Reset Standar BSKAP</span>
+                          </button>
+                        </div>
 
-                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={includeAsesmen}
-                        onChange={onToggleAsesmen}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-700"
-                      />
-                      <span>Sertakan Instrumen Asesmen Awal, Proses &amp; Akhir</span>
-                    </label>
-
-                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={includeRubrik}
-                        onChange={onToggleRubrik}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-700"
-                      />
-                      <span>Sertakan Rubrik 8 Dimensi Profil Lulusan</span>
-                    </label>
+                        <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                          {effectiveRubrikDpl.map((dpl, idx) => (
+                            <div
+                              key={dpl.no}
+                              className={`rounded-lg border p-2.5 transition-colors ${
+                                dpl.is_active ? 'border-slate-300 bg-white' : 'border-slate-200 bg-slate-100 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-800">
+                                  <input
+                                    type="checkbox"
+                                    checked={dpl.is_active}
+                                    onChange={() => handleToggleDplActive(idx)}
+                                    className="h-3.5 w-3.5 rounded border-slate-300 text-blue-700"
+                                  />
+                                  <span>{dpl.no}. {dpl.nama_dimensi}</span>
+                                </label>
+                                <span className="text-[10px] text-slate-400">
+                                  {dpl.is_active ? 'Aktif Dinilai' : 'Tidak Dinilai'}
+                                </span>
+                              </div>
+                              {dpl.is_active && (
+                                <textarea
+                                  rows={2}
+                                  value={dpl.indikator}
+                                  onChange={(e) => handleUpdateDplIndicator(idx, e.target.value)}
+                                  placeholder="Rumusan indikator amatan perilaku di kelas..."
+                                  className="clay-input w-full px-2.5 py-1.5 text-[11px] font-medium text-slate-800"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-slate-500 italic">
+                          * Kolom penilaian (MB, B, BSH, SB) disajikan sebagai kotak ceklis kosong ([ ]) pada dokumen untuk diisi guru saat observasi.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2476,10 +2765,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       <div className="mt-6 border-t-2 border-dashed border-slate-300 pt-5">
                         <div className="text-center mb-3">
                           <h4 className="text-sm font-extrabold uppercase text-slate-900">
-                            LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)
+                            {customOverrides.judul_lkpd || selectedChapter?.modul_ajar_template?.lampiran?.lkpd?.judul_lkpd || 'LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)'}
                           </h4>
                           <p className="text-xs font-bold text-slate-700">
-                            Materi: {selectedChapter?.judul_bab || 'Materi Pokok'} — Pendekatan Deep Learning 3M
+                            {customOverrides.tujuan_lkpd || selectedChapter?.modul_ajar_template?.lampiran?.lkpd?.tujuan_aktivitas || `Materi: ${selectedChapter?.judul_bab || 'Materi Pokok'} — Pendekatan Deep Learning 3M`}
                           </p>
                         </div>
 
@@ -2507,11 +2796,19 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                         {/* Petunjuk & Langkah Kerja LKPD */}
                         <div className="mt-3 space-y-2">
                           <p className="font-bold text-slate-900">Petunjuk Pengerjaan:</p>
-                          <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-700">
-                            <li>Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.</li>
-                            <li>Bacalah dengan cermat setiap instruksi pemecahan masalah dan bahan ajar yang diberikan.</li>
-                            <li>Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu.</li>
-                          </ol>
+                          {customOverrides.petunjuk_lkpd ? (
+                            <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-700">
+                              {customOverrides.petunjuk_lkpd.split('\n').filter((l) => l.trim()).map((line, idx) => (
+                                <li key={idx}>{line.replace(/^\d+[\.\)]\s*/, '')}</li>
+                              ))}
+                            </ol>
+                          ) : (
+                            <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-700">
+                              <li>Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.</li>
+                              <li>Bacalah dengan cermat setiap instruksi pemecahan masalah dan bahan ajar yang diberikan.</li>
+                              <li>Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu.</li>
+                            </ol>
+                          )}
                         </div>
 
                         {/* Tabel Aktivitas LKPD 3M */}
@@ -2532,7 +2829,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                                   <span className="text-[10px] font-normal text-slate-500">(Eksplorasi Konsep)</span>
                                 </td>
                                 <td>
-                                  {customOverrides.langkah_inti_memahami?.[0] ||
+                                  {customOverrides.tugas_lkpd_memahami ||
+                                    customOverrides.langkah_inti_memahami?.[0] ||
                                     selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
                                     `Pahamilah konsep dasar mengenai ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}. Tuliskan intisari pengertian dan prinsip utamanya pada lembar ini!`}
                                   <div className="mt-2 h-14 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
@@ -2547,7 +2845,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                                   <span className="text-[10px] font-normal text-slate-500">(Investigasi &amp; Praktik)</span>
                                 </td>
                                 <td>
-                                  {customOverrides.langkah_inti_mengaplikasi?.[0] ||
+                                  {customOverrides.tugas_lkpd_mengaplikasi ||
+                                    customOverrides.langkah_inti_mengaplikasi?.[0] ||
                                     selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
                                     `Diskusikan bersama kelompok studi kasus kontekstual penerapan ${selectedChapter?.judul_bab}. Temukan solusi dan langkah-langkah pemecahannya secara logis!`}
                                   <div className="mt-2 h-16 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
@@ -2562,7 +2861,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                                   <span className="text-[10px] font-normal text-slate-500">(Kesimpulan &amp; Evaluasi)</span>
                                 </td>
                                 <td>
-                                  {customOverrides.langkah_inti_merefleksi?.[0] ||
+                                  {customOverrides.tugas_lkpd_merefleksi ||
+                                    customOverrides.langkah_inti_merefleksi?.[0] ||
                                     selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
                                     'Simpulkan manfaat pembelajaran hari ini dan hal apa yang masih perlu diperdalam pada pertemuan selanjutnya!'}
                                   <div className="mt-2 h-12 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
@@ -2595,33 +2895,37 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                                 <th className="w-8 text-center">No</th>
                                 <th className="w-1/4">Dimensi Profil Lulusan</th>
                                 <th>Indikator Perilaku Amatan di Kelas</th>
-                                <th className="w-16 text-center">MB</th>
-                                <th className="w-16 text-center">B</th>
-                                <th className="w-16 text-center">BSH</th>
-                                <th className="w-16 text-center">SB</th>
+                                <th className="w-12 text-center">MB</th>
+                                <th className="w-12 text-center">B</th>
+                                <th className="w-12 text-center">BSH</th>
+                                <th className="w-12 text-center">SB</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {DELAPAN_DIMENSI_PROFIL_LULUSAN.map((dpl, idx) => (
-                                <tr key={dpl.kode}>
+                              {activeDplList.map((dpl, idx) => (
+                                <tr key={dpl.no || idx}>
                                   <td className="text-center font-bold">{idx + 1}</td>
                                   <td>
-                                    <p className="font-bold text-slate-900">{dpl.nama}</p>
-                                    <p className="text-[9.5px] text-slate-500">{dpl.deskripsi}</p>
+                                    <p className="font-bold text-slate-900">{dpl.nama_dimensi}</p>
                                   </td>
                                   <td>{dpl.indikator}</td>
-                                  <td className="text-center text-[10px] text-slate-400">Belum konsisten</td>
-                                  <td className="text-center text-[10px] text-slate-400">Mulai terlihat</td>
-                                  <td className="text-center text-[10px] text-blue-700 font-bold">Terlihat konsisten</td>
-                                  <td className="text-center text-[10px] text-emerald-700 font-bold">Membimbing rekan</td>
+                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
+                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
+                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
+                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
-                        <p className="mt-1 text-[10px] text-slate-500 italic">
-                          * Keterangan Skala: MB = Mulai Berkembang (Skor 1), B = Berkembang (Skor 2), BSH = Berkembang Sesuai Harapan (Skor 3), SB = Sangat Berkembang (Skor 4).
-                        </p>
+                        <div className="mt-2 space-y-1 text-[10px] text-slate-500 italic">
+                          <p>
+                            * Keterangan Skala: MB = Mulai Berkembang (Skor 1), B = Berkembang (Skor 2), BSH = Berkembang Sesuai Harapan (Skor 3), SB = Sangat Berkembang (Skor 4).
+                          </p>
+                          <p className="text-slate-600 font-medium">
+                            Catatan / Rekomendasi Guru: ........................................................................................................................................
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -662,16 +662,16 @@ class DocxDocumentEngine(DocumentEngine):
         if request.include_lkpd:
             self._add_section_heading(doc, "H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)")
             lkpd = lampiran.get("lkpd", {})
-            judul_lkpd = lkpd.get("judul_lkpd") or f"LKPD: {ch.judul_bab if ch else subject.nama_mapel} (Deep Learning 3M)"
-            tujuan_lkpd = lkpd.get("tujuan_aktivitas") or f"Mengembangkan penguasaan konsep dan pemecahan masalah materi {ch.judul_bab if ch else subject.nama_mapel}."
+            judul_lkpd = (ov.judul_lkpd if (ov and ov.judul_lkpd) else None) or lkpd.get("judul_lkpd") or f"LKPD: {ch.judul_bab if ch else subject.nama_mapel} (Deep Learning 3M)"
+            tujuan_lkpd = (ov.tujuan_lkpd if (ov and ov.tujuan_lkpd) else None) or lkpd.get("tujuan_aktivitas") or f"Mengembangkan penguasaan konsep dan pemecahan masalah materi {ch.judul_bab if ch else subject.nama_mapel}."
 
             p_lk = doc.add_paragraph()
             p_lk.add_run(f"Judul LKPD: {judul_lkpd}\n").bold = True
-            if lkpd.get("tujuan_aktivitas"):
-                p_lk.add_run(f"Tujuan: {lkpd.get('tujuan_aktivitas')}\n")
-            if lkpd.get("langkah_kerja"):
+            p_lk.add_run(f"Tujuan: {tujuan_lkpd}\n")
+            langkah_kustom = (ov.langkah_lkpd if (ov and ov.langkah_lkpd) else None) or lkpd.get("langkah_kerja")
+            if langkah_kustom:
                 p_lk.add_run("Langkah Kerja:\n")
-                for s in lkpd.get("langkah_kerja", []):
+                for s in langkah_kustom:
                     doc.add_paragraph(f"• {s}")
 
             # Identitas LKPD
@@ -691,11 +691,17 @@ class DocxDocumentEngine(DocumentEngine):
             r_id1[0].paragraphs[0].runs[0].bold = True
             self._style_data_table(t_id, [40, 40, 40, 40], has_header_row=False)
 
+            petunjuk_text = (ov.petunjuk_lkpd if (ov and ov.petunjuk_lkpd) else None)
             p_petunjuk = doc.add_paragraph()
             p_petunjuk.add_run("\nPetunjuk Pengerjaan:\n").bold = True
-            p_petunjuk.add_run("1. Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.\n")
-            p_petunjuk.add_run("2. Bacalah dengan cermat instruksi pemecahan masalah dan bahan ajar yang diberikan.\n")
-            p_petunjuk.add_run("3. Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu.\n")
+            if petunjuk_text:
+                for line in petunjuk_text.split("\n"):
+                    if line.strip():
+                        p_petunjuk.add_run(f"{line.strip()}\n")
+            else:
+                p_petunjuk.add_run("1. Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.\n")
+                p_petunjuk.add_run("2. Bacalah dengan cermat instruksi pemecahan masalah dan bahan ajar yang diberikan.\n")
+                p_petunjuk.add_run("3. Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu.\n")
 
             # Tabel Tugas Aktivitas LKPD 3M
             t_lkpd = doc.add_table(rows=4, cols=3)
@@ -706,17 +712,26 @@ class DocxDocumentEngine(DocumentEngine):
             for c in hdr_lk:
                 c.paragraphs[0].runs[0].bold = True
 
-            tahap1_instruksi = (ov.langkah_inti_memahami[0] if ov and ov.langkah_inti_memahami else None) or (
-                tpl.get("pembelajaran_mendalam_3m", {}).get("memahami") if tpl else None
-            ) or f"Pahamilah konsep dasar materi {ch.judul_bab if ch else subject.nama_mapel}. Tuliskan intisari pengertian dan prinsip utamanya!"
+            tahap1_instruksi = (
+                (ov.tugas_lkpd_memahami if ov and ov.tugas_lkpd_memahami else None)
+                or (ov.langkah_inti_memahami[0] if ov and ov.langkah_inti_memahami else None)
+                or (tpl.get("pembelajaran_mendalam_3m", {}).get("memahami") if tpl else None)
+                or f"Pahamilah konsep dasar materi {ch.judul_bab if ch else subject.nama_mapel}. Tuliskan intisari pengertian dan prinsip utamanya!"
+            )
 
-            tahap2_instruksi = (ov.langkah_inti_mengaplikasi[0] if ov and ov.langkah_inti_mengaplikasi else None) or (
-                tpl.get("pembelajaran_mendalam_3m", {}).get("mengaplikasi") if tpl else None
-            ) or f"Diskusikan bersama kelompok studi kasus kontekstual penerapan {ch.judul_bab if ch else subject.nama_mapel}. Tuliskan langkah-langkah solusinya!"
+            tahap2_instruksi = (
+                (ov.tugas_lkpd_mengaplikasi if ov and ov.tugas_lkpd_mengaplikasi else None)
+                or (ov.langkah_inti_mengaplikasi[0] if ov and ov.langkah_inti_mengaplikasi else None)
+                or (tpl.get("pembelajaran_mendalam_3m", {}).get("mengaplikasi") if tpl else None)
+                or f"Diskusikan bersama kelompok studi kasus kontekstual penerapan {ch.judul_bab if ch else subject.nama_mapel}. Tuliskan langkah-langkah solusinya!"
+            )
 
-            tahap3_instruksi = (ov.langkah_inti_merefleksi[0] if ov and ov.langkah_inti_merefleksi else None) or (
-                tpl.get("pembelajaran_mendalam_3m", {}).get("merefleksi") if tpl else None
-            ) or "Simpulkan manfaat pembelajaran hari ini dan hal apa yang masih perlu diperdalam pada pertemuan selanjutnya!"
+            tahap3_instruksi = (
+                (ov.tugas_lkpd_merefleksi if ov and ov.tugas_lkpd_merefleksi else None)
+                or (ov.langkah_inti_merefleksi[0] if ov and ov.langkah_inti_merefleksi else None)
+                or (tpl.get("pembelajaran_mendalam_3m", {}).get("merefleksi") if tpl else None)
+                or "Simpulkan manfaat pembelajaran hari ini dan hal apa yang masih perlu diperdalam pada pertemuan selanjutnya!"
+            )
 
             r_lk1 = t_lkpd.rows[1].cells
             r_lk1[0].text = "1"
@@ -741,7 +756,7 @@ class DocxDocumentEngine(DocumentEngine):
             p_desc = doc.add_paragraph()
             p_desc.add_run("Rubrik Observasi Ketercapaian Standar Kompetensi Lulusan (8 Dimensi Profil Lulusan):\n").bold = True
 
-            dpl_list = [
+            default_dpl = [
                 ("1", "Keimanan & Ketakwaan terhadap Tuhan YME", "Berdoa sebelum/sesudah belajar, bersikap jujur, dan peduli lingkungan sekitar."),
                 ("2", "Kewargaan & Cinta Tanah Air", "Menghargai keberagaman budaya, menaati kesepakatan kelas, dan toleran."),
                 ("3", "Penalaran Kritis", "Berpikir logis, analitis, mengolah data objektif, dan menarik kesimpulan berbasis bukti."),
@@ -752,27 +767,48 @@ class DocxDocumentEngine(DocumentEngine):
                 ("8", "Komunikasi", "Menyimak aktif, mempresentasikan hasil karya secara runtut, dan menanggapi dengan santun."),
             ]
 
-            t_dpl = doc.add_table(rows=len(dpl_list) + 1, cols=4)
+            active_dpl = []
+            if ov and ov.custom_rubrik_dpl:
+                for item in ov.custom_rubrik_dpl:
+                    if item.is_active:
+                        active_dpl.append((str(item.no), item.nama_dimensi, item.indikator))
+            if not active_dpl:
+                active_dpl = default_dpl
+
+            t_dpl = doc.add_table(rows=len(active_dpl) + 1, cols=7)
             hdr_d = t_dpl.rows[0].cells
             hdr_d[0].text = "No"
             hdr_d[1].text = "Dimensi Profil Lulusan"
             hdr_d[2].text = "Indikator Perilaku Amatan di Kelas"
-            hdr_d[3].text = "Skala Capaian (MB / B / BSH / SB)"
+            hdr_d[3].text = "MB"
+            hdr_d[4].text = "B"
+            hdr_d[5].text = "BSH"
+            hdr_d[6].text = "SB"
             for c in hdr_d:
                 c.paragraphs[0].runs[0].bold = True
+                self._format_header_cell(c, width_mm=10)
+            self._format_header_cell(hdr_d[1], width_mm=45)
+            self._format_header_cell(hdr_d[2], width_mm=65)
 
-            for idx, (no_str, nama_dim, ind_dim) in enumerate(dpl_list, start=1):
+            for idx, (no_str, nama_dim, ind_dim) in enumerate(active_dpl, start=1):
                 r_d = t_dpl.rows[idx].cells
                 r_d[0].text = no_str
                 r_d[1].text = nama_dim
                 r_d[2].text = ind_dim
-                r_d[3].text = "[ ] MB   [ ] B   [ ] BSH   [ ] SB"
+                r_d[3].text = "[  ]"
+                r_d[4].text = "[  ]"
+                r_d[5].text = "[  ]"
+                r_d[6].text = "[  ]"
                 r_d[1].paragraphs[0].runs[0].bold = True
+                for ci in [0, 3, 4, 5, 6]:
+                    r_d[ci].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-            self._style_data_table(t_dpl, [12, 45, 68, 35], has_header_row=True)
+            self._style_data_table(t_dpl, [10, 45, 65, 10, 10, 10, 10], has_header_row=True)
 
             p_ket = doc.add_paragraph()
-            p_ket.add_run("* Keterangan Skala: MB = Mulai Berkembang (1), B = Berkembang (2), BSH = Berkembang Sesuai Harapan (3), SB = Sangat Berkembang (4).").italic = True
+            p_ket.add_run("* Keterangan Skala Observasi Guru: MB = Mulai Berkembang (1), B = Berkembang (2), BSH = Berkembang Sesuai Harapan (3), SB = Sangat Berkembang (4).").italic = True
+            p_cat = doc.add_paragraph()
+            p_cat.add_run("Catatan Observasi Guru: ......................................................................................................................................").italic = True
 
         # Glosarium & Bahan Bacaan (jika tersedia)
         if lampiran.get("glosarium") or lampiran.get("bahan_bacaan_guru_dan_siswa"):

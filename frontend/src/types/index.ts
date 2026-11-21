@@ -102,6 +102,13 @@ export interface ChapterCreateRequest {
   daftar_tp?: CustomTpItem[];
 }
 
+export interface CustomRubrikDplItem {
+  no: number;
+  nama_dimensi: string;
+  indikator: string;
+  is_active: boolean;
+}
+
 export interface CustomDocumentOverrides {
   custom_chapters?: CustomChapterItem[];
   alokasi_jp_bab?: number;
@@ -120,6 +127,14 @@ export interface CustomDocumentOverrides {
   soal_asesmen_awal?: string[];
   soal_asesmen_proses?: string[];
   soal_asesmen_akhir?: string[];
+  judul_lkpd?: string;
+  tujuan_lkpd?: string;
+  petunjuk_lkpd?: string;
+  tugas_lkpd_memahami?: string;
+  tugas_lkpd_mengaplikasi?: string;
+  tugas_lkpd_merefleksi?: string;
+  langkah_lkpd?: string[];
+  custom_rubrik_dpl?: CustomRubrikDplItem[];
   catatan_khusus?: string;
   cadangan_jp?: number;
   students?: StudentOverrideItem[];

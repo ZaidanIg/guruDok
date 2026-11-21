@@ -356,28 +356,29 @@ class PdfDocumentEngine(DocumentEngine):
         if request.include_lkpd:
             self._add_section_title(pdf, "H. LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)")
             lkpd = lampiran.get("lkpd", {})
+            judul_lk = (ov.judul_lkpd if (ov and ov.judul_lkpd) else None) or lkpd.get("judul_lkpd") or f"LKPD: {ch_title} (Pendekatan Deep Learning 3M)"
+            tujuan_lk = (ov.tujuan_lkpd if (ov and ov.tujuan_lkpd) else None) or lkpd.get("tujuan_aktivitas") or f"Mengembangkan penguasaan kompetensi materi {ch_title} secara kolaboratif."
+            t1_lk = (ov.tugas_lkpd_memahami if (ov and ov.tugas_lkpd_memahami) else None) or "Pelajari konsep dasar materi bersama kelompok."
+            t2_lk = (ov.tugas_lkpd_mengaplikasi if (ov and ov.tugas_lkpd_mengaplikasi) else None) or "Diskusikan solusi studi kasus kontekstual pemecahan masalah."
+            t3_lk = (ov.tugas_lkpd_merefleksi if (ov and ov.tugas_lkpd_merefleksi) else None) or "Simpulkan manfaat pembelajaran hari ini dan evaluasi pemahaman."
+
             pdf.set_font("Helvetica", size=8.5)
             with pdf.table(col_widths=(45, 115), line_height=5.2, first_row_as_headings=False) as table:
                 r1 = table.row()
                 r1.cell("Judul LKPD", style=BOLD_STYLE)
-                r1.cell(_ascii_safe(lkpd.get("judul_lkpd") or f"LKPD: {ch_title} (Pendekatan Deep Learning 3M)"))
+                r1.cell(_ascii_safe(judul_lk))
                 r2 = table.row()
                 r2.cell("Tujuan Aktivitas", style=BOLD_STYLE)
-                r2.cell(_ascii_safe(lkpd.get("tujuan_aktivitas") or f"Mengembangkan penguasaan kompetensi materi {ch_title} secara kolaboratif."))
+                r2.cell(_ascii_safe(tujuan_lk))
                 r3 = table.row()
                 r3.cell("Langkah 3M", style=BOLD_STYLE)
-                langkah_list = lkpd.get("langkah_kerja") or [
-                    "1. Memahami: Mengkaji konsep inti dan prinsip utama materi.",
-                    "2. Mengaplikasi: Mengerjakan studi kasus kontekstual pemecahan masalah.",
-                    "3. Merefleksi: Menarik kesimpulan dan melakukan evaluasi diri.",
-                ]
-                r3.cell(_ascii_safe("\n".join(langkah_list)))
+                r3.cell(_ascii_safe(f"1. Memahami: {t1_lk}\n2. Mengaplikasi: {t2_lk}\n3. Merefleksi: {t3_lk}"))
             pdf.ln(2)
 
         # I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan
         if request.include_rubrik:
             self._add_section_title(pdf, "I. LAMPIRAN 2: RUBRIK 8 DIMENSI PROFIL LULUSAN (PERMENDIKDASMEN 10/2025)")
-            dpl_rows = [
+            default_dpl = [
                 ("1", "Keimanan & Ketakwaan Tuhan YME", "Berdoa, bersikap jujur, dan peduli lingkungan sekitar."),
                 ("2", "Kewargaan & Cinta Tanah Air", "Menghargai keberagaman, patuh aturan, dan toleran."),
                 ("3", "Penalaran Kritis", "Berpikir logis, analitis, dan menarik kesimpulan berbasis bukti."),
@@ -387,19 +388,38 @@ class PdfDocumentEngine(DocumentEngine):
                 ("7", "Kesehatan & Kebugaran", "Menjaga kebersihan, keselamatan praktik, dan fokus emosi positif."),
                 ("8", "Komunikasi", "Menyimak aktif, presentasi runtut, dan menanggapi santun."),
             ]
+
+            active_dpl = []
+            if ov and ov.custom_rubrik_dpl:
+                for item in ov.custom_rubrik_dpl:
+                    if item.is_active:
+                        active_dpl.append((str(item.no), item.nama_dimensi, item.indikator))
+            if not active_dpl:
+                active_dpl = default_dpl
+
             pdf.set_font("Helvetica", size=7.5)
-            with pdf.table(col_widths=(10, 50, 70, 30), line_height=4.8, first_row_as_headings=True) as table:
+            with pdf.table(col_widths=(8, 42, 62, 12, 12, 12, 12), line_height=4.8, first_row_as_headings=True) as table:
                 hdr = table.row()
                 hdr.cell("No", style=BOLD_STYLE)
                 hdr.cell("Dimensi Profil Lulusan", style=BOLD_STYLE)
                 hdr.cell("Indikator Perilaku Amatan", style=BOLD_STYLE)
-                hdr.cell("Skala Capaian", style=BOLD_STYLE)
-                for no_s, n_d, i_d in dpl_rows:
+                hdr.cell("MB", style=BOLD_STYLE)
+                hdr.cell("B", style=BOLD_STYLE)
+                hdr.cell("BSH", style=BOLD_STYLE)
+                hdr.cell("SB", style=BOLD_STYLE)
+                for no_s, n_d, i_d in active_dpl:
                     r = table.row()
                     r.cell(no_s)
                     r.cell(_ascii_safe(n_d), style=BOLD_STYLE)
                     r.cell(_ascii_safe(i_d))
-                    r.cell("MB / B / BSH / SB")
+                    r.cell("[  ]")
+                    r.cell("[  ]")
+                    r.cell("[  ]")
+                    r.cell("[  ]")
+            pdf.ln(1)
+            pdf.set_font("Helvetica", "I", 7.5)
+            pdf.cell(0, 4, _ascii_safe("* Skala Observasi: MB = Mulai Berkembang (1), B = Berkembang (2), BSH = Berkembang Sesuai Harapan (3), SB = Sangat Berkembang (4)."), new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 4, _ascii_safe("Catatan Observasi Guru: ......................................................................................................................................................"), new_x="LMARGIN", new_y="NEXT")
             pdf.ln(2)
 
         if lampiran.get("glosarium"):
