@@ -32,9 +32,6 @@ export const ServiceModeSelectionModal: React.FC<ServiceModeSelectionModalProps>
         aria-modal="true"
       >
         <div className="text-center mb-6">
-          <span className="inline-block px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 rounded-full mb-2">
-            Pilihan Metode Pembuatan
-          </span>
           <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
             {service.title}
           </h2>

@@ -42,6 +42,7 @@ import {
   FASE_BY_GRADE,
   GRADES_BY_JENJANG,
   PEDAGOGICAL_MODELS,
+  DELAPAN_DIMENSI_PROFIL_LULUSAN,
 } from '../../constants/services';
 import { AddChapterModal } from '../modals/AddChapterModal';
 import { ChapterEditorModal } from '../curriculum/ChapterEditorModal';
@@ -2467,6 +2468,160 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                             </tbody>
                           </table>
                         </div>
+                      </div>
+                    )}
+
+                    {/* H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD) */}
+                    {includeLkpd && (
+                      <div className="mt-6 border-t-2 border-dashed border-slate-300 pt-5">
+                        <div className="text-center mb-3">
+                          <h4 className="text-sm font-extrabold uppercase text-slate-900">
+                            LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)
+                          </h4>
+                          <p className="text-xs font-bold text-slate-700">
+                            Materi: {selectedChapter?.judul_bab || 'Materi Pokok'} — Pendekatan Deep Learning 3M
+                          </p>
+                        </div>
+
+                        {/* Identitas Kelompok LKPD */}
+                        <div className="paper-table-container">
+                          <table className="paper-table">
+                            <tbody>
+                              <tr>
+                                <th className="w-1/4 text-left">Nama Kelompok / Kelas</th>
+                                <td>........................................................... / Kelas {kelas}</td>
+                                <th className="w-1/4 text-left">Hari, Tanggal</th>
+                                <td>...........................................................</td>
+                              </tr>
+                              <tr>
+                                <th className="text-left">Nama Anggota</th>
+                                <td colSpan={3}>
+                                  1. ........................................................... 2. ...........................................................<br />
+                                  3. ........................................................... 4. ...........................................................
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Petunjuk & Langkah Kerja LKPD */}
+                        <div className="mt-3 space-y-2">
+                          <p className="font-bold text-slate-900">Petunjuk Pengerjaan:</p>
+                          <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-700">
+                            <li>Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.</li>
+                            <li>Bacalah dengan cermat setiap instruksi pemecahan masalah dan bahan ajar yang diberikan.</li>
+                            <li>Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu.</li>
+                          </ol>
+                        </div>
+
+                        {/* Tabel Aktivitas LKPD 3M */}
+                        <div className="paper-table-container mt-3">
+                          <table className="paper-table">
+                            <thead>
+                              <tr>
+                                <th className="w-12 text-center">No</th>
+                                <th className="w-1/3">Tahap Aktivitas (3M)</th>
+                                <th>Instruksi Tugas &amp; Lembar Kerja Siswa</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="text-center font-bold">1</td>
+                                <td className="font-bold">
+                                  Memahami<br />
+                                  <span className="text-[10px] font-normal text-slate-500">(Eksplorasi Konsep)</span>
+                                </td>
+                                <td>
+                                  {customOverrides.langkah_inti_memahami?.[0] ||
+                                    selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
+                                    `Pahamilah konsep dasar mengenai ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}. Tuliskan intisari pengertian dan prinsip utamanya pada lembar ini!`}
+                                  <div className="mt-2 h-14 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
+                                    [Ruang Jawaban / Intisari Pemahaman Konsep Siswa]
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="text-center font-bold">2</td>
+                                <td className="font-bold">
+                                  Mengaplikasi<br />
+                                  <span className="text-[10px] font-normal text-slate-500">(Investigasi &amp; Praktik)</span>
+                                </td>
+                                <td>
+                                  {customOverrides.langkah_inti_mengaplikasi?.[0] ||
+                                    selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
+                                    `Diskusikan bersama kelompok studi kasus kontekstual penerapan ${selectedChapter?.judul_bab}. Temukan solusi dan langkah-langkah pemecahannya secara logis!`}
+                                  <div className="mt-2 h-16 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
+                                    [Ruang Analisis &amp; Sketsa Solusi Pemecahan Masalah]
+                                  </div>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="text-center font-bold">3</td>
+                                <td className="font-bold">
+                                  Merefleksi<br />
+                                  <span className="text-[10px] font-normal text-slate-500">(Kesimpulan &amp; Evaluasi)</span>
+                                </td>
+                                <td>
+                                  {customOverrides.langkah_inti_merefleksi?.[0] ||
+                                    selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
+                                    'Simpulkan manfaat pembelajaran hari ini dan hal apa yang masih perlu diperdalam pada pertemuan selanjutnya!'}
+                                  <div className="mt-2 h-12 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
+                                    [Ruang Refleksi Diri &amp; Kesimpulan Bersama]
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025) */}
+                    {includeRubrik && (
+                      <div className="mt-6 border-t-2 border-dashed border-slate-300 pt-5">
+                        <div className="text-center mb-3">
+                          <h4 className="text-sm font-extrabold uppercase text-slate-900">
+                            LAMPIRAN 2: RUBRIK PENILAIAN 8 DIMENSI PROFIL LULUSAN
+                          </h4>
+                          <p className="text-xs font-bold text-slate-700">
+                            Standar Kompetensi Lulusan sesuai Permendikdasmen No. 10 Tahun 2025
+                          </p>
+                        </div>
+
+                        <div className="paper-table-container">
+                          <table className="paper-table text-[10.5px]">
+                            <thead>
+                              <tr>
+                                <th className="w-8 text-center">No</th>
+                                <th className="w-1/4">Dimensi Profil Lulusan</th>
+                                <th>Indikator Perilaku Amatan di Kelas</th>
+                                <th className="w-16 text-center">MB</th>
+                                <th className="w-16 text-center">B</th>
+                                <th className="w-16 text-center">BSH</th>
+                                <th className="w-16 text-center">SB</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {DELAPAN_DIMENSI_PROFIL_LULUSAN.map((dpl, idx) => (
+                                <tr key={dpl.kode}>
+                                  <td className="text-center font-bold">{idx + 1}</td>
+                                  <td>
+                                    <p className="font-bold text-slate-900">{dpl.nama}</p>
+                                    <p className="text-[9.5px] text-slate-500">{dpl.deskripsi}</p>
+                                  </td>
+                                  <td>{dpl.indikator}</td>
+                                  <td className="text-center text-[10px] text-slate-400">Belum konsisten</td>
+                                  <td className="text-center text-[10px] text-slate-400">Mulai terlihat</td>
+                                  <td className="text-center text-[10px] text-blue-700 font-bold">Terlihat konsisten</td>
+                                  <td className="text-center text-[10px] text-emerald-700 font-bold">Membimbing rekan</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <p className="mt-1 text-[10px] text-slate-500 italic">
+                          * Keterangan Skala: MB = Mulai Berkembang (Skor 1), B = Berkembang (Skor 2), BSH = Berkembang Sesuai Harapan (Skor 3), SB = Sangat Berkembang (Skor 4).
+                        </p>
                       </div>
                     )}
                   </div>

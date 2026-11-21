@@ -657,28 +657,132 @@ class DocxDocumentEngine(DocumentEngine):
 
             self._style_data_table(t_as, [45, 115], has_header_row=True)
 
-        # H. Lampiran (LKPD, Glosarium & Bahan Bacaan)
+        # H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)
         lampiran = tpl.get("lampiran", {})
-        if (request.include_lkpd or request.include_rubrik) and lampiran:
-            self._add_section_heading(doc, "H. Lampiran: Lembar Kerja Peserta Didik (LKPD), Glosarium & Bahan Bacaan")
+        if request.include_lkpd:
+            self._add_section_heading(doc, "H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)")
             lkpd = lampiran.get("lkpd", {})
-            if lkpd:
-                p_lk = doc.add_paragraph()
-                p_lk.add_run(f"Judul LKPD: {lkpd.get('judul_lkpd', 'Lembar Aktivitas Siswa')}\n").bold = True
-                if lkpd.get("tujuan_aktivitas"):
-                    p_lk.add_run(f"Tujuan: {lkpd.get('tujuan_aktivitas')}\n")
+            judul_lkpd = lkpd.get("judul_lkpd") or f"LKPD: {ch.judul_bab if ch else subject.nama_mapel} (Deep Learning 3M)"
+            tujuan_lkpd = lkpd.get("tujuan_aktivitas") or f"Mengembangkan penguasaan konsep dan pemecahan masalah materi {ch.judul_bab if ch else subject.nama_mapel}."
+
+            p_lk = doc.add_paragraph()
+            p_lk.add_run(f"Judul LKPD: {judul_lkpd}\n").bold = True
+            if lkpd.get("tujuan_aktivitas"):
+                p_lk.add_run(f"Tujuan: {lkpd.get('tujuan_aktivitas')}\n")
+            if lkpd.get("langkah_kerja"):
+                p_lk.add_run("Langkah Kerja:\n")
                 for s in lkpd.get("langkah_kerja", []):
                     doc.add_paragraph(f"• {s}")
-            glosarium = lampiran.get("glosarium")
-            if glosarium:
-                p_glo = doc.add_paragraph()
-                p_glo.add_run("Glosarium: ").bold = True
-                p_glo.add_run(str(glosarium))
-            bahan = lampiran.get("bahan_bacaan_guru_dan_siswa")
-            if bahan:
-                p_bah = doc.add_paragraph()
-                p_bah.add_run("Bahan Bacaan Guru dan Siswa: ").bold = True
-                p_bah.add_run(str(bahan))
+
+            # Identitas LKPD
+            t_id = doc.add_table(rows=2, cols=4)
+            r_id0 = t_id.rows[0].cells
+            r_id0[0].text = "Nama Kelompok / Kelas"
+            r_id0[1].text = f"......................... / Kelas {request.kelas}"
+            r_id0[2].text = "Hari, Tanggal"
+            r_id0[3].text = "........................."
+            r_id1 = t_id.rows[1].cells
+            r_id1[0].text = "Anggota Kelompok"
+            r_id1[1].text = "1. ..................... 2. ..................... 3. ..................... 4. ....................."
+            r_id1[1].merge(r_id1[2])
+            r_id1[1].merge(r_id1[3])
+            r_id0[0].paragraphs[0].runs[0].bold = True
+            r_id0[2].paragraphs[0].runs[0].bold = True
+            r_id1[0].paragraphs[0].runs[0].bold = True
+            self._style_data_table(t_id, [40, 40, 40, 40], has_header_row=False)
+
+            p_petunjuk = doc.add_paragraph()
+            p_petunjuk.add_run("\nPetunjuk Pengerjaan:\n").bold = True
+            p_petunjuk.add_run("1. Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.\n")
+            p_petunjuk.add_run("2. Bacalah dengan cermat instruksi pemecahan masalah dan bahan ajar yang diberikan.\n")
+            p_petunjuk.add_run("3. Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu.\n")
+
+            # Tabel Tugas Aktivitas LKPD 3M
+            t_lkpd = doc.add_table(rows=4, cols=3)
+            hdr_lk = t_lkpd.rows[0].cells
+            hdr_lk[0].text = "No"
+            hdr_lk[1].text = "Tahap Aktivitas (3M)"
+            hdr_lk[2].text = "Instruksi Tugas & Lembar Kerja Siswa"
+            for c in hdr_lk:
+                c.paragraphs[0].runs[0].bold = True
+
+            tahap1_instruksi = (ov.langkah_inti_memahami[0] if ov and ov.langkah_inti_memahami else None) or (
+                tpl.get("pembelajaran_mendalam_3m", {}).get("memahami") if tpl else None
+            ) or f"Pahamilah konsep dasar materi {ch.judul_bab if ch else subject.nama_mapel}. Tuliskan intisari pengertian dan prinsip utamanya!"
+
+            tahap2_instruksi = (ov.langkah_inti_mengaplikasi[0] if ov and ov.langkah_inti_mengaplikasi else None) or (
+                tpl.get("pembelajaran_mendalam_3m", {}).get("mengaplikasi") if tpl else None
+            ) or f"Diskusikan bersama kelompok studi kasus kontekstual penerapan {ch.judul_bab if ch else subject.nama_mapel}. Tuliskan langkah-langkah solusinya!"
+
+            tahap3_instruksi = (ov.langkah_inti_merefleksi[0] if ov and ov.langkah_inti_merefleksi else None) or (
+                tpl.get("pembelajaran_mendalam_3m", {}).get("merefleksi") if tpl else None
+            ) or "Simpulkan manfaat pembelajaran hari ini dan hal apa yang masih perlu diperdalam pada pertemuan selanjutnya!"
+
+            r_lk1 = t_lkpd.rows[1].cells
+            r_lk1[0].text = "1"
+            r_lk1[1].text = "Memahami\n(Eksplorasi Konsep)"
+            r_lk1[2].text = f"{tahap1_instruksi}\n\n[Ruang Jawaban / Intisari Konsep Siswa]\n................................................................................................."
+
+            r_lk2 = t_lkpd.rows[2].cells
+            r_lk2[0].text = "2"
+            r_lk2[1].text = "Mengaplikasi\n(Praktik & Kasus)"
+            r_lk2[2].text = f"{tahap2_instruksi}\n\n[Ruang Analisis & Langkah Solusi Siswa]\n................................................................................................."
+
+            r_lk3 = t_lkpd.rows[3].cells
+            r_lk3[0].text = "3"
+            r_lk3[1].text = "Merefleksi\n(Evaluasi Diri)"
+            r_lk3[2].text = f"{tahap3_instruksi}\n\n[Ruang Refleksi & Kesimpulan Siswa]\n................................................................................................."
+
+            self._style_data_table(t_lkpd, [15, 45, 100], has_header_row=True)
+
+        # I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025)
+        if request.include_rubrik:
+            self._add_section_heading(doc, "I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025)")
+            p_desc = doc.add_paragraph()
+            p_desc.add_run("Rubrik Observasi Ketercapaian Standar Kompetensi Lulusan (8 Dimensi Profil Lulusan):\n").bold = True
+
+            dpl_list = [
+                ("1", "Keimanan & Ketakwaan terhadap Tuhan YME", "Berdoa sebelum/sesudah belajar, bersikap jujur, dan peduli lingkungan sekitar."),
+                ("2", "Kewargaan & Cinta Tanah Air", "Menghargai keberagaman budaya, menaati kesepakatan kelas, dan toleran."),
+                ("3", "Penalaran Kritis", "Berpikir logis, analitis, mengolah data objektif, dan menarik kesimpulan berbasis bukti."),
+                ("4", "Kreativitas", "Menghasilkan gagasan inovatif, fleksibel, serta menyajikan karya pemecahan masalah orisinal."),
+                ("5", "Kolaborasi", "Bekerja sama secara aktif dalam kelompok, berbagi peran adil, dan saling membantu rekan."),
+                ("6", "Kemandirian", "Bertanggung jawab atas proses belajar sendiri, inisiatif tinggi, dan tuntas tepat waktu."),
+                ("7", "Kesehatan & Kebugaran", "Menjaga kebersihan dan keselamatan saat praktik, serta mengelola emosi secara positif."),
+                ("8", "Komunikasi", "Menyimak aktif, mempresentasikan hasil karya secara runtut, dan menanggapi dengan santun."),
+            ]
+
+            t_dpl = doc.add_table(rows=len(dpl_list) + 1, cols=4)
+            hdr_d = t_dpl.rows[0].cells
+            hdr_d[0].text = "No"
+            hdr_d[1].text = "Dimensi Profil Lulusan"
+            hdr_d[2].text = "Indikator Perilaku Amatan di Kelas"
+            hdr_d[3].text = "Skala Capaian (MB / B / BSH / SB)"
+            for c in hdr_d:
+                c.paragraphs[0].runs[0].bold = True
+
+            for idx, (no_str, nama_dim, ind_dim) in enumerate(dpl_list, start=1):
+                r_d = t_dpl.rows[idx].cells
+                r_d[0].text = no_str
+                r_d[1].text = nama_dim
+                r_d[2].text = ind_dim
+                r_d[3].text = "[ ] MB   [ ] B   [ ] BSH   [ ] SB"
+                r_d[1].paragraphs[0].runs[0].bold = True
+
+            self._style_data_table(t_dpl, [12, 45, 68, 35], has_header_row=True)
+
+            p_ket = doc.add_paragraph()
+            p_ket.add_run("* Keterangan Skala: MB = Mulai Berkembang (1), B = Berkembang (2), BSH = Berkembang Sesuai Harapan (3), SB = Sangat Berkembang (4).").italic = True
+
+        # Glosarium & Bahan Bacaan (jika tersedia)
+        if lampiran.get("glosarium") or lampiran.get("bahan_bacaan_guru_dan_siswa"):
+            p_sup = doc.add_paragraph()
+            if lampiran.get("glosarium"):
+                p_sup.add_run("\nGlosarium: ").bold = True
+                p_sup.add_run(str(lampiran["glosarium"]) + "\n")
+            if lampiran.get("bahan_bacaan_guru_dan_siswa"):
+                p_sup.add_run("Bahan Bacaan Guru & Siswa: ").bold = True
+                p_sup.add_run(str(lampiran["bahan_bacaan_guru_dan_siswa"]) + "\n")
 
     # =========================================================================
     # 4. SERVICE 05: PROGRAM TAHUNAN / PROTA (1:1 with Live Preview)

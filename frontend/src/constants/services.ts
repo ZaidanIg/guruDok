@@ -162,6 +162,64 @@ export const DEFAULT_TEACHER_PROFILE: TeacherProfile = {
   ukuran_kertas_default: 'F4',
 };
 
+export interface DimensiProfilLulusanItem {
+  kode: string;
+  nama: string;
+  deskripsi: string;
+  indikator: string;
+}
+
+export const DELAPAN_DIMENSI_PROFIL_LULUSAN: DimensiProfilLulusanItem[] = [
+  {
+    kode: 'DPL-1',
+    nama: 'Keimanan dan Ketakwaan terhadap Tuhan YME & Akhlak Mulia',
+    deskripsi: 'Beriman, berakhlak mulia terhadap sesama manusia, alam, dan bangsa.',
+    indikator: 'Berdoa sebelum dan sesudah belajar, bersikap jujur, dan peduli lingkungan.',
+  },
+  {
+    kode: 'DPL-2',
+    nama: 'Kewargaan dan Cinta Tanah Air',
+    deskripsi: 'Menghargai keberagaman budaya, patuh norma sosial, dan cinta tanah air.',
+    indikator: 'Menghargai perbedaan pendapat teman, taat aturan kelas, dan toleran.',
+  },
+  {
+    kode: 'DPL-3',
+    nama: 'Penalaran Kritis',
+    deskripsi: 'Berpikir logis, analitis, mengevaluasi bukti, dan memecahkan masalah kontekstual.',
+    indikator: 'Mengajukan pertanyaan mendalam, menganalisis data, dan menarik kesimpulan berbasis fakta.',
+  },
+  {
+    kode: 'DPL-4',
+    nama: 'Kreativitas',
+    deskripsi: 'Berpikir inovatif dan orisinal dalam mengolah gagasan menjadi karya nyata.',
+    indikator: 'Mengeksplorasi alternatif solusi tugas dan menyajikan produk karya secara orisinal.',
+  },
+  {
+    kode: 'DPL-5',
+    nama: 'Kolaborasi',
+    deskripsi: 'Bekerja sama secara efektif, gotong royong, dan berbagi peran dalam kelompok.',
+    indikator: 'Aktif dalam kerja kelompok, berbagi tugas secara adil, dan saling membantu.',
+  },
+  {
+    kode: 'DPL-6',
+    nama: 'Kemandirian',
+    deskripsi: 'Bertanggung jawab atas proses dan hasil belajar serta memiliki regulasi diri.',
+    indikator: 'Menyelesaikan tugas individu tepat waktu dan melakukan refleksi diri mandiri.',
+  },
+  {
+    kode: 'DPL-7',
+    nama: 'Kesehatan dan Kebugaran',
+    deskripsi: 'Menjaga kebugaran jasmani, kebersihan lingkungan belajar, dan stabilitas emosional.',
+    indikator: 'Menjaga kebersihan dan keselamatan saat praktik, serta mengelola emosi positif.',
+  },
+  {
+    kode: 'DPL-8',
+    nama: 'Komunikasi',
+    deskripsi: 'Menyimak aktif dan menyampaikan ide/hasil analisis secara lisan dan tertulis.',
+    indikator: 'Mempresentasikan hasil karya secara runtut dan menanggapi dengan santun.',
+  },
+];
+
 export const UPCOMING_13_SERVICES = [
   { code: '01', name: 'Kalender Pendidikan & Analisis Minggu Efektif', format: 'XLSX' },
   { code: '02', name: 'Jadwal Pelajaran & Alokasi JP Permendikdasmen 13/2025', format: 'XLSX' },

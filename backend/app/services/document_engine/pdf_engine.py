@@ -352,24 +352,62 @@ class PdfDocumentEngine(DocumentEngine):
                 r_sum.cell(_ascii_safe("Tes tertulis / unjuk kerja akhir bab:\n" + "\n".join(f"- {s}" for s in soal_akhir)))
             pdf.ln(2)
 
-        # H. Lampiran LKPD & Glosarium
-        if request.include_lkpd or request.include_rubrik:
-            self._add_section_title(pdf, "H. LAMPIRAN LKPD & GLOSARIUM")
+        # H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)
+        if request.include_lkpd:
+            self._add_section_title(pdf, "H. LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)")
             lkpd = lampiran.get("lkpd", {})
             pdf.set_font("Helvetica", size=8.5)
             with pdf.table(col_widths=(45, 115), line_height=5.2, first_row_as_headings=False) as table:
-                if lkpd.get("judul_lkpd"):
+                r1 = table.row()
+                r1.cell("Judul LKPD", style=BOLD_STYLE)
+                r1.cell(_ascii_safe(lkpd.get("judul_lkpd") or f"LKPD: {ch_title} (Pendekatan Deep Learning 3M)"))
+                r2 = table.row()
+                r2.cell("Tujuan Aktivitas", style=BOLD_STYLE)
+                r2.cell(_ascii_safe(lkpd.get("tujuan_aktivitas") or f"Mengembangkan penguasaan kompetensi materi {ch_title} secara kolaboratif."))
+                r3 = table.row()
+                r3.cell("Langkah 3M", style=BOLD_STYLE)
+                langkah_list = lkpd.get("langkah_kerja") or [
+                    "1. Memahami: Mengkaji konsep inti dan prinsip utama materi.",
+                    "2. Mengaplikasi: Mengerjakan studi kasus kontekstual pemecahan masalah.",
+                    "3. Merefleksi: Menarik kesimpulan dan melakukan evaluasi diri.",
+                ]
+                r3.cell(_ascii_safe("\n".join(langkah_list)))
+            pdf.ln(2)
+
+        # I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan
+        if request.include_rubrik:
+            self._add_section_title(pdf, "I. LAMPIRAN 2: RUBRIK 8 DIMENSI PROFIL LULUSAN (PERMENDIKDASMEN 10/2025)")
+            dpl_rows = [
+                ("1", "Keimanan & Ketakwaan Tuhan YME", "Berdoa, bersikap jujur, dan peduli lingkungan sekitar."),
+                ("2", "Kewargaan & Cinta Tanah Air", "Menghargai keberagaman, patuh aturan, dan toleran."),
+                ("3", "Penalaran Kritis", "Berpikir logis, analitis, dan menarik kesimpulan berbasis bukti."),
+                ("4", "Kreativitas", "Menghasilkan karya pemecahan masalah yang inovatif dan orisinal."),
+                ("5", "Kolaborasi", "Bekerja sama aktif, berbagi peran adil, dan saling membantu."),
+                ("6", "Kemandirian", "Regulasi diri mandiri, inisiatif belajar, dan tuntas tepat waktu."),
+                ("7", "Kesehatan & Kebugaran", "Menjaga kebersihan, keselamatan praktik, dan fokus emosi positif."),
+                ("8", "Komunikasi", "Menyimak aktif, presentasi runtut, dan menanggapi santun."),
+            ]
+            pdf.set_font("Helvetica", size=7.5)
+            with pdf.table(col_widths=(10, 50, 70, 30), line_height=4.8, first_row_as_headings=True) as table:
+                hdr = table.row()
+                hdr.cell("No", style=BOLD_STYLE)
+                hdr.cell("Dimensi Profil Lulusan", style=BOLD_STYLE)
+                hdr.cell("Indikator Perilaku Amatan", style=BOLD_STYLE)
+                hdr.cell("Skala Capaian", style=BOLD_STYLE)
+                for no_s, n_d, i_d in dpl_rows:
                     r = table.row()
-                    r.cell("Judul LKPD", style=BOLD_STYLE)
-                    r.cell(_ascii_safe(lkpd["judul_lkpd"]))
-                if lkpd.get("langkah_kerja"):
-                    r = table.row()
-                    r.cell("Langkah Aktivitas", style=BOLD_STYLE)
-                    r.cell(_ascii_safe("\n".join(f"- {step}" for step in lkpd["langkah_kerja"])))
-                if lampiran.get("glosarium"):
-                    r = table.row()
-                    r.cell("Glosarium", style=BOLD_STYLE)
-                    r.cell(_ascii_safe(lampiran["glosarium"]))
+                    r.cell(no_s)
+                    r.cell(_ascii_safe(n_d), style=BOLD_STYLE)
+                    r.cell(_ascii_safe(i_d))
+                    r.cell("MB / B / BSH / SB")
+            pdf.ln(2)
+
+        if lampiran.get("glosarium"):
+            pdf.set_font("Helvetica", size=8.5)
+            with pdf.table(col_widths=(45, 115), line_height=5.2, first_row_as_headings=False) as table:
+                r_glo = table.row()
+                r_glo.cell("Glosarium", style=BOLD_STYLE)
+                r_glo.cell(_ascii_safe(lampiran["glosarium"]))
             pdf.ln(2)
 
     def _build_cp_tp(self, pdf: FPDF, request: DocumentGenerateRequest, subject: CurriculumSubject, chapter: Optional[ChapterTopic] = None) -> None:
