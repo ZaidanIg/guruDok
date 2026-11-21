@@ -1,6 +1,7 @@
-import { ChapterTopic, CustomChapterItem, CustomDocumentOverrides, CustomTpItem, GenerationMode } from '../types';
+import { ChapterTopic, CustomChapterItem, CustomCpElementItem, CustomDocumentOverrides, CustomTpItem, GenerationMode } from '../types';
 
 const STORAGE_PREFIX = 'gurudok_curriculum';
+const CP_PREFIX = 'gurudok_cp';
 const DRAFT_PREFIX = 'gurudok_draft';
 const SESSION_KEY = 'gurudok_last_session';
 
@@ -203,5 +204,61 @@ export function getLastSession(): {
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Gets cached custom CP elements for a given subject and mode.
+ */
+export function getCustomCpElements(mode: GenerationMode, subjectId: string): CustomCpElementItem[] | null {
+  if (!subjectId) return null;
+  try {
+    const raw = localStorage.getItem(`${CP_PREFIX}_${mode}_${subjectId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (err) {
+    console.warn('[CurriculumStorage] Failed to read CP cache:', err);
+    return null;
+  }
+}
+
+/**
+ * Saves custom CP elements for a given subject and mode.
+ */
+export function saveCustomCpElements(
+  mode: GenerationMode,
+  subjectId: string,
+  elements: CustomCpElementItem[]
+): void {
+  if (!subjectId) return;
+  try {
+    localStorage.setItem(`${CP_PREFIX}_${mode}_${subjectId}`, JSON.stringify(elements));
+  } catch (err) {
+    console.warn('[CurriculumStorage] Failed to save CP cache:', err);
+  }
+}
+
+/**
+ * Resets / deletes custom CP elements cache for a given subject and mode.
+ */
+export function resetCustomCpElements(mode: GenerationMode, subjectId: string): void {
+  if (!subjectId) return;
+  try {
+    localStorage.removeItem(`${CP_PREFIX}_${mode}_${subjectId}`);
+  } catch (err) {
+    console.warn('[CurriculumStorage] Failed to reset CP cache:', err);
+  }
+}
+
+/**
+ * Checks if custom CP elements cache exists for a given subject and mode.
+ */
+export function hasCustomCpElements(mode: GenerationMode, subjectId: string): boolean {
+  if (!subjectId) return false;
+  try {
+    return Boolean(localStorage.getItem(`${CP_PREFIX}_${mode}_${subjectId}`));
+  } catch {
+    return false;
   }
 }

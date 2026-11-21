@@ -223,3 +223,103 @@ class TestCustomOverridesModulAjar:
         assert b"LKPD" in decompressed
         assert b"Eksplorasi Suku Kata" in decompressed
         assert b"Penalaran Kritis" in decompressed
+
+    def test_custom_cp_elements_schema_validation_and_sanitization(self):
+        """Verifies CustomCpElementItem validates, sanitizes HTML, and rejects XSS injection."""
+        from app.core.exceptions import SecurityViolationError
+        from app.schemas.generation import CustomCpElementItem
+
+        # 1. Script injection must raise SecurityViolationError
+        with pytest.raises(SecurityViolationError):
+            CustomCpElementItem(
+                kode_elemen="EL-01",
+                nama_elemen="Elemen Normal",
+                deskripsi_cp="Deskripsi dengan <script>alert('xss')</script>",
+            )
+
+        # 2. Clean input with HTML tags stripped
+        item = CustomCpElementItem(
+            kode_elemen="EL-01",
+            nama_elemen="Pemahaman <b>Konsep</b>",
+            deskripsi_cp="Peserta didik mampu memahami <i>konsep</i> dasar.",
+        )
+        assert "<b>" not in item.nama_elemen
+        assert "<i>" not in item.deskripsi_cp
+
+        # 3. Can be attached to CustomDocumentOverrides
+        overrides = CustomDocumentOverrides(custom_elemen_cp=[item])
+        assert overrides.custom_elemen_cp is not None
+        assert len(overrides.custom_elemen_cp) == 1
+        assert overrides.custom_elemen_cp[0].kode_elemen == "EL-01"
+
+    def test_docx_and_pdf_render_custom_cp_elements(self, sample_teacher):
+        """Verifies Word and PDF Document Engines render custom CP elements in Service 03 (CP-TP)."""
+        import io
+        import re
+        import zlib
+        from docx import Document
+        from app.schemas.generation import CustomCpElementItem
+
+        repo = PostgresCurriculumRepository()
+        subject = repo.get_subject_by_id("SD-K1-BINDO")
+        chapter = subject.bab_list[0] if subject.bab_list else None
+
+        custom_cp = [
+            CustomCpElementItem(
+                kode_elemen="EL-KUSTOM-01",
+                nama_elemen="Literasi Budaya dan Kewargaan",
+                deskripsi_cp="Peserta didik mampu memahami nilai-nilai luhur kearifan lokal Nusantara secara kontekstual.",
+            )
+        ]
+        overrides = CustomDocumentOverrides(custom_elemen_cp=custom_cp)
+
+        req = DocumentGenerateRequest(
+            service_id=ServiceIdEnum.CP_TP,
+            jenjang="SD",
+            kelas=1,
+            subject_id="SD-K1-BINDO",
+            semester=1,
+            paper_size=PaperSizeEnum.F4,
+            output_format=OutputFormatEnum.DOCX,
+            teacher_profile=TeacherProfileCreate(
+                nama_guru=sample_teacher.nama_guru,
+                nip_guru=sample_teacher.nip_guru,
+                nama_sekolah=sample_teacher.nama_sekolah,
+                kabupaten_kota=sample_teacher.kabupaten_kota,
+                provinsi=sample_teacher.provinsi,
+                nama_kepala_sekolah=sample_teacher.nama_kepala_sekolah,
+                nip_kepala_sekolah=sample_teacher.nip_kepala_sekolah,
+                no_whatsapp=sample_teacher.no_whatsapp,
+            ),
+            include_lkpd=False,
+            include_asesmen=False,
+            include_rubrik=False,
+            custom_overrides=overrides,
+        )
+
+        # 1. Word check
+        docx_engine = DocxDocumentEngine()
+        docx_bytes = docx_engine.generate(req, subject, chapter, sample_teacher)
+        doc = Document(io.BytesIO(docx_bytes))
+
+        # Check in tables for custom CP element
+        found_docx_cp = False
+        for t in doc.tables:
+            for row in t.rows:
+                for cell in row.cells:
+                    if "Literasi Budaya dan Kewargaan" in cell.text:
+                        found_docx_cp = True
+                        break
+        assert found_docx_cp, "Custom CP element name not found in Word document tables!"
+
+        # 2. PDF check
+        req.output_format = OutputFormatEnum.PDF
+        pdf_engine = PdfDocumentEngine()
+        pdf_bytes = pdf_engine.generate(req, subject, chapter, sample_teacher)
+        decompressed = b""
+        for m in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", pdf_bytes, re.DOTALL):
+            try:
+                decompressed += zlib.decompress(m.group(1))
+            except Exception:
+                pass
+        assert b"Literasi Budaya" in decompressed, "Custom CP element name not found in PDF stream!"

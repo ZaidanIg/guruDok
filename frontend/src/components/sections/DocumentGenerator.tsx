@@ -26,6 +26,7 @@ import {
   ChapterTopic,
   CurriculumSubject,
   CustomChapterItem,
+  CustomCpElementItem,
   CustomDocumentOverrides,
   CustomRubrikDplItem,
   CustomTpItem,
@@ -47,11 +48,15 @@ import {
 } from '../../constants/services';
 import { AddChapterModal } from '../modals/AddChapterModal';
 import { ChapterEditorModal } from '../curriculum/ChapterEditorModal';
+import { CpElementEditorModal } from '../curriculum/CpElementEditorModal';
 import {
   getCustomCurriculum,
   saveCustomCurriculum,
   resetCustomCurriculum,
   convertChapterTopicsToCustom,
+  getCustomCpElements,
+  saveCustomCpElements,
+  resetCustomCpElements,
 } from '../../services/curriculumStorage';
 import {
   getClassrooms,
@@ -201,22 +206,24 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   // Dual-Mode & Chapter Management State (Alternatif 1 + 4 & Crash-Safe Cache)
   const [isChapterEditorOpen, setIsChapterEditorOpen] = useState<boolean>(false);
   const [chapterEditing, setChapterEditing] = useState<CustomChapterItem | null>(null);
+  const [isCpEditorOpen, setIsCpEditorOpen] = useState<boolean>(false);
+  const [cpEditing, setCpEditing] = useState<CustomCpElementItem | null>(null);
   const [justSavedNotification, setJustSavedNotification] = useState<boolean>(false);
 
-  // Load and Synchronize Custom Chapters across services for the active subject
+  // Load and Synchronize Custom Chapters & CP Elements across services for the active subject
   useEffect(() => {
     if (!selectedSubject) return;
 
-    const cached = getCustomCurriculum(generationMode, selectedSubject.id);
-    if (cached && cached.length > 0) {
+    // 1. Sync custom chapters
+    const cachedChapters = getCustomCurriculum(generationMode, selectedSubject.id);
+    let chaptersToSync = customOverrides.custom_chapters;
+
+    if (cachedChapters && cachedChapters.length > 0) {
       if (
         !customOverrides.custom_chapters ||
-        JSON.stringify(customOverrides.custom_chapters) !== JSON.stringify(cached)
+        JSON.stringify(customOverrides.custom_chapters) !== JSON.stringify(cachedChapters)
       ) {
-        onChangeCustomOverrides({
-          ...customOverrides,
-          custom_chapters: cached,
-        });
+        chaptersToSync = cachedChapters;
       }
     } else {
       if (generationMode === 'template') {
@@ -229,20 +236,33 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         if (sourceList.length > 0) {
           const converted = convertChapterTopicsToCustom(sourceList);
           saveCustomCurriculum(generationMode, selectedSubject.id, converted);
-          onChangeCustomOverrides({
-            ...customOverrides,
-            custom_chapters: converted,
-          });
+          chaptersToSync = converted;
         }
       } else {
-        // Mode Manual: mulai dari kanvas kosong
         if (!customOverrides.custom_chapters || customOverrides.custom_chapters.length > 0) {
-          onChangeCustomOverrides({
-            ...customOverrides,
-            custom_chapters: [],
-          });
+          chaptersToSync = [];
         }
       }
+    }
+
+    // 2. Sync custom CP elements
+    const cachedCp = getCustomCpElements(generationMode, selectedSubject.id);
+    let cpToSync = customOverrides.custom_elemen_cp;
+    if (cachedCp && cachedCp.length > 0) {
+      if (
+        !customOverrides.custom_elemen_cp ||
+        JSON.stringify(customOverrides.custom_elemen_cp) !== JSON.stringify(cachedCp)
+      ) {
+        cpToSync = cachedCp;
+      }
+    }
+
+    if (chaptersToSync !== customOverrides.custom_chapters || cpToSync !== customOverrides.custom_elemen_cp) {
+      onChangeCustomOverrides({
+        ...customOverrides,
+        custom_chapters: chaptersToSync,
+        custom_elemen_cp: cpToSync,
+      });
     }
   }, [selectedSubject?.id, generationMode, chapters]);
 
@@ -379,6 +399,11 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             } secara kolaboratif.`,
           },
         ];
+
+  const activeCpElements: CustomCpElementItem[] =
+    customOverrides.custom_elemen_cp && customOverrides.custom_elemen_cp.length > 0
+      ? customOverrides.custom_elemen_cp
+      : officialElements;
 
   const effectiveKesiapanMurid =
     customOverrides.kesiapan_murid ??
@@ -580,6 +605,84 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         custom_chapters: [],
       });
     }
+    triggerSaveAlert();
+  };
+
+  const handleOpenAddCp = () => {
+    setCpEditing(null);
+    setIsCpEditorOpen(true);
+  };
+
+  const handleOpenEditCp = (cp: CustomCpElementItem) => {
+    setCpEditing(cp);
+    setIsCpEditorOpen(true);
+  };
+
+  const handleSaveCpFromModal = (savedCp: CustomCpElementItem) => {
+    if (!selectedSubject) return;
+    const currentList = customOverrides.custom_elemen_cp && customOverrides.custom_elemen_cp.length > 0
+      ? customOverrides.custom_elemen_cp
+      : officialElements;
+    let updatedList: CustomCpElementItem[];
+
+    const existingIdx = currentList.findIndex(
+      (c) => c.kode_elemen === savedCp.kode_elemen || c.nama_elemen.toLowerCase() === savedCp.nama_elemen.toLowerCase()
+    );
+
+    if (existingIdx >= 0) {
+      updatedList = currentList.map((item, idx) => (idx === existingIdx ? savedCp : item));
+    } else {
+      updatedList = [...currentList, savedCp];
+    }
+
+    saveCustomCpElements(generationMode, selectedSubject.id, updatedList);
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_elemen_cp: updatedList,
+    });
+    triggerSaveAlert();
+  };
+
+  const handleDeleteCp = (indexToDelete: number) => {
+    if (!selectedSubject) return;
+    const currentList = customOverrides.custom_elemen_cp && customOverrides.custom_elemen_cp.length > 0
+      ? customOverrides.custom_elemen_cp
+      : officialElements;
+    if (currentList.length <= 1) {
+      alert('Mata pelajaran minimal harus memiliki 1 Elemen Capaian Pembelajaran (CP).');
+      return;
+    }
+    const updatedList = currentList.filter((_, idx) => idx !== indexToDelete);
+
+    saveCustomCpElements(generationMode, selectedSubject.id, updatedList);
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_elemen_cp: updatedList,
+    });
+    triggerSaveAlert();
+  };
+
+  const handleResetCp = () => {
+    if (!selectedSubject) return;
+    resetCustomCpElements(generationMode, selectedSubject.id);
+    const bskapList = selectedSubject.elemen_cp_resmi && selectedSubject.elemen_cp_resmi.length > 0
+      ? selectedSubject.elemen_cp_resmi
+      : [
+          {
+            kode_elemen: 'EL-01',
+            nama_elemen: 'Pemahaman Konsep',
+            deskripsi_cp: `Peserta didik mampu memahami dan menerapkan konsep inti ${selectedSubject.nama_mapel} pada ${faseLabel} secara sistematis dan kontekstual.`,
+          },
+          {
+            kode_elemen: 'EL-02',
+            nama_elemen: 'Keterampilan Proses',
+            deskripsi_cp: `Peserta didik mampu mengamati, menanya, merencanakan penyelidikan, menganalisis data, dan mengomunikasikan hasil karya ${selectedSubject.nama_mapel} secara kolaboratif.`,
+          },
+        ];
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_elemen_cp: bskapList,
+    });
     triggerSaveAlert();
   };
 
@@ -1041,14 +1144,25 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     Kontrol penuh CRUD bab, urutan materi, alokasi JP, dan butir TP yang tersinkronisasi lintas layanan.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleOpenAddChapter}
-                  className="clay-btn-primary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Tambah Bab</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenAddCp}
+                    className="clay-btn-secondary inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200"
+                    title="Kelola Elemen Capaian Pembelajaran untuk mata pelajaran ini"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                    <span>Kelola CP ({activeCpElements.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddChapter}
+                    className="clay-btn-primary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Tambah Bab</span>
+                  </button>
+                </div>
               </div>
 
               {/* Kalkulator JP Banner */}
@@ -1503,6 +1617,97 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     className="clay-input w-full px-3 py-2 text-xs font-medium text-slate-800"
                   />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Card Khusus CP: Editor Capaian Pembelajaran (CP) Berdasarkan Elemen (Khusus Layanan 03 CP-TP) */}
+          {isCpTp && (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-600" />
+                    1. Capaian Pembelajaran (CP) Berdasarkan Elemen
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Kelola rumusan elemen dan narasi CP fase ini sesuai BSKAP 046/2025 atau kurikulum sekolah Anda.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {customOverrides.custom_elemen_cp && customOverrides.custom_elemen_cp.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleResetCp}
+                      className="text-[11px] font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                      title="Kembalikan ke rumusan resmi BSKAP 046/2025"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Reset BSKAP
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleOpenAddCp}
+                    className="clay-btn-primary text-xs font-bold px-3 py-1.5 flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Tambah Elemen CP
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {activeCpElements.map((elem, idx) => {
+                  const isCustom = Boolean(customOverrides.custom_elemen_cp && customOverrides.custom_elemen_cp.length > 0);
+                  return (
+                    <div
+                      key={elem.kode_elemen || idx}
+                      className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:border-indigo-300 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {elem.kode_elemen || `EL-${idx + 1}`}
+                          </span>
+                          <h4 className="text-xs font-extrabold text-slate-800">
+                            {elem.nama_elemen}
+                          </h4>
+                          {isCustom ? (
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-50 text-amber-700 border border-amber-200">
+                              Kustom
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-slate-100 text-slate-600 border border-slate-200">
+                              BSKAP 046/2025
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditCp(elem)}
+                            className="p-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                            title="Edit Rumusan CP"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCp(idx)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                            title="Hapus Elemen CP"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        {elem.deskripsi_cp}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2273,7 +2478,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                           </tr>
                         </thead>
                         <tbody>
-                          {officialElements.map((el, i) => (
+                          {activeCpElements.map((el, i) => (
                             <tr key={i}>
                               <td className="font-bold">{el.nama_elemen}</td>
                               <td>{el.deskripsi_cp}</td>
@@ -2370,7 +2575,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                           </tr>
                         </thead>
                         <tbody>
-                          {officialElements.map((el, i) => (
+                          {activeCpElements.map((el, i) => (
                             <tr key={i}>
                               <td className="font-bold">{el.nama_elemen}</td>
                               <td>{el.deskripsi_cp}</td>
@@ -2958,7 +3163,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                           </tr>
                         </thead>
                         <tbody>
-                          {officialElements.map((el, i) => (
+                          {activeCpElements.map((el, i) => (
                             <tr key={i}>
                               <td className="font-bold">{el.nama_elemen}</td>
                               <td>{el.deskripsi_cp}</td>
@@ -3073,7 +3278,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                           </tr>
                         </thead>
                         <tbody>
-                          {officialElements.map((el, i) => (
+                          {activeCpElements.map((el, i) => (
                             <tr key={i}>
                               <td className="font-bold">{el.nama_elemen}</td>
                               <td>{el.deskripsi_cp}</td>
@@ -3605,6 +3810,12 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   <p className="text-[11px] text-slate-600">NIP. {teacher.nip_guru || '-'}</p>
                 </div>
               </div>
+
+              {/* Visual Document Footer Page Number Indicator */}
+              <div className="mt-8 pt-3 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400 italic">
+                <span>Standar Naskah Dinas: Margin Kiri 3.0cm • Atas 2.5cm • Kanan 2.0cm • Bawah 2.5cm | Font: Arial</span>
+                <span className="font-bold text-slate-600">Halaman 1</span>
+              </div>
               </div>
             </div>
           </div>
@@ -3629,11 +3840,23 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         chapterToEdit={chapterEditing}
         defaultSemester={semester}
         suggestedChapterNumber={(activeCustomChapters?.length || 0) + 1}
-        availableCpElements={officialElements}
+        availableCpElements={activeCpElements}
         onSave={handleSaveChapterFromModal}
         onClose={() => {
           setIsChapterEditorOpen(false);
           setChapterEditing(null);
+        }}
+      />
+
+      {/* Modal Editor Elemen Capaian Pembelajaran (CP) Multi-Service */}
+      <CpElementEditorModal
+        isOpen={isCpEditorOpen}
+        elementToEdit={cpEditing}
+        suggestedCode={`EL-${String(activeCpElements.length + 1).padStart(2, '0')}`}
+        onSave={handleSaveCpFromModal}
+        onClose={() => {
+          setIsCpEditorOpen(false);
+          setCpEditing(null);
         }}
       />
     </section>

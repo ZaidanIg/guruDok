@@ -8,9 +8,9 @@ from app.schemas.generation import DocumentGenerateRequest
 class DocumentEngine(ABC):
     """Abstract Strategy interface for deterministic document generation engines."""
 
-    # Official Indonesian standard margins in mm
-    MARGIN_TOP_MM = 25.4
-    MARGIN_BOTTOM_MM = 25.4
+    # Official Indonesian standard margins in mm (Left 3cm for binding, Top 2.5cm, Right 2cm, Bottom 2.5cm)
+    MARGIN_TOP_MM = 25.0
+    MARGIN_BOTTOM_MM = 25.0
     MARGIN_LEFT_MM = 30.0   # 3 cm left for binding
     MARGIN_RIGHT_MM = 20.0
 

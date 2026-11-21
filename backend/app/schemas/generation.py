@@ -53,9 +53,24 @@ class CustomRubrikDplItem(BaseModel):
     is_active: bool = Field(True)
 
 
+class CustomCpElementItem(BaseModel):
+    """Pydantic model representing a custom or modified Capaian Pembelajaran (CP) element."""
+    kode_elemen: str = Field(..., min_length=1, max_length=50)
+    nama_elemen: str = Field(..., min_length=2, max_length=200)
+    deskripsi_cp: str = Field(..., min_length=5, max_length=3000)
+
+    @model_validator(mode="after")
+    def sanitize_fields(self):
+        self.kode_elemen = InputSanitizer.sanitize_text(self.kode_elemen, max_length=50, allow_empty=False)
+        self.nama_elemen = InputSanitizer.sanitize_text(self.nama_elemen, max_length=200, allow_empty=False)
+        self.deskripsi_cp = InputSanitizer.sanitize_text(self.deskripsi_cp, max_length=3000, allow_empty=False)
+        return self
+
+
 class CustomDocumentOverrides(BaseModel):
     """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, assessments, and classroom rosters."""
     custom_chapters: Optional[List[CustomChapterItem]] = None
+    custom_elemen_cp: Optional[List[CustomCpElementItem]] = None
     custom_tps: Optional[List[CustomTpItem]] = None
     tujuan_pembelajaran_custom: Optional[List[CustomTpItem]] = None
     custom_alokasi_jp: Optional[int] = Field(None, ge=1, le=200)

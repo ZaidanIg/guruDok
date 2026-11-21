@@ -84,6 +84,52 @@ def _ascii_safe(text: Any) -> str:
     return s.encode("latin-1", "ignore").decode("latin-1")
 
 
+def _resolve_effective_cp_elements(subject: CurriculumSubject, request: DocumentGenerateRequest) -> List[Dict[str, str]]:
+    """Resolves customized Capaian Pembelajaran (CP) elements if teacher provided custom_elemen_cp, otherwise BSKAP 046/2025 official elements."""
+    ov = request.custom_overrides
+    if ov and ov.custom_elemen_cp and len(ov.custom_elemen_cp) > 0:
+        return [
+            {
+                "kode_elemen": item.kode_elemen,
+                "nama_elemen": item.nama_elemen,
+                "deskripsi_cp": item.deskripsi_cp,
+            }
+            for item in ov.custom_elemen_cp
+        ]
+    elems = getattr(subject, "elemen_cp_resmi", []) or []
+    if elems:
+        return [
+            {
+                "kode_elemen": e.get("kode_elemen", f"EL-{i:02d}"),
+                "nama_elemen": e.get("nama_elemen", "-"),
+                "deskripsi_cp": e.get("deskripsi_cp", "-"),
+            }
+            for i, e in enumerate(elems, start=1)
+        ]
+    return [
+        {
+            "kode_elemen": "EL-01",
+            "nama_elemen": "Pemahaman Konsep",
+            "deskripsi_cp": f"Peserta didik mampu memahami dan menerapkan konsep esensial {subject.nama_mapel} secara mendalam.",
+        },
+        {
+            "kode_elemen": "EL-02",
+            "nama_elemen": "Keterampilan Proses",
+            "deskripsi_cp": f"Peserta didik mampu mengamati, menganalisis, dan memecahkan masalah kontekstual {subject.nama_mapel}.",
+        },
+    ]
+
+
+class GuruDokPDF(FPDF):
+    """Subclass of FPDF providing standardized page numbering and margins."""
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Helvetica", "I", 8.5)
+        self.set_text_color(100, 116, 139)
+        self.cell(0, 10, f"Halaman {self.page_no()}", align="R")
+
+
 class PdfDocumentEngine(DocumentEngine):
     """Engine responsible for generating official PDF (.pdf) documents on F4/A4 paper with bordered tables."""
 
@@ -103,9 +149,9 @@ class PdfDocumentEngine(DocumentEngine):
             else:
                 page_format = (self.A4_WIDTH_MM, self.A4_HEIGHT_MM)
 
-            pdf = FPDF(orientation=orientation, unit="mm", format=page_format)
-            pdf.set_margins(left=18, top=16, right=18)
-            pdf.set_auto_page_break(auto=True, margin=18)
+            pdf = GuruDokPDF(orientation=orientation, unit="mm", format=page_format)
+            pdf.set_margins(left=self.MARGIN_LEFT_MM, top=self.MARGIN_TOP_MM, right=self.MARGIN_RIGHT_MM)
+            pdf.set_auto_page_break(auto=True, margin=self.MARGIN_BOTTOM_MM)
             pdf.add_page()
 
             # 1. KOP Surat Sekolah
@@ -354,6 +400,7 @@ class PdfDocumentEngine(DocumentEngine):
 
         # H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)
         if request.include_lkpd:
+            pdf.add_page()
             self._add_section_title(pdf, "H. LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)")
             lkpd = lampiran.get("lkpd", {})
             judul_lk = (ov.judul_lkpd if (ov and ov.judul_lkpd) else None) or lkpd.get("judul_lkpd") or f"LKPD: {ch_title} (Pendekatan Deep Learning 3M)"
@@ -377,6 +424,7 @@ class PdfDocumentEngine(DocumentEngine):
 
         # I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan
         if request.include_rubrik:
+            pdf.add_page()
             self._add_section_title(pdf, "I. LAMPIRAN 2: RUBRIK 8 DIMENSI PROFIL LULUSAN (PERMENDIKDASMEN 10/2025)")
             default_dpl = [
                 ("1", "Keimanan & Ketakwaan Tuhan YME", "Berdoa, bersikap jujur, dan peduli lingkungan sekitar."),
@@ -476,22 +524,16 @@ class PdfDocumentEngine(DocumentEngine):
         pdf.ln(2)
 
         self._add_section_title(pdf, f"3. Capaian Pembelajaran Fase {subject.fase} Berdasarkan Elemen")
-        elems = getattr(subject, "elemen_cp_resmi", []) or []
+        elems = _resolve_effective_cp_elements(subject, request)
         pdf.set_font("Helvetica", size=8.5)
         with pdf.table(col_widths=(45, 115), line_height=5.2) as table:
             hdr = table.row(style=HEADER_STYLE)
             hdr.cell("Elemen")
             hdr.cell("Deskripsi Capaian Pembelajaran Resmi (BSKAP 046/2025)")
-            if elems:
-                for e in elems:
-                    r = table.row()
-                    r.cell(_ascii_safe(e.get("nama_elemen", "-")), style=BOLD_STYLE)
-                    r.cell(_ascii_safe(e.get("deskripsi_cp", "-")))
-            else:
-                for ch in subject.bab_list[:3]:
-                    r = table.row()
-                    r.cell(_ascii_safe(getattr(ch, "elemen_cp", "Pemahaman Konsep")), style=BOLD_STYLE)
-                    r.cell(_ascii_safe("; ".join(tp.deskripsi for tp in ch.tujuan_pembelajaran)))
+            for e in elems:
+                r = table.row()
+                r.cell(_ascii_safe(e.get("nama_elemen", "-")), style=BOLD_STYLE)
+                r.cell(_ascii_safe(e.get("deskripsi_cp", "-")))
         pdf.ln(2)
 
         self._add_section_title(pdf, "4. Pemetaan Tujuan Pembelajaran (TP) per Bab")
@@ -786,6 +828,7 @@ class PdfDocumentEngine(DocumentEngine):
         pdf.ln(2)
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
+        pdf.add_page()
         pengesahan = teacher.get_lembar_pengesahan()
         pdf.ln(6)
         pdf.set_font("Helvetica", "", 9.5)

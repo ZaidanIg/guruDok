@@ -5,6 +5,7 @@ from docx import Document
 from docx.shared import Mm, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.enum.style import WD_STYLE_TYPE
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls, qn
 
@@ -30,6 +31,42 @@ def _resolve_effective_tps(chapter: Optional[ChapterTopic], request: DocumentGen
             for idx, item in enumerate(custom_list, start=1)
         ]
     return list(chapter.tujuan_pembelajaran) if chapter else []
+
+
+def _resolve_effective_cp_elements(subject: CurriculumSubject, request: DocumentGenerateRequest) -> List[Dict[str, str]]:
+    """Resolves customized Capaian Pembelajaran (CP) elements if teacher provided custom_elemen_cp, otherwise BSKAP 046/2025 official elements."""
+    ov = request.custom_overrides
+    if ov and ov.custom_elemen_cp and len(ov.custom_elemen_cp) > 0:
+        return [
+            {
+                "kode_elemen": item.kode_elemen,
+                "nama_elemen": item.nama_elemen,
+                "deskripsi_cp": item.deskripsi_cp,
+            }
+            for item in ov.custom_elemen_cp
+        ]
+    elems = getattr(subject, "elemen_cp_resmi", []) or []
+    if elems:
+        return [
+            {
+                "kode_elemen": e.get("kode_elemen", f"EL-{i:02d}"),
+                "nama_elemen": e.get("nama_elemen", "-"),
+                "deskripsi_cp": e.get("deskripsi_cp", "-"),
+            }
+            for i, e in enumerate(elems, start=1)
+        ]
+    return [
+        {
+            "kode_elemen": "EL-01",
+            "nama_elemen": "Pemahaman Konsep",
+            "deskripsi_cp": f"Peserta didik mampu memahami dan menerapkan konsep esensial {subject.nama_mapel} secara mendalam.",
+        },
+        {
+            "kode_elemen": "EL-02",
+            "nama_elemen": "Keterampilan Proses",
+            "deskripsi_cp": f"Peserta didik mampu mengamati, menganalisis, dan memecahkan masalah kontekstual {subject.nama_mapel}.",
+        },
+    ]
 
 
 def _resolve_effective_alokasi_jp(chapter: Optional[ChapterTopic], request: DocumentGenerateRequest) -> int:
@@ -87,11 +124,45 @@ class DocxDocumentEngine(DocumentEngine):
             section.left_margin = Mm(self.MARGIN_LEFT_MM)
             section.right_margin = Mm(self.MARGIN_RIGHT_MM)
 
-            style = doc.styles["Normal"]
-            font = style.font
-            font.name = "Arial"
-            font.size = Pt(10)
-            font.color.rgb = RGBColor(15, 23, 42)
+            # 1. Normal Style (Arial 10pt, Line Spacing 1.15, Space After 4pt)
+            normal_style = doc.styles["Normal"]
+            normal_font = normal_style.font
+            normal_font.name = "Arial"
+            normal_font.size = Pt(10)
+            normal_font.color.rgb = RGBColor(15, 23, 42)
+            normal_style.paragraph_format.line_spacing = 1.15
+            normal_style.paragraph_format.space_after = Pt(4)
+
+            # 2. Heading 1 Style (Navigation Pane compatible)
+            try:
+                h1_style = doc.styles["Heading 1"]
+            except KeyError:
+                h1_style = doc.styles.add_style("Heading 1", WD_STYLE_TYPE.PARAGRAPH)
+            h1_font = h1_style.font
+            h1_font.name = "Arial"
+            h1_font.size = Pt(12)
+            h1_font.bold = True
+            h1_font.color.rgb = RGBColor(15, 23, 42)
+            h1_style.paragraph_format.space_before = Pt(10)
+            h1_style.paragraph_format.space_after = Pt(3)
+            h1_style.paragraph_format.keep_with_next = True
+
+            # 3. Heading 2 Style (Sub-heading Navigation Pane)
+            try:
+                h2_style = doc.styles["Heading 2"]
+            except KeyError:
+                h2_style = doc.styles.add_style("Heading 2", WD_STYLE_TYPE.PARAGRAPH)
+            h2_font = h2_style.font
+            h2_font.name = "Arial"
+            h2_font.size = Pt(11)
+            h2_font.bold = True
+            h2_font.color.rgb = RGBColor(30, 58, 138)
+            h2_style.paragraph_format.space_before = Pt(8)
+            h2_style.paragraph_format.space_after = Pt(2)
+            h2_style.paragraph_format.keep_with_next = True
+
+            # 4. Standard Footer Page Number
+            self._add_page_number_to_footer(section)
 
             tpl = raw_template or (chapter.modul_ajar_template if chapter else None)
             if request.service_id == ServiceIdEnum.MODUL_AJAR:
@@ -236,26 +307,25 @@ class DocxDocumentEngine(DocumentEngine):
         self._style_data_table(t_aims, [12, 148], has_header_row=True)
 
         # 3. Karakteristik & 4. Capaian Pembelajaran Fase Berdasarkan Elemen
-        self._add_section_heading(doc, f"3. Karakteristik Mata Pelajaran & 4. Capaian Pembelajaran Fase {subject.fase} Berdasarkan Elemen")
+        self._add_section_heading(doc, f"3. Karakteristik Mata Pelajaran & 4. Capaian Pembelajaran Fase {subject.fase} Berdasarkan Elemen", level=2)
         karakteristik = getattr(subject, "karakteristik_bskap", "") or (
             f"Mata pelajaran {subject.nama_mapel} menerapkan pendekatan pembelajaran mendalam (Deep Learning 3M) yang mengintegrasikan "
             f"pemahaman konsep, keterampilan proses, dan refleksi kontekstual."
         )
         doc.add_paragraph(karakteristik)
 
-        elems = getattr(subject, "elemen_cp_resmi", []) or []
+        elems = _resolve_effective_cp_elements(subject, request)
         t_kar = doc.add_table(rows=1, cols=2)
         t_kar.alignment = WD_TABLE_ALIGNMENT.CENTER
         t_kar.rows[0].cells[0].text = "Elemen"
         t_kar.rows[0].cells[1].text = "Deskripsi Capaian Pembelajaran Resmi (BSKAP 046/2025)"
         self._format_header_cell(t_kar.rows[0].cells[0], width_mm=40)
         self._format_header_cell(t_kar.rows[0].cells[1], width_mm=120)
-        if elems:
-            for e in elems:
-                rc = t_kar.add_row().cells
-                rc[0].text = str(e.get("nama_elemen", "-"))
-                rc[1].text = str(e.get("deskripsi_cp", "-"))
-                rc[0].paragraphs[0].runs[0].bold = True
+        for e in elems:
+            rc = t_kar.add_row().cells
+            rc[0].text = str(e.get("nama_elemen", "-"))
+            rc[1].text = str(e.get("deskripsi_cp", "-"))
+            rc[0].paragraphs[0].runs[0].bold = True
         self._style_data_table(t_kar, [40, 120], has_header_row=True)
 
         # 5. Pemetaan Capaian dan Tujuan Pembelajaran Semester (Tabel KATEGORI | RUMUSAN)
@@ -660,7 +730,8 @@ class DocxDocumentEngine(DocumentEngine):
         # H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)
         lampiran = tpl.get("lampiran", {})
         if request.include_lkpd:
-            self._add_section_heading(doc, "H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)")
+            doc.add_page_break()
+            self._add_section_heading(doc, "H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD)", level=1)
             lkpd = lampiran.get("lkpd", {})
             judul_lkpd = (ov.judul_lkpd if (ov and ov.judul_lkpd) else None) or lkpd.get("judul_lkpd") or f"LKPD: {ch.judul_bab if ch else subject.nama_mapel} (Deep Learning 3M)"
             tujuan_lkpd = (ov.tujuan_lkpd if (ov and ov.tujuan_lkpd) else None) or lkpd.get("tujuan_aktivitas") or f"Mengembangkan penguasaan konsep dan pemecahan masalah materi {ch.judul_bab if ch else subject.nama_mapel}."
@@ -752,7 +823,8 @@ class DocxDocumentEngine(DocumentEngine):
 
         # I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025)
         if request.include_rubrik:
-            self._add_section_heading(doc, "I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025)")
+            doc.add_page_break()
+            self._add_section_heading(doc, "I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025)", level=1)
             p_desc = doc.add_paragraph()
             p_desc.add_run("Rubrik Observasi Ketercapaian Standar Kompetensi Lulusan (8 Dimensi Profil Lulusan):\n").bold = True
 
@@ -1188,17 +1260,54 @@ class DocxDocumentEngine(DocumentEngine):
             soal_tbl.rows[idx].cells[1].text = f"{q}\nJawaban: ......................................................................................."
         self._style_data_table(soal_tbl, [14, 146], has_header_row=True)
 
-    def _add_section_heading(self, doc: Document, title: str):
-        p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(8)
-        p.paragraph_format.space_after = Pt(2)
+    def _add_page_number_to_footer(self, section):
+        """Adds standard right-aligned 'Halaman X' page number field to section footer."""
+        footer = section.footer
+        p = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(0)
+
+        r = p.add_run("Halaman ")
+        r.font.name = "Arial"
+        r.font.size = Pt(9)
+        r.font.italic = True
+        r.font.color.rgb = RGBColor(100, 116, 139)
+
+        fldSimple = parse_xml(
+            f'<w:fldSimple {nsdecls("w")} w:instr="PAGE">'
+            f'<w:r>'
+            f'<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="18"/><w:i/></w:rPr>'
+            f'<w:t>1</w:t>'
+            f'</w:r>'
+            f'</w:fldSimple>'
+        )
+        p._p.append(fldSimple)
+
+    def _add_section_heading(self, doc: Document, title: str, level: Optional[int] = None):
+        """Adds official Heading 1 or Heading 2 paragraph compatible with Microsoft Word & WPS Navigation Pane."""
+        if level is None:
+            if any(k in title.upper() for k in ["LAMPIRAN", "DESAIN PEMBELAJARAN", "INFORMASI UMUM", "RINCIAN ALUR", "DISTRIBUSI ALOKASI", "MATRIKS DISTRIBUSI", "LANGKAH-LANGKAH PEMBELAJARAN"]):
+                level = 1
+            elif re.match(r"^[A-Z]\.\s", title) or re.match(r"^\d+\.\s", title):
+                level = 2
+            else:
+                level = 1
+
+        style_name = f"Heading {level}" if level in (1, 2) else "Heading 1"
+        p = doc.add_paragraph(style=style_name)
+        p.paragraph_format.space_before = Pt(10 if level == 1 else 8)
+        p.paragraph_format.space_after = Pt(3 if level == 1 else 2)
+        p.paragraph_format.keep_with_next = True
         r = p.add_run(title)
         r.bold = True
-        r.font.size = Pt(10.5)
-        r.font.color.rgb = RGBColor(30, 58, 138)
+        r.font.name = "Arial"
+        r.font.size = Pt(12 if level == 1 else 11)
+        r.font.color.rgb = RGBColor(15, 23, 42) if level == 1 else RGBColor(30, 58, 138)
+        return p
 
     def _add_lembar_pengesahan(self, doc: Document, teacher: TeacherProfile):
-        doc.add_paragraph().paragraph_format.space_before = Pt(14)
+        doc.add_page_break()
         pengesahan = teacher.get_lembar_pengesahan()
 
         p_titi = doc.add_paragraph()

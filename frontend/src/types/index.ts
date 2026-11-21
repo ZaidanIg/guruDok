@@ -109,8 +109,15 @@ export interface CustomRubrikDplItem {
   is_active: boolean;
 }
 
+export interface CustomCpElementItem {
+  kode_elemen: string;
+  nama_elemen: string;
+  deskripsi_cp: string;
+}
+
 export interface CustomDocumentOverrides {
   custom_chapters?: CustomChapterItem[];
+  custom_elemen_cp?: CustomCpElementItem[];
   alokasi_jp_bab?: number;
   tujuan_pembelajaran_custom?: CustomTpItem[];
   kesiapan_murid?: string;
