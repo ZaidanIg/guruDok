@@ -202,6 +202,16 @@ class XlsxDocumentEngine(DocumentEngine):
         for ch in chapters:
             is_current = (request.chapter_id and ch.id == request.chapter_id)
             ch_tps = _resolve_effective_tps(ch, request) if is_current else ch.tujuan_pembelajaran
+            if not ch_tps:
+                from app.models.curriculum import LearningObjective
+                ch_tps = [
+                    LearningObjective(
+                        code=f"TP.{subject.kelas}.{ch.nomor_bab}.1",
+                        deskripsi=f"Mempelajari dan mengaplikasikan materi {ch.judul_bab}",
+                        alokasi_jp=ch.alokasi_jp,
+                        urutan_atp=1,
+                    )
+                ]
             for tp in ch_tps:
                 ws.cell(row=current_row, column=1, value=row_num).alignment = center_align
                 ws.cell(row=current_row, column=2, value=f"Bab {ch.nomor_bab}: {ch.judul_bab}").alignment = left_align

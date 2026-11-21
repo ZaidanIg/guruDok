@@ -5,6 +5,7 @@ import {
   CurriculumSubject,
   CustomDocumentOverrides,
   DocumentGenerateResponse,
+  GenerationMode,
   HistoryDocumentItem,
   Jenjang,
   OutputFormat,
@@ -31,6 +32,7 @@ import { SchoolProfileModal } from './components/modals/SchoolProfileModal';
 import { SuccessDownloadModal } from './components/modals/SuccessDownloadModal';
 import { GoogleLoginModal } from './components/modals/GoogleLoginModal';
 import { ClassroomManagementModal } from './components/modals/ClassroomManagementModal';
+import { ServiceModeSelectionModal } from './components/modals/ServiceModeSelectionModal';
 import { getClassrooms, getActiveClassroom, StudentItem } from './services/classroomStorage';
 
 const STORAGE_KEY_TEACHER = 'gurudok_teacher_profile_v2';
@@ -39,6 +41,11 @@ export const App: React.FC = () => {
   // Multi-Page Navigation State: 'home' | 'katalog' | 'generator' | 'riwayat'
   const [activeSection, setActiveSection] = useState<'home' | 'katalog' | 'generator' | 'riwayat'>('home');
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('08_modul_ajar');
+
+  // Dual-Mode Document Generator State ('template' vs 'manual')
+  const [generationMode, setGenerationMode] = useState<GenerationMode>('template');
+  const [isModeModalOpen, setIsModeModalOpen] = useState<boolean>(false);
+  const [pendingServiceId, setPendingServiceId] = useState<ServiceId | null>(null);
 
   // Classroom Management Modal State
   const [isClassroomModalOpen, setIsClassroomModalOpen] = useState<boolean>(false);
@@ -183,9 +190,19 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Select Service from Home or Katalog -> Opens dedicated Generator Page
+  // Select Service from Home or Katalog -> Opens Mode Selection Pop-up Modal
   const handleSelectService = (serviceId: ServiceId) => {
+    if (activeSection !== 'generator') {
+      setPendingServiceId(serviceId);
+      setIsModeModalOpen(true);
+    } else {
+      applyServiceSelection(serviceId, generationMode);
+    }
+  };
+
+  const applyServiceSelection = (serviceId: ServiceId, mode: GenerationMode) => {
     setSelectedServiceId(serviceId);
+    setGenerationMode(mode);
     const targetService = CORE_SERVICES.find((s) => s.id === serviceId);
     const allowed = (targetService?.formats || ['DOCX', 'PDF']).map((f) => f.toLowerCase() as OutputFormat);
     setOutputFormat((prev) => {
@@ -197,6 +214,14 @@ export const App: React.FC = () => {
     });
     setErrorMsg(null);
     handleNavigate('generator');
+  };
+
+  const handleConfirmModeSelection = (mode: GenerationMode) => {
+    if (pendingServiceId) {
+      applyServiceSelection(pendingServiceId, mode);
+      setPendingServiceId(null);
+    }
+    setIsModeModalOpen(false);
   };
 
   // Handle Jenjang Change in Generator
@@ -455,6 +480,7 @@ export const App: React.FC = () => {
           {activeSection === 'generator' && (
             <DocumentGenerator
               activeService={activeServiceObj}
+              generationMode={generationMode}
               jenjang={jenjang}
               kelas={kelas}
               subjects={subjects}
@@ -541,6 +567,22 @@ export const App: React.FC = () => {
       <ClassroomManagementModal
         isOpen={isClassroomModalOpen}
         onClose={() => setIsClassroomModalOpen(false)}
+      />
+
+      {/* Modal 5: Pop-up Pemilihan Mode Pembuatan (Gunakan Template vs Buat Manual) */}
+      <ServiceModeSelectionModal
+        isOpen={isModeModalOpen}
+        service={
+          pendingServiceId
+            ? CORE_SERVICES.find((s) => s.id === pendingServiceId) || null
+            : null
+        }
+        selectedSubjectId={selectedSubject?.id}
+        onSelectMode={handleConfirmModeSelection}
+        onClose={() => {
+          setIsModeModalOpen(false);
+          setPendingServiceId(null);
+        }}
       />
     </div>
   );

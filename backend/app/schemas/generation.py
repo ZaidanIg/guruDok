@@ -32,8 +32,22 @@ class StudentItemInput(BaseModel):
     jenis_kelamin: Optional[str] = Field("L", max_length=10)
 
 
+class CustomChapterItem(BaseModel):
+    """Pydantic model representing a custom or modified chapter in multi-chapter documents."""
+    id_bab: Optional[str] = Field(None, max_length=50)
+    nomor_bab: int = Field(..., ge=1)
+    semester: int = Field(..., ge=1, le=2)
+    judul_bab: str = Field(..., min_length=2, max_length=300)
+    elemen_cp: Optional[str] = Field("Pemahaman Konsep & Keterampilan Proses", max_length=200)
+    alokasi_jp_bab: int = Field(..., ge=1, le=200)
+    estimasi_jumlah_pertemuan: Optional[int] = Field(None, ge=1)
+    rentang_minggu_promes: Optional[str] = Field(None, max_length=150)
+    tujuan_pembelajaran: Optional[List[CustomTpItem]] = None
+
+
 class CustomDocumentOverrides(BaseModel):
     """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, assessments, and classroom rosters."""
+    custom_chapters: Optional[List[CustomChapterItem]] = None
     custom_tps: Optional[List[CustomTpItem]] = None
     tujuan_pembelajaran_custom: Optional[List[CustomTpItem]] = None
     custom_alokasi_jp: Optional[int] = Field(None, ge=1, le=200)
@@ -141,6 +155,18 @@ class CustomDocumentOverrides(BaseModel):
                     if it and it.strip()
                 ]
                 setattr(self, lf, cleaned_list)
+
+        # 5. Sanitize custom_chapters
+        if self.custom_chapters:
+            for ch in self.custom_chapters:
+                ch.judul_bab = InputSanitizer.sanitize_text(ch.judul_bab, max_length=300)
+                if ch.elemen_cp:
+                    ch.elemen_cp = InputSanitizer.sanitize_text(ch.elemen_cp, max_length=200)
+                if ch.rentang_minggu_promes:
+                    ch.rentang_minggu_promes = InputSanitizer.sanitize_text(ch.rentang_minggu_promes, max_length=150)
+                if ch.tujuan_pembelajaran:
+                    for tp in ch.tujuan_pembelajaran:
+                        tp.deskripsi = InputSanitizer.sanitize_text(tp.deskripsi, max_length=1000)
         return self
 
 

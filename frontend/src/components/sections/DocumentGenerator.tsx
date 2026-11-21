@@ -16,12 +16,19 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Calculator,
+  ArrowUp,
+  ArrowDown,
+  Sparkles,
+  Layers,
+  Save,
 } from 'lucide-react';
 import {
   ChapterTopic,
   CurriculumSubject,
+  CustomChapterItem,
   CustomDocumentOverrides,
   CustomTpItem,
+  GenerationMode,
   Jenjang,
   OutputFormat,
   PaperSize,
@@ -37,6 +44,13 @@ import {
   PEDAGOGICAL_MODELS,
 } from '../../constants/services';
 import { AddChapterModal } from '../modals/AddChapterModal';
+import { ChapterEditorModal } from '../curriculum/ChapterEditorModal';
+import {
+  getCustomCurriculum,
+  saveCustomCurriculum,
+  resetCustomCurriculum,
+  convertChapterTopicsToCustom,
+} from '../../services/curriculumStorage';
 import {
   getClassrooms,
   getActiveClassroom,
@@ -47,6 +61,7 @@ import {
 
 interface DocumentGeneratorProps {
   activeService: ServiceCatalogItem;
+  generationMode: GenerationMode;
   jenjang: Jenjang;
   kelas: number;
   subjects: CurriculumSubject[];
@@ -87,6 +102,7 @@ interface DocumentGeneratorProps {
 
 export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   activeService,
+  generationMode = 'template',
   jenjang,
   kelas,
   subjects,
@@ -128,6 +144,54 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [showPedagogicalEditor, setShowPedagogicalEditor] = useState<boolean>(true);
   const [showAssessmentEditor, setShowAssessmentEditor] = useState<boolean>(false);
   const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState<boolean>(false);
+
+  // Dual-Mode & Chapter Management State (Alternatif 1 + 4 & Crash-Safe Cache)
+  const [isChapterEditorOpen, setIsChapterEditorOpen] = useState<boolean>(false);
+  const [chapterEditing, setChapterEditing] = useState<CustomChapterItem | null>(null);
+  const [justSavedNotification, setJustSavedNotification] = useState<boolean>(false);
+
+  // Load and Synchronize Custom Chapters across services for the active subject
+  useEffect(() => {
+    if (!selectedSubject) return;
+
+    const cached = getCustomCurriculum(generationMode, selectedSubject.id);
+    if (cached && cached.length > 0) {
+      if (
+        !customOverrides.custom_chapters ||
+        JSON.stringify(customOverrides.custom_chapters) !== JSON.stringify(cached)
+      ) {
+        onChangeCustomOverrides({
+          ...customOverrides,
+          custom_chapters: cached,
+        });
+      }
+    } else {
+      if (generationMode === 'template') {
+        const sourceList =
+          chapters && chapters.length > 0
+            ? chapters
+            : selectedSubject.bab_list && selectedSubject.bab_list.length > 0
+            ? selectedSubject.bab_list
+            : [];
+        if (sourceList.length > 0) {
+          const converted = convertChapterTopicsToCustom(sourceList);
+          saveCustomCurriculum(generationMode, selectedSubject.id, converted);
+          onChangeCustomOverrides({
+            ...customOverrides,
+            custom_chapters: converted,
+          });
+        }
+      } else {
+        // Mode Manual: mulai dari kanvas kosong
+        if (!customOverrides.custom_chapters || customOverrides.custom_chapters.length > 0) {
+          onChangeCustomOverrides({
+            ...customOverrides,
+            custom_chapters: [],
+          });
+        }
+      }
+    }
+  }, [selectedSubject?.id, generationMode, chapters]);
 
   // Service Category Helpers
   const isModulAjar = activeService.id === '08_modul_ajar';
@@ -367,21 +431,150 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     'Kemandirian',
   ];
 
-  const allSubjectChapters =
-    selectedSubject?.bab_list && selectedSubject.bab_list.length > 0
-      ? selectedSubject.bab_list
-      : chapters;
+  // Alternatif 1 & 4 CRUD Chapter Handlers
+  const triggerSaveAlert = () => {
+    setJustSavedNotification(true);
+    setTimeout(() => setJustSavedNotification(false), 2500);
+  };
 
+  const handleOpenAddChapter = () => {
+    setChapterEditing(null);
+    setIsChapterEditorOpen(true);
+  };
+
+  const handleOpenEditChapter = (ch: CustomChapterItem) => {
+    setChapterEditing(ch);
+    setIsChapterEditorOpen(true);
+  };
+
+  const handleSaveChapterFromModal = (savedChapter: CustomChapterItem) => {
+    if (!selectedSubject) return;
+    const currentList = customOverrides.custom_chapters || [];
+    let updatedList: CustomChapterItem[];
+
+    const existingIdx = currentList.findIndex(
+      (c) => c.id_bab === savedChapter.id_bab || c.nomor_bab === savedChapter.nomor_bab
+    );
+
+    if (existingIdx >= 0) {
+      updatedList = currentList.map((item, idx) => (idx === existingIdx ? savedChapter : item));
+    } else {
+      updatedList = [...currentList, savedChapter];
+    }
+
+    updatedList.sort((a, b) => a.semester - b.semester || a.nomor_bab - b.nomor_bab);
+
+    saveCustomCurriculum(generationMode, selectedSubject.id, updatedList);
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_chapters: updatedList,
+    });
+    triggerSaveAlert();
+  };
+
+  const handleDeleteChapter = (indexToDelete: number) => {
+    if (!selectedSubject) return;
+    const currentList = customOverrides.custom_chapters || [];
+    const updatedList = currentList.filter((_, idx) => idx !== indexToDelete);
+
+    saveCustomCurriculum(generationMode, selectedSubject.id, updatedList);
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_chapters: updatedList,
+    });
+    triggerSaveAlert();
+  };
+
+  const handleMoveChapter = (index: number, direction: 'up' | 'down') => {
+    if (!selectedSubject) return;
+    const currentList = [...(customOverrides.custom_chapters || [])];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentList.length) return;
+
+    const temp = currentList[index];
+    currentList[index] = currentList[targetIndex];
+    currentList[targetIndex] = temp;
+
+    saveCustomCurriculum(generationMode, selectedSubject.id, currentList);
+    onChangeCustomOverrides({
+      ...customOverrides,
+      custom_chapters: currentList,
+    });
+    triggerSaveAlert();
+  };
+
+  const handleResetCurriculum = () => {
+    if (!selectedSubject) return;
+    resetCustomCurriculum(generationMode, selectedSubject.id);
+
+    if (generationMode === 'template') {
+      const sourceList =
+        chapters && chapters.length > 0
+          ? chapters
+          : selectedSubject.bab_list && selectedSubject.bab_list.length > 0
+          ? selectedSubject.bab_list
+          : [];
+      const converted = convertChapterTopicsToCustom(sourceList);
+      saveCustomCurriculum(generationMode, selectedSubject.id, converted);
+      onChangeCustomOverrides({
+        ...customOverrides,
+        custom_chapters: converted,
+      });
+    } else {
+      saveCustomCurriculum(generationMode, selectedSubject.id, []);
+      onChangeCustomOverrides({
+        ...customOverrides,
+        custom_chapters: [],
+      });
+    }
+    triggerSaveAlert();
+  };
+
+  // Effective Chapters for Live Preview & Calculators
+  const activeCustomChapters = customOverrides.custom_chapters;
+  const hasCustomChapters = Boolean(activeCustomChapters && activeCustomChapters.length > 0);
+
+  const effectiveSubjectChapters: ChapterTopic[] = hasCustomChapters
+    ? (activeCustomChapters || []).map((cb) => ({
+        id: cb.id_bab || `CUSTOM-${cb.nomor_bab}`,
+        nomor_bab: cb.nomor_bab,
+        semester: cb.semester,
+        judul_bab: cb.judul_bab,
+        alokasi_jp: cb.alokasi_jp_bab,
+        elemen_cp: cb.elemen_cp || 'Pemahaman Konsep & Keterampilan Proses',
+        estimasi_pertemuan: cb.estimasi_jumlah_pertemuan || Math.ceil(cb.alokasi_jp_bab / 3),
+        rentang_minggu_promes: cb.rentang_minggu_promes || `Minggu Semester ${cb.semester}`,
+        model_pembelajaran_default: 'Problem-Based Learning',
+        dimensi_profil_lulusan: ['Penalaran Kritis', 'Kreativitas', 'Kolaborasi', 'Kemandirian'],
+        tujuan_pembelajaran: (cb.tujuan_pembelajaran || []).map((tp) => ({
+          code: tp.code,
+          deskripsi: tp.deskripsi,
+          alokasi_jp: tp.alokasi_jp || 2,
+        })),
+      }))
+    : selectedSubject?.bab_list && selectedSubject.bab_list.length > 0
+    ? selectedSubject.bab_list
+    : chapters;
+
+  const allSubjectChapters = effectiveSubjectChapters;
   const sem1Chapters = allSubjectChapters.filter((c) => c.semester === 1);
   const sem2Chapters = allSubjectChapters.filter((c) => c.semester === 2);
   const currentSemesterChapters =
     semester === 1
       ? sem1Chapters.length > 0
         ? sem1Chapters
-        : chapters
+        : allSubjectChapters
       : sem2Chapters.length > 0
       ? sem2Chapters
-      : chapters;
+      : allSubjectChapters;
+
+  const totalCustomJp = (activeCustomChapters || []).reduce(
+    (acc, c) => acc + (Number(c.alokasi_jp_bab) || 0),
+    0
+  );
+  const targetJpTahunan = selectedSubject?.total_alokasi_jp_tahun || 108;
+  const isCurriculumService =
+    isProta || isPromes || isAtp || isCpTp || isKktp || isModulAjar || isLkpd;
 
   const monthLabels =
     semester === 1
@@ -503,6 +696,60 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             mobileViewMode === 'preview' ? 'hidden md:block' : 'block'
           }`}
         >
+          {/* Mode Banner & Crash-Safe Status (Sprint 34) */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+                    generationMode === 'template'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-slate-800 text-white'
+                  }`}
+                >
+                  {generationMode === 'template' ? 'Gunakan Template' : 'Buat Manual'}
+                </span>
+                <span className="text-xs text-slate-600">
+                  {generationMode === 'template'
+                    ? 'Standar BSKAP No. 046/2025 & SIBI (dapat dimodifikasi bebas)'
+                    : 'Penyusunan mandiri / kustom'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {justSavedNotification ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md animate-in fade-in duration-200">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Tersimpan
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                    <Save className="h-3 w-3 text-slate-400" />
+                    Tersimpan di browser
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleResetCurriculum}
+                  title={generationMode === 'template' ? 'Reset ke Template BSKAP 2025' : 'Bersihkan seluruh bab'}
+                  className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                >
+                  <RotateCcw className="inline mr-1 h-3 w-3" />
+                  {generationMode === 'template' ? 'Reset Template' : 'Bersihkan'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onBackToCatalog}
+                  className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  Ganti Mode
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Card 1: Parameter Kurikulum & Format Cetak */}
           <div className="clay-card p-5">
             <h2 className="border-b border-slate-200 pb-3 text-sm font-extrabold uppercase tracking-wider text-slate-800">
@@ -728,6 +975,124 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Card CRUD Lingkup Materi / Bab & Alokasi JP (Alternatif 1 & 4) */}
+          {isCurriculumService && (
+            <div className="clay-card p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    2. Lingkup Materi / Bab &amp; Alokasi JP
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Kontrol penuh CRUD bab, urutan materi, alokasi JP, dan butir TP yang tersinkronisasi lintas layanan.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenAddChapter}
+                  className="clay-btn-primary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Tambah Bab</span>
+                </button>
+              </div>
+
+              {/* Kalkulator JP Banner */}
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 border border-slate-200/80 p-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-blue-700" />
+                  <span className="font-bold text-slate-700">
+                    Total: <span className="text-blue-700 font-extrabold">{totalCustomJp} JP</span> ({activeCustomChapters?.length || 0} Bab)
+                  </span>
+                </div>
+                <div className="text-[11px] font-medium text-slate-600">
+                  Target Standar: <strong>{targetJpTahunan} JP/Tahun</strong> ({jpPerMinggu} JP/Minggu)
+                </div>
+              </div>
+
+              {/* Chapter Items List */}
+              <div className="mt-3.5 space-y-2.5">
+                {(!activeCustomChapters || activeCustomChapters.length === 0) ? (
+                  <div className="rounded-xl border-2 border-dashed border-slate-200 p-6 text-center">
+                    <p className="text-xs font-semibold text-slate-600">
+                      Belum ada materi bab yang terdaftar.
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Klik tombol &quot;+ Tambah Bab&quot; di atas untuk menyusun materi pokok dan TP pertama Anda.
+                    </p>
+                  </div>
+                ) : (
+                  activeCustomChapters.map((ch, idx) => (
+                    <div
+                      key={ch.id_bab || idx}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3 hover:border-blue-300 transition-all shadow-sm"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
+                            Bab {ch.nomor_bab}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                            Sem {ch.semester}
+                          </span>
+                          <span className="rounded bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-bold">
+                            {ch.alokasi_jp_bab} JP
+                          </span>
+                          <span className="rounded bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 text-[10px] font-semibold">
+                            {(ch.tujuan_pembelajaran || []).length} TP
+                          </span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-800 truncate">
+                          {ch.judul_bab}
+                        </p>
+                        <p className="text-[10px] text-slate-500 truncate">
+                          Elemen CP: {ch.elemen_cp}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 self-end sm:self-center">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveChapter(idx, 'up')}
+                          title="Geser Naik"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (activeCustomChapters.length - 1)}
+                          onClick={() => handleMoveChapter(idx, 'down')}
+                          title="Geser Turun"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditChapter(ch)}
+                          title="Edit Bab & TP"
+                          className="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteChapter(idx)}
+                          title="Hapus Bab"
+                          className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Card Khusus 1: Layanan Administrasi Kelas (Presensi Siswa / Daftar Nilai) */}
           {isClassroomService && (
@@ -2796,6 +3161,20 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         onClose={() => setIsAddChapterModalOpen(false)}
         onSuccess={(newCh) => {
           onChapterCreated(newCh);
+        }}
+      />
+
+      {/* Modal Editor Bab & TP Komprehensif (Sprint 34) */}
+      <ChapterEditorModal
+        isOpen={isChapterEditorOpen}
+        chapterToEdit={chapterEditing}
+        defaultSemester={semester}
+        suggestedChapterNumber={(activeCustomChapters?.length || 0) + 1}
+        availableCpElements={officialElements}
+        onSave={handleSaveChapterFromModal}
+        onClose={() => {
+          setIsChapterEditorOpen(false);
+          setChapterEditing(null);
         }}
       />
     </section>

@@ -51,10 +51,67 @@ class DocumentGenerationService:
         if not subject:
             raise CurriculumNotFoundError(f"Subject '{req.subject_id}' does not exist in master curriculum database.")
 
+        # 1b. Multi-Chapter Override (Sprint 34: Custom Chapters / Mode Kustom / Mode Modifikasi)
+        if req.custom_overrides and req.custom_overrides.custom_chapters:
+            from app.models.curriculum import ChapterTopic, LearningObjective
+            import copy
+            subject = copy.copy(subject)
+            custom_topic_list = []
+            for c_item in req.custom_overrides.custom_chapters:
+                ch_id = c_item.id_bab or f"{req.subject_id}-B{c_item.nomor_bab:02d}"
+                tps = []
+                if c_item.tujuan_pembelajaran:
+                    for idx, tp in enumerate(c_item.tujuan_pembelajaran, start=1):
+                        tps.append(
+                            LearningObjective(
+                                code=tp.code or f"TP.{subject.kelas}.{c_item.nomor_bab}.{idx}",
+                                deskripsi=tp.deskripsi,
+                                alokasi_jp=tp.alokasi_jp or 4,
+                                urutan_atp=idx,
+                            )
+                        )
+                else:
+                    half_jp = max(2, c_item.alokasi_jp_bab // 2)
+                    rem_jp = max(2, c_item.alokasi_jp_bab - half_jp)
+                    tps = [
+                        LearningObjective(
+                            code=f"TP.{subject.kelas}.{c_item.nomor_bab}.1",
+                            deskripsi=f"Memahami konsep dasar dan materi pokok {c_item.judul_bab}.",
+                            alokasi_jp=half_jp,
+                            urutan_atp=1,
+                        ),
+                        LearningObjective(
+                            code=f"TP.{subject.kelas}.{c_item.nomor_bab}.2",
+                            deskripsi=f"Menerapkan dan mengeksplorasi solusi kontekstual terkait {c_item.judul_bab}.",
+                            alokasi_jp=rem_jp,
+                            urutan_atp=2,
+                        ),
+                    ]
+                custom_topic_list.append(
+                    ChapterTopic(
+                        id=ch_id,
+                        semester=c_item.semester,
+                        nomor_bab=c_item.nomor_bab,
+                        judul_bab=c_item.judul_bab,
+                        elemen_cp=c_item.elemen_cp or "Pemahaman Konsep & Keterampilan Proses",
+                        alokasi_jp=c_item.alokasi_jp_bab,
+                        estimasi_pertemuan=c_item.estimasi_jumlah_pertemuan or max(1, c_item.alokasi_jp_bab // max(1, subject.alokasi_jp_mingguan)),
+                        rentang_minggu_promes=c_item.rentang_minggu_promes or f"Minggu Efektif Semester {c_item.semester}",
+                        tujuan_pembelajaran=tps,
+                    )
+                )
+            subject.bab_list = custom_topic_list
+
         # 2. Resolve Chapter if requested
         chapter = None
         if req.chapter_id:
             chapter = subject.get_chapter(req.chapter_id)
+            if not chapter and req.custom_overrides and req.custom_overrides.custom_chapters:
+                # If custom chapter id match fallback
+                for ch in subject.bab_list:
+                    if ch.id == req.chapter_id or str(ch.nomor_bab) == str(req.chapter_id):
+                        chapter = ch
+                        break
             if not chapter:
                 raise CurriculumNotFoundError(f"Chapter '{req.chapter_id}' not found in subject '{subject.nama_mapel}'.")
 

@@ -2,6 +2,19 @@ export type Jenjang = 'SD' | 'SMP' | 'SMA';
 export type PaperSize = 'F4' | 'A4';
 export type OutputFormat = 'docx' | 'xlsx' | 'pdf';
 export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '13_presensi' | '15_daftar_nilai';
+export type GenerationMode = 'template' | 'manual';
+
+export interface CustomChapterItem {
+  id_bab?: string;
+  nomor_bab: number;
+  semester: number;
+  judul_bab: string;
+  elemen_cp?: string;
+  alokasi_jp_bab: number;
+  estimasi_jumlah_pertemuan?: number;
+  rentang_minggu_promes?: string;
+  tujuan_pembelajaran?: CustomTpItem[];
+}
 
 export interface StudentOverrideItem {
   nomor_absen?: number;
@@ -90,6 +103,7 @@ export interface ChapterCreateRequest {
 }
 
 export interface CustomDocumentOverrides {
+  custom_chapters?: CustomChapterItem[];
   alokasi_jp_bab?: number;
   tujuan_pembelajaran_custom?: CustomTpItem[];
   kesiapan_murid?: string;

@@ -124,3 +124,161 @@ class TestCustomChapterApi:
         body = gen_resp.json()
         assert body["success"] is True
         assert "download_url" in body["data"]
+
+    def test_custom_chapters_override_prota_docx(self):
+        """Verifies Prota document uses custom_chapters sent in request overrides instead of master DB."""
+        generate_payload = {
+            "service_id": "05_prota",
+            "jenjang": "SMP",
+            "kelas": 7,
+            "subject_id": "SMP-K7-IPA",
+            "semester": 1,
+            "paper_size": "F4",
+            "output_format": "docx",
+            "teacher_profile": {
+                "nama_guru": "Budi Santoso, S.Pd.",
+                "nip_guru": "198001012005011001",
+                "nama_sekolah": "SMP Negeri 1 Jakarta",
+                "kabupaten_kota": "Jakarta Pusat",
+                "provinsi": "DKI Jakarta",
+                "nama_kepala_sekolah": "Drs. H. Mulyadi",
+                "nip_kepala_sekolah": "196501011990011001",
+                "no_whatsapp": "081234567891",
+            },
+            "custom_overrides": {
+                "custom_chapters": [
+                    {
+                        "nomor_bab": 1,
+                        "semester": 1,
+                        "judul_bab": "Eksplorasi Ekosistem Pesisir & Terumbu Karang Mandiri",
+                        "elemen_cp": "Pemahaman IPA",
+                        "alokasi_jp_bab": 20,
+                        "tujuan_pembelajaran": [
+                            {"code": "TP.7.1.1", "deskripsi": "Mengidentifikasi keanekaragaman hayati pesisir", "alokasi_jp": 10},
+                            {"code": "TP.7.1.2", "deskripsi": "Menganalisis dampak polusi laut pada terumbu karang", "alokasi_jp": 10},
+                        ],
+                    },
+                    {
+                        "nomor_bab": 2,
+                        "semester": 1,
+                        "judul_bab": "Bioteknologi Pengolahan Sampah Organik Sekolah",
+                        "elemen_cp": "Keterampilan Proses",
+                        "alokasi_jp_bab": 24,
+                        "tujuan_pembelajaran": [
+                            {"code": "TP.7.2.1", "deskripsi": "Merancang komposter anaerob mini di sekolah", "alokasi_jp": 12},
+                            {"code": "TP.7.2.2", "deskripsi": "Mengevaluasi efisiensi penguraian sampah organik", "alokasi_jp": 12},
+                        ],
+                    },
+                    {
+                        "nomor_bab": 3,
+                        "semester": 2,
+                        "judul_bab": "Energi Surya Mandiri untuk Laboratorium IPA",
+                        "elemen_cp": "Pemahaman IPA",
+                        "alokasi_jp_bab": 28,
+                    },
+                ]
+            },
+        }
+
+        res = client.post("/api/v1/documents/generate", json=generate_payload)
+        assert res.status_code in (200, 201), f"Expected 201, got {res.status_code}: {res.text}"
+        body = res.json()
+        assert body["success"] is True
+
+        # Read generated document from local storage to inspect text
+        from pathlib import Path
+        from docx import Document
+        from app.core.config import settings
+
+        filename = body["data"]["filename"]
+        file_path = settings.generated_dir / filename
+        assert file_path.exists(), "Generated document must be saved in storage"
+
+        doc = Document(file_path)
+        full_text = "\n".join([p.text for p in doc.paragraphs] + [cell.text for tbl in doc.tables for row in tbl.rows for cell in row.cells])
+
+        # Assert custom chapter titles are rendered
+        assert "Eksplorasi Ekosistem Pesisir" in full_text
+        assert "Bioteknologi Pengolahan Sampah" in full_text
+        assert "Energi Surya Mandiri" in full_text
+
+    def test_custom_chapters_override_promes_xlsx(self):
+        """Verifies Promes Excel document uses custom_chapters sent in request overrides."""
+        generate_payload = {
+            "service_id": "06_promes",
+            "jenjang": "SMP",
+            "kelas": 7,
+            "subject_id": "SMP-K7-IPA",
+            "semester": 1,
+            "paper_size": "F4",
+            "output_format": "xlsx",
+            "teacher_profile": {
+                "nama_guru": "Budi Santoso, S.Pd.",
+                "nip_guru": "198001012005011001",
+                "nama_sekolah": "SMP Negeri 1 Jakarta",
+                "kabupaten_kota": "Jakarta Pusat",
+                "provinsi": "DKI Jakarta",
+                "nama_kepala_sekolah": "Drs. H. Mulyadi",
+                "nip_kepala_sekolah": "196501011990011001",
+                "no_whatsapp": "081234567891",
+            },
+            "custom_overrides": {
+                "custom_chapters": [
+                    {
+                        "nomor_bab": 1,
+                        "semester": 1,
+                        "judul_bab": "Keanekaragaman Ekosistem Lokal Spesifik",
+                        "elemen_cp": "Pemahaman IPA",
+                        "alokasi_jp_bab": 24,
+                    },
+                    {
+                        "nomor_bab": 2,
+                        "semester": 1,
+                        "judul_bab": "Zat dan Perubahannya dalam Industri Rumah Tangga",
+                        "elemen_cp": "Pemahaman IPA",
+                        "alokasi_jp_bab": 26,
+                    },
+                ]
+            },
+        }
+
+        res = client.post("/api/v1/documents/generate", json=generate_payload)
+        assert res.status_code in (200, 201), f"Expected 201, got {res.status_code}: {res.text}"
+        body = res.json()
+        assert body["success"] is True
+
+        from app.core.config import settings
+        import openpyxl
+
+        filename = body["data"]["filename"]
+        file_path = settings.generated_dir / filename
+        assert file_path.exists()
+
+        wb = openpyxl.load_workbook(file_path, data_only=False)
+        ws = wb.active
+        all_cell_values = [str(cell.value) for row in ws.iter_rows() for cell in row if cell.value is not None]
+
+        assert any("Keanekaragaman Ekosistem Lokal Spesifik" in v for v in all_cell_values)
+        assert any("Zat dan Perubahannya dalam Industri" in v for v in all_cell_values)
+
+    def test_custom_chapters_xss_protection(self):
+        """Verifies malicious scripts in custom_chapters are rejected or sanitized."""
+        malicious_payload = {
+            "service_id": "05_prota",
+            "jenjang": "SMP",
+            "kelas": 7,
+            "subject_id": "SMP-K7-IPA",
+            "semester": 1,
+            "custom_overrides": {
+                "custom_chapters": [
+                    {
+                        "nomor_bab": 1,
+                        "semester": 1,
+                        "judul_bab": "Eksplorasi <script>alert('hack')</script>",
+                        "alokasi_jp_bab": 20,
+                    }
+                ]
+            },
+        }
+        res = client.post("/api/v1/documents/generate", json=malicious_payload)
+        assert res.status_code == 400, "Script injection in custom chapters must return 400 Bad Request"
