@@ -177,60 +177,66 @@
     -webkit-touch-callout: none;
   }
 
-  /* 11. Full-Screen Radial Glow + Thin Grid & Planetary Orbit (Sprint 17) */
-  .hero-grid-bg {
-    background-image:
-      linear-gradient(to right, rgba(100, 116, 139, 0.14) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(100, 116, 139, 0.14) 1px, transparent 1px);
-    background-size: 36px 36px;
-    mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 35%, transparent 100%);
-    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 35%, transparent 100%);
+  /* 11. Aurora Style Ambient Background & Glow (Sprint 37) */
+  .hero-aurora-bg {
+    background: radial-gradient(circle at 50% 25%, #F0F7FF 0%, #FAFBFD 65%, #F4F7FB 100%);
+    overflow: hidden;
   }
 
-  .hero-radial-glow {
-    background:
-      radial-gradient(circle at 50% 46%, rgba(59, 130, 246, 0.20) 0%, rgba(16, 185, 129, 0.10) 30%, rgba(244, 247, 251, 0) 68%);
+  .aurora-blob-1 {
+    position: absolute;
+    top: -5%;
+    left: 15%;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(56, 189, 248, 0) 70%);
+    filter: blur(64px);
+    pointer-events: none;
+    animation: aurora-drift-1 18s ease-in-out infinite alternate;
+  }
+
+  .aurora-blob-2 {
+    position: absolute;
+    top: 20%;
+    right: 12%;
+    width: 28rem;
+    height: 28rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.22) 0%, rgba(52, 211, 153, 0) 70%);
+    filter: blur(64px);
+    pointer-events: none;
+    animation: aurora-drift-2 22s ease-in-out infinite alternate;
+  }
+
+  .aurora-blob-3 {
+    position: absolute;
+    bottom: 5%;
+    left: 28%;
+    width: 36rem;
+    height: 36rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(129, 140, 248, 0.22) 0%, rgba(129, 140, 248, 0) 70%);
+    filter: blur(72px);
+    pointer-events: none;
+    animation: aurora-drift-3 20s ease-in-out infinite alternate;
   }
 }
 
-@keyframes orbit-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+@keyframes aurora-drift-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.08); }
+  100% { transform: translate(-25px, 25px) scale(0.95); }
 }
 
-@keyframes orbit-counter-spin {
-  from {
-    transform: rotate(360deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
+@keyframes aurora-drift-2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-35px, 20px) scale(1.05); }
+  100% { transform: translate(20px, -30px) scale(0.92); }
 }
 
-.animate-orbit-1 {
-  animation: orbit-spin 42s linear infinite;
-}
-
-.animate-orbit-counter-1 {
-  animation: orbit-counter-spin 42s linear infinite;
-}
-
-.animate-orbit-2 {
-  animation: orbit-counter-spin 34s linear infinite;
-}
-
-.animate-orbit-counter-2 {
-  animation: orbit-spin 34s linear infinite;
-}
-
-.animate-orbit-3 {
-  animation: orbit-spin 26s linear infinite;
-}
-
-.animate-orbit-counter-3 {
-  animation: orbit-counter-spin 26s linear infinite;
+@keyframes aurora-drift-3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(25px, 30px) scale(1.1); }
+  100% { transform: translate(-20px, -20px) scale(0.96); }
 }

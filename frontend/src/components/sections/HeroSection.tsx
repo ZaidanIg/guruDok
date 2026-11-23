@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import {
   BookOpen,
   FileText,
@@ -38,9 +39,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   return (
     <section className="relative flex min-h-[calc(100vh-140px)] w-full flex-col justify-center overflow-hidden">
-      {/* Full-Screen Thin Grid & Large Centered Radial Glow */}
-      <div className="hero-grid-bg pointer-events-none absolute inset-0" />
-      <div className="hero-radial-glow pointer-events-none absolute inset-0" />
+      {/* Aurora Ambient Background Effect */}
+      <div className="hero-aurora-bg pointer-events-none absolute inset-0">
+        <div className="aurora-blob-1" />
+        <div className="aurora-blob-2" />
+        <div className="aurora-blob-3" />
+      </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-4 py-8 text-center sm:px-6 sm:py-12 lg:px-8">
         {/* Centered Headline Text */}
@@ -54,60 +58,50 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           Pilih layanan dan unduh dokumennya langsung. Rapi, otomatis, dan sesuai standar BSKAP 2025.
         </p>
 
-        {/* Planetary Orbit Stage around /hero-clay-3d.png (3 Orbit Independen Pelan) */}
-        <div className="relative my-6 flex h-72 w-72 items-center justify-center sm:my-8 sm:h-80 sm:w-80">
-          {/* 3 Subtle Orbital Rings */}
-          <div className="pointer-events-none absolute inset-0 rounded-full border border-dashed border-blue-400/35" />
-          <div className="pointer-events-none absolute inset-6 rounded-full border border-dashed border-emerald-400/30" />
-          <div className="pointer-events-none absolute inset-12 rounded-full border border-rose-400/25" />
-
-          {/* Orbit 1 (Luar — 42s CW): Word 3D Clay */}
-          <div className="animate-orbit-1 pointer-events-none absolute inset-0">
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-              <img
-                src="/doc-word-clay.png"
-                alt="Dokumen Word 3D Clay"
-                className="animate-orbit-counter-1 h-12 w-12 object-contain drop-shadow-xl sm:h-14 sm:w-14"
-              />
-            </div>
+        {/* Brand Avatar Stage with Framer-Motion Pop-up Greeting */}
+        <div className="relative my-7 flex items-center justify-center sm:my-9">
+          {/* Circular Brand Avatar Container (White BG, Thin Black Border, Waist-up Framing) */}
+          <div className="relative flex h-56 w-56 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-white shadow-xl sm:h-64 sm:w-64">
+            <img
+              src="/character2.png"
+              alt="Karakter Brand GuruDok"
+              className="pointer-events-none h-full w-full select-none object-cover object-top scale-110 origin-top translate-y-1 transition-transform duration-300 hover:scale-115"
+              draggable={false}
+            />
           </div>
 
-          {/* Orbit 2 (Tengah — 34s CCW): Excel 3D Clay */}
-          <div
-            className="animate-orbit-2 pointer-events-none absolute inset-6"
-            style={{ animationDelay: '-10s' }}
+          {/* Pop-up Greeting Bubble (Animated with Framer Motion) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.75, y: 15 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: [0, -6, 0],
+            }}
+            transition={{
+              opacity: { duration: 0.45, ease: 'easeOut', delay: 0.15 },
+              scale: { type: 'spring', stiffness: 280, damping: 18, delay: 0.15 },
+              y: {
+                repeat: Infinity,
+                repeatType: 'reverse',
+                duration: 3.2,
+                ease: 'easeInOut',
+                delay: 0.6,
+              },
+            }}
+            className="absolute -top-4 -right-4 z-20 max-w-[210px] rounded-2xl border border-slate-900 bg-white/95 px-3.5 py-2.5 text-left shadow-lg backdrop-blur-sm sm:-top-5 sm:-right-8 sm:max-w-[245px] sm:px-4 sm:py-3"
           >
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2">
-              <img
-                src="/doc-excel-clay.png"
-                alt="Dokumen Excel 3D Clay"
-                className="animate-orbit-counter-2 h-11 w-11 object-contain drop-shadow-xl sm:h-12 sm:w-12"
-                style={{ animationDelay: '-10s' }}
-              />
+            <div className="flex items-start gap-1.5">
+              <span className="text-base sm:text-lg leading-none" role="img" aria-label="wave">
+                👋
+              </span>
+              <p className="text-xs font-bold leading-snug text-slate-800 sm:text-sm">
+                Selamat datang di website Administrasi guru
+              </p>
             </div>
-          </div>
-
-          {/* Orbit 3 (Dalam — 26s CW): PDF 3D Clay */}
-          <div
-            className="animate-orbit-3 pointer-events-none absolute inset-12"
-            style={{ animationDelay: '-5s' }}
-          >
-            <div className="absolute top-1/2 -right-5 -translate-y-1/2">
-              <img
-                src="/doc-pdf-clay.png"
-                alt="Dokumen PDF 3D Clay"
-                className="animate-orbit-counter-3 h-10 w-10 object-contain drop-shadow-xl sm:h-11 sm:w-11"
-                style={{ animationDelay: '-5s' }}
-              />
-            </div>
-          </div>
-
-          {/* Center 3D Clay Illustration (Tanpa Box) */}
-          <img
-            src="/hero-clay-3d.png"
-            alt="Ilustrasi 3D Administrasi Guru GuruDok.id"
-            className="relative z-10 h-36 w-36 object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-105 sm:h-44 sm:w-44"
-          />
+            {/* Speech Bubble Pointer Arrow */}
+            <div className="absolute -bottom-1.5 left-7 h-3 w-3 rotate-45 border-b border-r border-slate-900 bg-white" />
+          </motion.div>
         </div>
 
         {/* Centered Quick Service Section (Tanpa Box Pembungkus) */}
