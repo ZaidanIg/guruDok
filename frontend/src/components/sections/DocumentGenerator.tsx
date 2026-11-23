@@ -1767,7 +1767,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 serviceId={activeService.id as ServiceId}
                 jenjang={jenjang}
                 subjectId={selectedSubject?.id || ''}
-                chapterId={selectedChapter?.id}
+                chapterId={isStsSas ? undefined : selectedChapter?.id}
                 availableTps={
                   isStsSas
                     ? chapters.flatMap((c) => c.tujuan_pembelajaran || [])
@@ -3692,7 +3692,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   {(isSumatifBab || isStsSas) && (
                     <div>
                       <h3 className="font-extrabold uppercase text-slate-900">
-                        A. Tabel Kisi-Kisi Penulisan Soal (7 Kolom)
+                        A. Tabel Kisi-Kisi Penulisan Soal
                       </h3>
                       <div className="paper-table-container mt-1.5">
                         <table className="paper-table">
