@@ -125,19 +125,66 @@
     color: #FFFFFF;
   }
 
-  /* 10. Live Document Paper Sheet Preview (Mobile & iOS Overflow Protected) */
+  /* 10. Live Document Paper Sheet Preview (Multi-Sheet F4 & A4 Support) */
+  .paper-canvas {
+    background-color: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 160px);
+    -webkit-overflow-scrolling: touch;
+  }
+
   .paper-sheet {
     background: #FFFFFF;
     border: 1px solid #CBD5E1;
     box-shadow:
-      0 10px 25px -5px rgba(15, 23, 42, 0.08),
-      0 4px 10px -2px rgba(15, 23, 42, 0.04);
+      0 12px 28px -6px rgba(15, 23, 42, 0.12),
+      0 4px 10px -2px rgba(15, 23, 42, 0.05);
     font-family: Arial, 'Liberation Sans', sans-serif;
     color: #0F172A;
     min-width: 0;
     max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    border-radius: 3px;
+    position: relative;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Kertas F4 / Folio (215 x 330 mm): Jenjang tinggi khas administrasi sekolah */
+  .paper-sheet-f4 {
+    min-height: 960px;
+  }
+
+  /* Kertas A4 (210 x 297 mm): Standar ISO */
+  .paper-sheet-a4 {
+    min-height: 860px;
+  }
+
+  @media (max-width: 640px) {
+    .paper-canvas {
+      padding: 0.75rem;
+    }
+    .paper-sheet-f4,
+    .paper-sheet-a4 {
+      min-height: auto;
+    }
+  }
+
+  .paper-sheet-footer {
+    border-top: 1px dashed #CBD5E1;
+    margin-top: 2rem;
+    padding-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: #64748B;
+    font-weight: 600;
   }
 
   .paper-table-container {

@@ -853,28 +853,7 @@ class PdfDocumentEngine(DocumentEngine):
         pdf.cell(0, 5, _ascii_safe(f"{subject.nama_mapel} | {subject.jenjang} Kelas {subject.kelas} | Semester {request.semester}"), new_x="LMARGIN", new_y="NEXT", align="C")
         pdf.ln(3)
 
-        # Kisi-Kisi 7 Kolom (S11 & S12)
-        if request.service_id in (ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
-            self._add_section_title(pdf, "A. Kisi-Kisi Penulisan Soal (7 Kolom)")
-            pdf.set_font("Helvetica", size=7.5)
-            with pdf.table(col_widths=(10, 20, 28, 52, 18, 18, 14), line_height=4.8) as table:
-                hdr = table.row(style=HEADER_STYLE)
-                for h_col in ("No", "TP", "Materi", "Indikator Soal", "Level", "Bentuk", "Soal"):
-                    hdr.cell(h_col)
-                for row in bp["kisi_kisi"]:
-                    r = table.row()
-                    r.cell(str(row["no"]))
-                    r.cell(_ascii_safe(row["tp_code"]))
-                    r.cell(_ascii_safe(row["materi"][:30]))
-                    r.cell(_ascii_safe(row["indikator"][:60]))
-                    r.cell(_ascii_safe(row["level_kognitif"]))
-                    r.cell(_ascii_safe(row["bentuk_soal"]))
-                    r.cell(_ascii_safe(row["nomor_soal"]))
-            pdf.ln(3)
-
-        # Naskah Soal (Terpisah: A. Soal Pilihan Ganda & B. Soal Essai)
-        pdf.add_page()
-        self._add_section_title(pdf, "Naskah Soal Evaluasi")
+        # 1. Halaman Pertama: Naskah Soal Evaluasi Siswa
         usable_w = pdf.w - pdf.l_margin - pdf.r_margin
 
         if bp["pg_questions"]:
@@ -914,9 +893,10 @@ class PdfDocumentEngine(DocumentEngine):
                 pdf.multi_cell(usable_w, 5, "   Jawaban: ___________________________________________________________")
                 pdf.ln(1.5)
 
-        # Kunci Jawaban & Pedoman Penskoran
+        # 2. Halaman Kedua: Kunci Jawaban & Kisi-Kisi Pegangan Guru
         pdf.add_page()
-        self._add_section_title(pdf, "Kunci Jawaban & Pedoman Penskoran")
+        self._add_section_title(pdf, "DOKUMEN PEGANGAN GURU -- KUNCI JAWABAN & KISI-KISI SOAL")
+        self._add_section_title(pdf, "Kunci Jawaban & Pedoman Penskoran (Pegangan Guru)")
         pdf.set_font("Helvetica", size=8)
         with pdf.table(col_widths=(12, 30, 98, 20), line_height=5) as table:
             hdr = table.row(style=HEADER_STYLE)
@@ -930,6 +910,31 @@ class PdfDocumentEngine(DocumentEngine):
                 pemb = f" - {q['pembahasan']}" if q.get("pembahasan") else ""
                 r.cell(_ascii_safe(f"{q['kunci_jawaban']}{pemb}"))
                 r.cell(str(q["bobot_skor"]))
+            r_tot = table.row()
+            r_tot.cell("-")
+            r_tot.cell("TOTAL")
+            r_tot.cell("Nilai Akhir = (Skor Diperoleh / 100) x 100")
+            r_tot.cell(str(bp["total_skor_maksimal"]))
+        pdf.ln(3)
+
+        # Kisi-Kisi 7 Kolom (S11 & S12)
+        if request.service_id in (ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
+            self._add_section_title(pdf, "Tabel Kisi-Kisi Penulisan Soal (7 Kolom)")
+            pdf.set_font("Helvetica", size=7.5)
+            with pdf.table(col_widths=(10, 20, 28, 52, 18, 18, 14), line_height=4.8) as table:
+                hdr = table.row(style=HEADER_STYLE)
+                for h_col in ("No", "TP", "Materi", "Indikator Soal", "Level", "Bentuk", "Soal"):
+                    hdr.cell(h_col)
+                for row in bp["kisi_kisi"]:
+                    r = table.row()
+                    r.cell(str(row["no"]))
+                    r.cell(_ascii_safe(row["tp_code"]))
+                    r.cell(_ascii_safe(row["materi"][:30]))
+                    r.cell(_ascii_safe(row["indikator"][:60]))
+                    r.cell(_ascii_safe(row["level_kognitif"]))
+                    r.cell(_ascii_safe(row["bentuk_soal"]))
+                    r.cell(_ascii_safe(row["nomor_soal"]))
+            pdf.ln(3)
             tot = table.row(style=BOLD_STYLE)
             tot.cell("-")
             tot.cell("TOTAL")

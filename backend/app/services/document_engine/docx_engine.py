@@ -1465,41 +1465,7 @@ class DocxDocumentEngine(DocumentEngine):
             id_table.cell(idx, 1).text = v
         self._style_data_table(id_table, [50, 110], has_header_row=False)
 
-        # Kisi-Kisi 7 Kolom (S11 & S12)
-        if request.service_id in (ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
-            self._add_section_heading(doc, "A. Kisi-Kisi Penulisan Soal (7 Kolom)")
-            k_table = doc.add_table(rows=len(bp["kisi_kisi"]) + 1, cols=7)
-            k_headers = ["No", "TP", "Materi", "Indikator Soal", "Level", "Bentuk", "No Soal"]
-            for c_i, h_text in enumerate(k_headers):
-                k_table.cell(0, c_i).text = h_text
-                self._format_header_cell(k_table.cell(0, c_i))
-            for r_i, row in enumerate(bp["kisi_kisi"], start=1):
-                k_table.cell(r_i, 0).text = str(row["no"])
-                k_table.cell(r_i, 1).text = row["tp_code"]
-                k_table.cell(r_i, 2).text = row["materi"][:35]
-                k_table.cell(r_i, 3).text = row["indikator"][:65]
-                k_table.cell(r_i, 4).text = row["level_kognitif"]
-                k_table.cell(r_i, 5).text = row["bentuk_soal"]
-                k_table.cell(r_i, 6).text = row["nomor_soal"]
-            self._style_data_table(k_table, [10, 20, 28, 52, 18, 18, 14], has_header_row=True)
-
-        # Kartu Soal (khusus S12)
-        if request.service_id == ServiceIdEnum.STS_SAS and bp["questions"]:
-            self._add_section_heading(doc, "B. Kartu Soal & Telaah Butir")
-            ks_table = doc.add_table(rows=min(len(bp["questions"]), 10) + 1, cols=4)
-            for c_i, h_text in enumerate(["No", "TP & Level", "Rumusan Indikator", "Kunci & Skor"]):
-                ks_table.cell(0, c_i).text = h_text
-                self._format_header_cell(ks_table.cell(0, c_i))
-            for r_i, q in enumerate(bp["questions"][:10], start=1):
-                ks_table.cell(r_i, 0).text = str(q["no"])
-                ks_table.cell(r_i, 1).text = f"{q['tp_code']}\n({q['level_kognitif']})"
-                ks_table.cell(r_i, 2).text = q["indikator"][:90]
-                ks_table.cell(r_i, 3).text = f"Kunci: {q['kunci_jawaban'][:25]}\nSkor: {q['bobot_skor']}"
-            self._style_data_table(ks_table, [12, 34, 78, 36], has_header_row=True)
-
-        # Naskah Soal (Terpisah: A. Soal Pilihan Ganda & B. Soal Essai)
-        doc.add_page_break()
-        self._add_section_heading(doc, "Naskah Soal Evaluasi")
+        # 1. Halaman Pertama: Naskah Soal Evaluasi Siswa
         p_petunjuk = doc.add_paragraph("Petunjuk Umum: Berdoalah sebelum mengerjakan. Pilih jawaban yang paling tepat pada Bagian A dan jawablah secara runtut pada Bagian B.")
         p_petunjuk.paragraph_format.space_after = Pt(6)
 
@@ -1537,9 +1503,15 @@ class DocxDocumentEngine(DocumentEngine):
                 p_ans_line = doc.add_paragraph("    Jawaban: _________________________________________________________________")
                 p_ans_line.paragraph_format.space_after = Pt(4)
 
-        # Kunci Jawaban & Pedoman Penskoran (Halaman Terpisah)
+        # 2. Halaman Kedua: Kunci Jawaban & Kisi-Kisi (Pegangan Guru)
         doc.add_page_break()
-        self._add_section_heading(doc, "Kunci Jawaban & Pedoman Penskoran")
+        p_subkop = doc.add_paragraph()
+        r_sub = p_subkop.add_run("DOKUMEN PEGANGAN GURU — KUNCI JAWABAN & KISI-KISI SOAL")
+        r_sub.bold = True
+        r_sub.font.size = Pt(11)
+        p_subkop.paragraph_format.space_after = Pt(4)
+
+        self._add_section_heading(doc, "Kunci Jawaban & Pedoman Penskoran (Pegangan Guru)")
         ans_table = doc.add_table(rows=len(bp["questions"]) + 2, cols=4)
         for c_i, h_text in enumerate(["No", "Bentuk & Level", "Kunci Jawaban & Pembahasan", "Skor Maks"]):
             ans_table.cell(0, c_i).text = h_text
@@ -1557,6 +1529,38 @@ class DocxDocumentEngine(DocumentEngine):
         ans_table.cell(last_r, 2).text = "Nilai Akhir = (Skor Diperoleh / 100) x 100"
         ans_table.cell(last_r, 3).text = str(bp["total_skor_maksimal"])
         self._style_data_table(ans_table, [12, 32, 96, 20], has_header_row=True)
+
+        # Kisi-Kisi 7 Kolom (S11 & S12) di Lembar Pegangan Guru
+        if request.service_id in (ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
+            self._add_section_heading(doc, "Tabel Kisi-Kisi Penulisan Soal (7 Kolom)")
+            k_table = doc.add_table(rows=len(bp["kisi_kisi"]) + 1, cols=7)
+            k_headers = ["No", "TP", "Materi", "Indikator Soal", "Level", "Bentuk", "No Soal"]
+            for c_i, h_text in enumerate(k_headers):
+                k_table.cell(0, c_i).text = h_text
+                self._format_header_cell(k_table.cell(0, c_i))
+            for r_i, row in enumerate(bp["kisi_kisi"], start=1):
+                k_table.cell(r_i, 0).text = str(row["no"])
+                k_table.cell(r_i, 1).text = row["tp_code"]
+                k_table.cell(r_i, 2).text = row["materi"][:35]
+                k_table.cell(r_i, 3).text = row["indikator"][:65]
+                k_table.cell(r_i, 4).text = row["level_kognitif"]
+                k_table.cell(r_i, 5).text = row["bentuk_soal"]
+                k_table.cell(r_i, 6).text = row["nomor_soal"]
+            self._style_data_table(k_table, [10, 20, 28, 52, 18, 18, 14], has_header_row=True)
+
+        # Kartu Soal (khusus S12)
+        if request.service_id == ServiceIdEnum.STS_SAS and bp["questions"]:
+            self._add_section_heading(doc, "Kartu Soal & Telaah Butir")
+            ks_table = doc.add_table(rows=min(len(bp["questions"]), 10) + 1, cols=4)
+            for c_i, h_text in enumerate(["No", "TP & Level", "Rumusan Indikator", "Kunci & Skor"]):
+                ks_table.cell(0, c_i).text = h_text
+                self._format_header_cell(ks_table.cell(0, c_i))
+            for r_i, q in enumerate(bp["questions"][:10], start=1):
+                ks_table.cell(r_i, 0).text = str(q["no"])
+                ks_table.cell(r_i, 1).text = f"{q['tp_code']}\n({q['level_kognitif']})"
+                ks_table.cell(r_i, 2).text = q["indikator"][:90]
+                ks_table.cell(r_i, 3).text = f"Kunci: {q['kunci_jawaban'][:25]}\nSkor: {q['bobot_skor']}"
+            self._style_data_table(ks_table, [12, 34, 78, 36], has_header_row=True)
 
         # Lembar Jawab (LJK) khusus S12
         if request.service_id == ServiceIdEnum.STS_SAS:

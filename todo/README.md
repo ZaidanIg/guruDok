@@ -52,10 +52,25 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 39** | **Pembuatan 3D Clay Icon-Pack Batch 1 (4 Layanan Aktif + 2 Menu Pintasan) dengan Palet Seragam Biru & Hijau Murni** | [plan/sprint-39-generate-3d-clay-icons-batch-1.md](../plan/sprint-39-generate-3d-clay-icons-batch-1.md) | [todo/sprint-39-todo.md](./sprint-39-todo.md) | 🚫 `CANCELLED` |
 | **Sprint 40** | **Fase 2B: Engine Blueprint Soal Deterministik, Bank Soal DB (`question_bank`), `CollectionService`, & Pembuat Soal Ala Google Form (S10, S11, S12)** | [plan/sprint-40-fase-2b-engine-soal-s10-s11-s12.md](../plan/sprint-40-fase-2b-engine-soal-s10-s11-s12.md) | [todo/sprint-40-todo.md](./sprint-40-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 41** | **Pemisahan Tegas Bagian A (Pilihan Ganda) & Bagian B (Essai) pada Form Generator Stacked, Bank Soal Cerdas Global, Live Preview, DOCX & PDF Engine (Nomor Direset per Bagian 1..N & 1..M)** | [plan/sprint-41-pemisahan-soal-pg-dan-essai-dua-bagian.md](../plan/sprint-41-pemisahan-soal-pg-dan-essai-dua-bagian.md) | [todo/sprint-41-todo.md](./sprint-41-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 42** | **Multi-Sheet Paper Preview (Lembar Kertas Fisik Terpisah ala Google Docs / MS Word), Pemisahan Lembar 1 (Naskah Soal) & Lembar 2 (Kunci Jawaban & Kisi-Kisi Guru), serta Standarisasi Lembar Global 15 Layanan** | [plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md](../plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md) | [todo/sprint-42-todo.md](./sprint-42-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 42):**
+  - **Multi-Sheet Paper Preview (Lembar Kertas Fisik Terpisah & Aspek Rasio F4 vs A4):**
+    1. **Paper Canvas Container:** Mengubah viewport preview dokumen menjadi `.paper-canvas` dengan latar kanvas abu-abu (`#F1F5F9`), padding vertikal, dan gap antar lembar kertas ala Print Preview Google Docs/MS Word.
+    2. **Rasio Fisik Proporsional F4 & A4:** Mengimplementasikan `.paper-sheet-f4` ($215 \times 330$ mm, min-height 960px) dan `.paper-sheet-a4` ($210 \times 297$ mm, min-height 860px) yang secara dinamis mengikuti pilihan kertas form pengguna.
+    3. **Pemisahan Lembar 1 & Lembar 2 pada Layanan Soal (S10 Kuis, S11 Sumatif Bab, S12 STS/SAS):**
+       - **Lembar 1 (Naskah Soal Siswa):** KOP Dinas Lengkap + Identitas Ujian & Waktu + Petunjuk Umum Pengerjaan + Bagian A (PG 1..N) + Bagian B (Essai 1..M) dengan stimulus teks polos tanpa kotak / kata stimulus.
+       - **Lembar 2 (Pegangan Guru):** Sub-KOP Ringkas Dokumen Pegangan Guru + Tabel Kunci Jawaban & Bobot Skor + Tabel Kisi-Kisi Penulisan Soal (7 Kolom BSKAP 046/2025) + Lembar Pengesahan Guru Pengampu.
+    4. **Sinkronisasi Backend DOCX & PDF Engine:**
+       - `docx_engine.py`: Menyisipkan page break (`doc.add_page_break()`) dan Sub-KOP ringkas Lembar 2 sebelum Kunci Jawaban, Kisi-Kisi, dan Kartu Soal.
+       - `pdf_engine.py`: Menambahkan halaman baru (`pdf.add_page()`) dan Sub-KOP ringkas Lembar 2 sebelum Kunci Jawaban dan Kisi-Kisi.
+    5. **Verifikasi Zero-Trust:**
+       - `npm.cmd --prefix frontend run build`: **0 errors (built in 5.49s)**.
+       - `pytest backend/tests`: **123 passed in 52.90s (100% PASS)** termasuk test spesifik multi-sheet `test_exam_service_multi_sheet_page_break_and_sub_kop`.
 
 - **2026-11-24 (Sprint 38):**
   - **Penyelarasan Form CP & Input Bebas Dropdown Kaku:**

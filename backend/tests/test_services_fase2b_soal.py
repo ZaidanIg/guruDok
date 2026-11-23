@@ -419,3 +419,45 @@ def test_sprint41_two_section_numbering_reset_pg_and_essai(client):
     assert "Stimulus Soal No." not in combined_paragraphs
     assert "Stimulus No." not in combined_paragraphs
 
+
+def test_exam_service_multi_sheet_page_break_and_sub_kop(client):
+    """TDD Sprint 42: Exam services (S10-S12) must separate Question Sheet (Sheet 1) and Answer Key (Sheet 2) with Page Break."""
+    for s_id in ("10_kuis", "11_sumatif_bab", "12_sts_sas"):
+        res = client.post(
+            "/api/v1/documents/generate",
+            json={
+                "service_id": s_id,
+                "jenjang": "SMA",
+                "kelas": 11,
+                "subject_id": "SMA-K11-INF",
+                "semester": 1,
+                "chapter_id": "INF-K11-B01",
+                "paper_size": "F4",
+                "output_format": "docx",
+                "custom_overrides": {
+                    "butir_soal_kustom": _sample_questions(),
+                    "jenis_ujian": "STS",
+                    "paket_soal": "A",
+                },
+            },
+        )
+        assert res.status_code == 201
+        dl = client.get(res.json()["data"]["download_url"])
+        assert dl.status_code == 200
+
+        doc = Document(BytesIO(dl.content))
+        # Zero-Trust: Verify physical page break exists between Sheet 1 and Sheet 2
+        page_breaks = [
+            r for p in doc.paragraphs for r in p.runs if len(r._r.xpath('./w:br[@w:type="page"]')) > 0
+        ]
+        assert len(page_breaks) >= 1, f"Expected at least 1 page break for {s_id} separating Sheet 1 and Sheet 2"
+
+        # Check sub-kop on Sheet 2
+        all_text = "\n".join(p.text for p in doc.paragraphs)
+        assert "DOKUMEN PEGANGAN GURU" in all_text
+
+        # Verify Question section precedes Answer Key section
+        idx_pg = all_text.index("A. Soal Pilihan Ganda")
+        idx_subkop = all_text.index("DOKUMEN PEGANGAN GURU")
+        assert idx_pg < idx_subkop, f"Question section must precede Answer Key Sub-KOP for {s_id}"
+
