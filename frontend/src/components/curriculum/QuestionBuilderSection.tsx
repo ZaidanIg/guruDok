@@ -5,7 +5,6 @@ import {
   ArrowUp,
   ArrowDown,
   Copy,
-  Sparkles,
   Database,
   Loader2,
 } from 'lucide-react';
@@ -191,7 +190,7 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
         <div>
           <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-            Pembuat Soal Langsung (Ala Google Form)
+            Pembuatan Soal
           </h2>
           <p className="text-[11px] font-medium text-slate-500">
             Tulis soal &amp; klik huruf kunci jawaban. Kisi-Kisi, Kartu Soal, &amp; Pedoman Penskoran (Skor Maks 100) terhitung otomatis.
@@ -203,7 +202,6 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
             onClick={handleFillDraftFromTp}
             className="clay-btn-white inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700"
           >
-            <Sparkles className="h-3.5 w-3.5 text-blue-600" />
             <span>Isi Draf dari TP</span>
           </button>
           <button
@@ -303,30 +301,32 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
                 </div>
               </div>
 
-              {/* Metadata Kisi-Kisi 1 Baris (TP & Level Kognitif + Toggle Stimulus) */}
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-12 items-center">
-                <div className="sm:col-span-5">
-                  <select
-                    value={q.tp_code || ''}
-                    onChange={(e) => updateAt(idx, { tp_code: e.target.value })}
-                    className="clay-input w-full px-2.5 py-1.5 text-xs font-semibold text-slate-700"
-                    aria-label={`TP Terkait Soal ${idx + 1}`}
-                  >
-                    <option value="">-- Pilih TP Kisi-Kisi --</option>
-                    {availableTps.map((tp) => (
-                      <option key={tp.code} value={tp.code}>
-                        {tp.code}: {tp.deskripsi.slice(0, 45)}...
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="sm:col-span-5 flex flex-wrap gap-1">
+              {/* Baris 2: Pemilih TP Kisi-Kisi (Full Width agar lega) */}
+              <div>
+                <select
+                  value={q.tp_code || ''}
+                  onChange={(e) => updateAt(idx, { tp_code: e.target.value })}
+                  className="clay-input w-full px-3 py-2 text-xs font-semibold text-slate-700"
+                  aria-label={`TP Terkait Soal ${idx + 1}`}
+                >
+                  <option value="">-- Pilih TP Kisi-Kisi --</option>
+                  {availableTps.map((tp) => (
+                    <option key={tp.code} value={tp.code}>
+                      {tp.code}: {tp.deskripsi.slice(0, 60)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Baris 3: Level Kognitif (Sejajar Horizontal) + Tombol Stimulus */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {(['C1-C2', 'C3', 'C4-C6'] as const).map((lvl) => (
                     <button
                       key={lvl}
                       type="button"
                       onClick={() => updateAt(idx, { level_kognitif: lvl })}
-                      className={`px-2 py-1 text-[11px] font-bold ${
+                      className={`whitespace-nowrap px-2.5 py-1 text-[11px] font-bold ${
                         q.level_kognitif === lvl ? 'clay-btn-success' : 'clay-btn-white'
                       }`}
                     >
@@ -334,17 +334,15 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
                     </button>
                   ))}
                 </div>
-                <div className="sm:col-span-2 text-right">
-                  {!showStimulus && (
-                    <button
-                      type="button"
-                      onClick={() => setOpenStimulusMap((prev) => ({ ...prev, [idx]: true }))}
-                      className="clay-btn-white px-2 py-1 text-[11px] font-bold text-blue-700"
-                    >
-                      + Stimulus
-                    </button>
-                  )}
-                </div>
+                {!showStimulus && (
+                  <button
+                    type="button"
+                    onClick={() => setOpenStimulusMap((prev) => ({ ...prev, [idx]: true }))}
+                    className="clay-btn-white shrink-0 whitespace-nowrap px-2.5 py-1 text-[11px] font-bold text-blue-700"
+                  >
+                    + Stimulus
+                  </button>
+                )}
               </div>
 
               {/* Stimulus / Wacana Singkat Opsional */}
