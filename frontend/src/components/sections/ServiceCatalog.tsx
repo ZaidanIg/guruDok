@@ -11,7 +11,7 @@ import {
   CheckSquare,
   ClipboardList,
 } from 'lucide-react';
-import { CORE_SERVICES, UPCOMING_13_SERVICES } from '../../constants/services';
+import { CORE_SERVICES, UPCOMING_13_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceCatalogItem, ServiceId } from '../../types';
 
 interface ServiceCatalogProps {
@@ -85,13 +85,24 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <div
-                    className={`${getIconClass(
-                      item.iconColor
-                    )} flex h-10 w-10 items-center justify-center rounded-lg`}
-                  >
-                    {renderIcon(item)}
-                  </div>
+                  {SERVICE_ICON_PACK[item.id] ? (
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center">
+                      <img
+                        src={SERVICE_ICON_PACK[item.id]}
+                        alt={item.title}
+                        className="h-full w-full object-contain drop-shadow-md select-none pointer-events-none"
+                        draggable={false}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={`${getIconClass(
+                        item.iconColor
+                      )} flex h-10 w-10 items-center justify-center rounded-lg`}
+                    >
+                      {renderIcon(item)}
+                    </div>
+                  )}
                   <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
                     {item.codeLabel}
                   </span>

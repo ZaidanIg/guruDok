@@ -11,7 +11,7 @@ import {
   CheckSquare,
   ClipboardList,
 } from 'lucide-react';
-import { CORE_SERVICES } from '../../constants/services';
+import { CORE_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceId } from '../../types';
 
 interface HeroSectionProps {
@@ -132,7 +132,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Centered Quick Service Section (Tanpa Box Pembungkus) */}
         <div className="mt-2 w-full">
           <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 sm:text-sm">
-            Quick Service
+            Pintasan Layanan
           </h2>
 
           <div className="mt-4 flex flex-wrap items-start justify-center gap-5 sm:gap-8">
@@ -143,13 +143,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onClick={() => onSelectService(srv.id as ServiceId)}
                 className="group flex w-20 flex-col items-center gap-2 focus:outline-none sm:w-24"
               >
-                <div
-                  className={`${
-                    srv.iconColor === 'green' ? 'clay-icon-green' : 'clay-icon-blue'
-                  } flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-110 sm:h-14 sm:w-14`}
-                >
-                  {renderServiceIcon(srv.id)}
-                </div>
+                {SERVICE_ICON_PACK[srv.id] ? (
+                  <div className="flex h-12 w-12 items-center justify-center transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-110 sm:h-14 sm:w-14">
+                    <img
+                      src={SERVICE_ICON_PACK[srv.id]}
+                      alt={srv.shortTitle || srv.title}
+                      className="h-full w-full object-contain drop-shadow-md select-none pointer-events-none"
+                      draggable={false}
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className={`${
+                      srv.iconColor === 'green' ? 'clay-icon-green' : 'clay-icon-blue'
+                    } flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-110 sm:h-14 sm:w-14`}
+                  >
+                    {renderServiceIcon(srv.id)}
+                  </div>
+                )}
                 <span className="text-center text-xs font-bold leading-tight text-slate-700 transition group-hover:text-blue-700">
                   {srv.shortTitle || srv.title}
                 </span>
