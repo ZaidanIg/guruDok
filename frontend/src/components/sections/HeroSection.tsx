@@ -60,28 +60,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Brand Avatar Stage with Pop-Out Character & Framer-Motion Greeting */}
         <div className="relative mt-8 mb-6 flex items-center justify-center sm:mt-11 sm:mb-8">
-          {/* Stunning Halo & Ambient Light Glow behind the circle */}
-          <div className="pointer-events-none absolute -inset-2.5 sm:-inset-4 rounded-full bg-gradient-to-tr from-sky-400/35 via-blue-500/20 to-indigo-400/35 blur-xl animate-pulse" />
-          <div className="pointer-events-none absolute -inset-1 rounded-full bg-cyan-400/20 blur-md" />
-
-          {/* Circular Brand Avatar Container with Inner Lighting, Thin Black Border, & Soft Glow Shadow */}
-          <div className="relative flex h-52 w-52 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-gradient-to-b from-white via-sky-50/70 to-blue-100/80 shadow-[0_16px_36px_rgba(15,23,42,0.15),0_0_28px_rgba(56,189,248,0.25)] sm:h-64 sm:w-64">
-            {/* Top Spotlight Radial Highlight */}
-            <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_15%,rgba(255,255,255,0.9)_0%,rgba(224,242,254,0.45)_50%,transparent_75%)]" />
-
-            {/* Base character inside circle with Realistic Drop Shadow */}
+          {/* Circular Brand Avatar Container (Clean White BG & Thin Black Border, Tanpa Box Shadow/Lightning) */}
+          <div className="relative flex h-52 w-52 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-white sm:h-64 sm:w-64">
+            {/* Base character inside circle with Clean Drop Shadow */}
             <img
               src="/character2.png"
               alt="Karakter Brand GuruDok"
               className="pointer-events-none h-full w-full select-none object-cover object-top scale-[1.65] origin-top translate-y-3 transition-transform duration-300 hover:scale-[1.7]"
               style={{
-                filter: 'drop-shadow(0 10px 18px rgba(15, 23, 42, 0.28)) drop-shadow(0 2px 6px rgba(30, 58, 138, 0.2))',
+                filter: 'drop-shadow(0 10px 18px rgba(15, 23, 42, 0.22))',
               }}
               draggable={false}
             />
           </div>
 
-          {/* 3D Pop-Out Layer: Head, Hair, & Waving Hand with 3D Drop Shadow overflowing circle */}
+          {/* 3D Pop-Out Layer: Head, Hair, & Waving Hand overflowing circle (Tanpa drop-shadow pada cut edge agar bebas bug garis) */}
           <div className="pointer-events-none absolute inset-0 flex items-end justify-center">
             <img
               src="/character2.png"
@@ -90,32 +83,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               className="h-full w-full select-none object-cover object-top scale-[1.65] origin-top translate-y-3"
               style={{
                 clipPath: 'polygon(0% 0%, 100% 0%, 100% 48%, 0% 48%)',
-                filter: 'drop-shadow(0 8px 16px rgba(15, 23, 42, 0.28)) drop-shadow(0 2px 6px rgba(56, 189, 248, 0.25))',
               }}
               draggable={false}
             />
           </div>
-
-          {/* Subtle Shimmering Light Sparkles */}
-          <motion.div
-            animate={{ scale: [0.8, 1.25, 0.8], opacity: [0.6, 1, 0.6], rotate: [0, 90, 180] }}
-            transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
-            className="pointer-events-none absolute -top-1 left-2 sm:-top-2 sm:left-4 z-20"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.85)]" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
-            </svg>
-          </motion.div>
-
-          <motion.div
-            animate={{ scale: [1, 0.7, 1], opacity: [0.5, 0.9, 0.5], rotate: [0, -45, 0] }}
-            transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut', delay: 1 }}
-            className="pointer-events-none absolute bottom-8 -left-2 sm:bottom-12 sm:-left-3 z-20"
-          >
-            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.85)]" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
-            </svg>
-          </motion.div>
 
           {/* Pop-up Greeting Bubble (Animated with Framer Motion, positioned to the side) */}
           <motion.div
