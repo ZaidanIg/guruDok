@@ -1505,10 +1505,7 @@ class DocxDocumentEngine(DocumentEngine):
 
         for q in bp["questions"]:
             if q.get("stimulus"):
-                p_stim = doc.add_paragraph()
-                r_stim = p_stim.add_run(f"Stimulus Soal No. {q['no']}: {q['stimulus']}")
-                r_stim.italic = True
-                r_stim.font.size = Pt(9.5)
+                p_stim = doc.add_paragraph(q["stimulus"])
                 p_stim.paragraph_format.space_after = Pt(2)
 
             p_q = doc.add_paragraph()

@@ -3737,8 +3737,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       ).map((q, idx) => (
                         <div key={idx} className="space-y-1">
                           {q.stimulus && (
-                            <p className="italic text-slate-600 bg-slate-50 p-2 rounded border border-slate-200">
-                              Stimulus No. {idx + 1}: {q.stimulus}
+                            <p className="text-slate-800 leading-relaxed">
+                              {q.stimulus}
                             </p>
                           )}
                           <p className="font-bold text-slate-900">

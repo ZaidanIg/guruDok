@@ -879,8 +879,8 @@ class PdfDocumentEngine(DocumentEngine):
         for q in bp["questions"]:
             if q.get("stimulus"):
                 pdf.set_x(pdf.l_margin)
-                pdf.set_font("Helvetica", "I", 8.5)
-                pdf.multi_cell(usable_w, 4.8, _ascii_safe(f"Stimulus No. {q['no']}: {q['stimulus']}"))
+                pdf.set_font("Helvetica", "", 8.8)
+                pdf.multi_cell(usable_w, 4.8, _ascii_safe(q["stimulus"]))
             pdf.set_x(pdf.l_margin)
             pdf.set_font("Helvetica", "B", 9)
             pdf.multi_cell(usable_w, 5, _ascii_safe(f"{q['no']}. {q['pertanyaan']}"))
