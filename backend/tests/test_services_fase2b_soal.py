@@ -317,3 +317,105 @@ def test_fase2b_security_xss_and_validation(client):
         },
     )
     assert limit_res.status_code == 422
+
+
+def test_sprint41_two_section_numbering_reset_pg_and_essai(client):
+    """TDD Sprint 41: Bagian A (PG) & Bagian B (Essai) must have separate headings and section-reset numbering."""
+    from app.models.curriculum import CurriculumSubject, ChapterTopic, LearningObjective
+    from app.schemas.generation import DocumentGenerateRequest, CustomDocumentOverrides, CustomQuestionItem, ServiceIdEnum
+    from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
+
+    sample_subject = CurriculumSubject(
+        id="SMA-K11-INF",
+        nama_mapel="Informatika",
+        jenjang="SMA",
+        kelas=11,
+        fase="F",
+        alokasi_jp_mingguan=3,
+        total_alokasi_jp_tahun=108,
+    )
+    sample_chapter = ChapterTopic(
+        id="INF-K11-B01",
+        semester=1,
+        nomor_bab=1,
+        judul_bab="Berpikir Komputasional",
+        alokasi_jp=12,
+        tujuan_pembelajaran=[
+            LearningObjective(code="TP.11.1.1", deskripsi="Memahami strategi algoritmik", alokasi_jp=4),
+        ],
+    )
+    req = DocumentGenerateRequest(
+        service_id=ServiceIdEnum.SUMATIF_BAB,
+        jenjang="SMA",
+        kelas=11,
+        subject_id="SMA-K11-INF",
+        semester=1,
+        custom_overrides=CustomDocumentOverrides(
+            butir_soal_kustom=[
+                CustomQuestionItem(
+                    tipe_soal="PG",
+                    pertanyaan="Pertanyaan PG Satu",
+                    opsi=["A", "B", "C", "D"],
+                    kunci_jawaban="A",
+                ),
+                CustomQuestionItem(
+                    tipe_soal="PG",
+                    pertanyaan="Pertanyaan PG Dua",
+                    opsi=["A", "B", "C", "D"],
+                    kunci_jawaban="B",
+                ),
+                CustomQuestionItem(
+                    tipe_soal="URAIAN",
+                    pertanyaan="Pertanyaan Essai Satu",
+                    opsi=[],
+                    kunci_jawaban="Rubrik Essai Satu",
+                ),
+            ]
+        ),
+    )
+
+    bp = QuestionBlueprintEngine.build_blueprint(req, sample_subject, sample_chapter)
+
+    # 1. Blueprint validation
+    assert len(bp["pg_questions"]) == 2
+    assert len(bp["essai_questions"]) == 1
+    assert bp["pg_questions"][0]["section_no"] == 1
+    assert bp["pg_questions"][1]["section_no"] == 2
+    assert bp["essai_questions"][0]["section_no"] == 1  # Reset to 1!
+    assert bp["pg_questions"][0]["bagian"] == "A"
+    assert bp["essai_questions"][0]["bagian"] == "B"
+
+    # Kisi-kisi check
+    assert bp["kisi_kisi"][0]["nomor_soal"] == "A.1"
+    assert bp["kisi_kisi"][1]["nomor_soal"] == "A.2"
+    assert bp["kisi_kisi"][2]["nomor_soal"] == "B.1"
+
+    # 2. DOCX Generation check
+    res_docx = client.post(
+        "/api/v1/documents/generate",
+        json={
+            "service_id": "11_sumatif_bab",
+            "jenjang": "SMA",
+            "kelas": 11,
+            "subject_id": "SMA-K11-INF",
+            "semester": 1,
+            "chapter_id": "INF-K11-B01",
+            "paper_size": "F4",
+            "output_format": "docx",
+            "custom_overrides": {
+                "butir_soal_kustom": _sample_questions(),
+            },
+        },
+    )
+    assert res_docx.status_code == 201
+    dl_url = res_docx.json()["data"]["download_url"]
+    dl = client.get(dl_url)
+    assert dl.status_code == 200
+
+    doc = Document(BytesIO(dl.content))
+    combined_paragraphs = "\n".join(p.text for p in doc.paragraphs)
+    assert "A. Soal Pilihan Ganda" in combined_paragraphs
+    assert "B. Soal Essai" in combined_paragraphs
+    assert "Stimulus Soal No." not in combined_paragraphs
+    assert "Stimulus No." not in combined_paragraphs
+

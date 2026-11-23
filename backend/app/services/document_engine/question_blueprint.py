@@ -198,14 +198,22 @@ class QuestionBlueprintEngine:
             questions = cls._build_default_questions(subject, chapters, request)
 
         paket = (overrides.paket_soal if overrides and overrides.paket_soal else "A").upper()
+        pg_part = [q for q in questions if q["tipe_soal"] == "PG"]
+        ur_part = [q for q in questions if q["tipe_soal"] != "PG"]
+
         if paket == "B" and len(questions) > 1:
             rng = random.Random(f"{subject.id}:{request.semester}:B")
-            pg_part = [q for q in questions if q["tipe_soal"] == "PG"]
-            ur_part = [q for q in questions if q["tipe_soal"] == "URAIAN"]
             rng.shuffle(pg_part)
             rng.shuffle(ur_part)
-            questions = pg_part + ur_part
 
+        for idx, q in enumerate(pg_part, start=1):
+            q["bagian"] = "A"
+            q["section_no"] = idx
+        for idx, q in enumerate(ur_part, start=1):
+            q["bagian"] = "B"
+            q["section_no"] = idx
+
+        questions = pg_part + ur_part
         for idx, q in enumerate(questions, start=1):
             q["no"] = idx
 
@@ -219,8 +227,8 @@ class QuestionBlueprintEngine:
                 "materi": q["materi"],
                 "indikator": q["indikator"],
                 "level_kognitif": q["level_kognitif"],
-                "bentuk_soal": "Pilihan Ganda" if q["tipe_soal"] == "PG" else "Uraian",
-                "nomor_soal": str(q["no"]),
+                "bentuk_soal": "Pilihan Ganda" if q["tipe_soal"] == "PG" else "Essai",
+                "nomor_soal": f"{q['bagian']}.{q['section_no']}",
             }
             for q in questions
         ]
@@ -235,8 +243,10 @@ class QuestionBlueprintEngine:
             "alokasi_waktu_menit": alokasi_waktu,
             "chapters": chapters,
             "questions": questions,
+            "pg_questions": pg_part,
+            "essai_questions": ur_part,
             "kisi_kisi": kisi_kisi,
-            "pg_count": sum(1 for q in questions if q["tipe_soal"] == "PG"),
-            "uraian_count": sum(1 for q in questions if q["tipe_soal"] == "URAIAN"),
+            "pg_count": len(pg_part),
+            "uraian_count": len(ur_part),
             "total_skor_maksimal": total_skor or 100,
         }

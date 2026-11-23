@@ -872,28 +872,47 @@ class PdfDocumentEngine(DocumentEngine):
                     r.cell(_ascii_safe(row["nomor_soal"]))
             pdf.ln(3)
 
-        # Naskah Soal
+        # Naskah Soal (Terpisah: A. Soal Pilihan Ganda & B. Soal Essai)
         pdf.add_page()
         self._add_section_title(pdf, "Naskah Soal Evaluasi")
         usable_w = pdf.w - pdf.l_margin - pdf.r_margin
-        for q in bp["questions"]:
-            if q.get("stimulus"):
-                pdf.set_x(pdf.l_margin)
-                pdf.set_font("Helvetica", "", 8.8)
-                pdf.multi_cell(usable_w, 4.8, _ascii_safe(q["stimulus"]))
+
+        if bp["pg_questions"]:
             pdf.set_x(pdf.l_margin)
-            pdf.set_font("Helvetica", "B", 9)
-            pdf.multi_cell(usable_w, 5, _ascii_safe(f"{q['no']}. {q['pertanyaan']}"))
-            pdf.set_font("Helvetica", "", 8.8)
-            if q["tipe_soal"] == "PG" and q.get("opsi"):
-                for o_idx, opt_text in enumerate(q["opsi"]):
+            pdf.set_font("Helvetica", "B", 10)
+            pdf.cell(0, 6, "A. Soal Pilihan Ganda", new_x="LMARGIN", new_y="NEXT")
+            for q in bp["pg_questions"]:
+                if q.get("stimulus"):
+                    pdf.set_x(pdf.l_margin)
+                    pdf.set_font("Helvetica", "", 8.8)
+                    pdf.multi_cell(usable_w, 4.8, _ascii_safe(q["stimulus"]))
+                pdf.set_x(pdf.l_margin)
+                pdf.set_font("Helvetica", "B", 9)
+                pdf.multi_cell(usable_w, 5, _ascii_safe(f"{q['section_no']}. {q['pertanyaan']}"))
+                pdf.set_font("Helvetica", "", 8.8)
+                for o_idx, opt_text in enumerate(q.get("opsi") or []):
                     letter = letters[o_idx] if o_idx < len(letters) else str(o_idx + 1)
                     pdf.set_x(pdf.l_margin)
                     pdf.multi_cell(usable_w, 4.6, _ascii_safe(f"   {letter}. {opt_text}"))
-            else:
+                pdf.ln(1.5)
+
+        if bp["essai_questions"]:
+            pdf.ln(2)
+            pdf.set_x(pdf.l_margin)
+            pdf.set_font("Helvetica", "B", 10)
+            pdf.cell(0, 6, "B. Soal Essai", new_x="LMARGIN", new_y="NEXT")
+            for q in bp["essai_questions"]:
+                if q.get("stimulus"):
+                    pdf.set_x(pdf.l_margin)
+                    pdf.set_font("Helvetica", "", 8.8)
+                    pdf.multi_cell(usable_w, 4.8, _ascii_safe(q["stimulus"]))
+                pdf.set_x(pdf.l_margin)
+                pdf.set_font("Helvetica", "B", 9)
+                pdf.multi_cell(usable_w, 5, _ascii_safe(f"{q['section_no']}. {q['pertanyaan']}"))
+                pdf.set_font("Helvetica", "", 8.8)
                 pdf.set_x(pdf.l_margin)
                 pdf.multi_cell(usable_w, 5, "   Jawaban: ___________________________________________________________")
-            pdf.ln(1.5)
+                pdf.ln(1.5)
 
         # Kunci Jawaban & Pedoman Penskoran
         pdf.add_page()
@@ -905,8 +924,9 @@ class PdfDocumentEngine(DocumentEngine):
                 hdr.cell(h_col)
             for q in bp["questions"]:
                 r = table.row()
-                r.cell(str(q["no"]))
-                r.cell(_ascii_safe(f"{q['tipe_soal']} ({q['level_kognitif']})"))
+                r.cell(f"{q['bagian']}.{q['section_no']}")
+                bentuk_label = "PG" if q["tipe_soal"] == "PG" else "Essai"
+                r.cell(_ascii_safe(f"{bentuk_label} ({q['level_kognitif']})"))
                 pemb = f" - {q['pembahasan']}" if q.get("pembahasan") else ""
                 r.cell(_ascii_safe(f"{q['kunci_jawaban']}{pemb}"))
                 r.cell(str(q["bobot_skor"]))

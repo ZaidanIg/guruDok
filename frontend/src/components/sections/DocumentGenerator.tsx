@@ -3674,101 +3674,194 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               )}
 
               {/* Service 10, 11, 12: Live Preview Kuis / Sumatif Bab / STS-SAS */}
-              {isExamService && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      {isKuis
-                        ? 'KUIS HARIAN & PENILAIAN FORMATIF'
-                        : isSumatifBab
-                        ? 'ASESMEN SUMATIF LINGKUP MATERI (BAB)'
-                        : `PENILAIAN ${customOverrides.jenis_ujian || 'STS'} — PAKET ${customOverrides.paket_soal || 'A'}`}
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      {selectedSubject?.nama_mapel} | {jenjang} KELAS {kelas} | SEMESTER {semester}
-                    </p>
-                  </div>
+              {isExamService && (() => {
+                const allCustom =
+                  customOverrides.butir_soal_kustom && customOverrides.butir_soal_kustom.length > 0
+                    ? customOverrides.butir_soal_kustom
+                    : [
+                        {
+                          tipe_soal: 'PG' as const,
+                          pertanyaan: '(Ketik soal Anda pada kartu di sebelah kiri...)',
+                          opsi: ['Opsi A', 'Opsi B', 'Opsi C', 'Opsi D'],
+                          kunci_jawaban: 'A',
+                          tp_code: activeTps[0]?.code || 'TP.1',
+                          level_kognitif: 'C1-C2',
+                        },
+                      ];
 
-                  {(isSumatifBab || isStsSas) && (
+                const pgQuestions = allCustom.filter((q) => q.tipe_soal === 'PG');
+                const essaiQuestions = allCustom.filter((q) => q.tipe_soal !== 'PG');
+                const sortedQuestions = [...pgQuestions, ...essaiQuestions];
+
+                return (
+                  <div className="mt-5 space-y-5 text-xs leading-relaxed">
+                    <div className="text-center">
+                      <h2 className="text-base font-extrabold uppercase text-slate-900">
+                        {isKuis
+                          ? 'KUIS HARIAN & PENILAIAN FORMATIF'
+                          : isSumatifBab
+                          ? 'ASESMEN SUMATIF LINGKUP MATERI (BAB)'
+                          : `PENILAIAN ${customOverrides.jenis_ujian || 'STS'} — PAKET ${customOverrides.paket_soal || 'A'}`}
+                      </h2>
+                      <p className="font-bold uppercase text-slate-700">
+                        {selectedSubject?.nama_mapel} | {jenjang} KELAS {kelas} | SEMESTER {semester}
+                      </p>
+                    </div>
+
+                    {(isSumatifBab || isStsSas) && (
+                      <div>
+                        <h3 className="font-extrabold uppercase text-slate-900">
+                          A. Tabel Kisi-Kisi Penulisan Soal
+                        </h3>
+                        <div className="paper-table-container mt-1.5">
+                          <table className="paper-table">
+                            <thead>
+                              <tr>
+                                <th>No</th>
+                                <th>TP</th>
+                                <th>Materi</th>
+                                <th>Indikator Soal</th>
+                                <th>Level</th>
+                                <th>Bentuk</th>
+                                <th>Soal</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sortedQuestions.map((q, idx) => {
+                                const isPg = q.tipe_soal === 'PG';
+                                const sectionIdx = isPg
+                                  ? pgQuestions.indexOf(q) + 1
+                                  : essaiQuestions.indexOf(q) + 1;
+                                return (
+                                  <tr key={idx}>
+                                    <td>{idx + 1}</td>
+                                    <td>{q.tp_code || '-'}</td>
+                                    <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
+                                    <td>Menguasai indikator {q.tp_code || 'materi pokok'}</td>
+                                    <td>{q.level_kognitif || 'C1-C2'}</td>
+                                    <td>{isPg ? 'Pilihan Ganda' : 'Essai'}</td>
+                                    <td>{isPg ? `A.${sectionIdx}` : `B.${sectionIdx}`}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <h3 className="font-extrabold uppercase text-slate-900">
-                        A. Tabel Kisi-Kisi Penulisan Soal
+                        {isSumatifBab || isStsSas ? 'B. Naskah Soal Evaluasi' : 'Naskah Soal Evaluasi'}
+                      </h3>
+                      <p className="mt-1 text-[11px] italic text-slate-600">
+                        Petunjuk: Kerjakan soal Pilihan Ganda pada Bagian A dan soal Essai pada Bagian B dengan teliti dan jujur.
+                      </p>
+
+                      {/* Bagian A: Pilihan Ganda */}
+                      {pgQuestions.length > 0 && (
+                        <div className="mt-3 space-y-3">
+                          <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">
+                            A. Soal Pilihan Ganda
+                          </h4>
+                          {pgQuestions.map((q, pgIdx) => (
+                            <div key={pgIdx} className="space-y-1">
+                              {q.stimulus && (
+                                <p className="text-slate-800 leading-relaxed font-normal">
+                                  {q.stimulus}
+                                </p>
+                              )}
+                              <p className="font-bold text-slate-900">
+                                {pgIdx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
+                              </p>
+                              {q.opsi && (
+                                <ul className="pl-5 space-y-0.5 text-slate-700">
+                                  {q.opsi.map((opt, oIdx) => (
+                                    <li key={oIdx}>
+                                      {['A', 'B', 'C', 'D', 'E'][oIdx]}. {opt || '...'}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Bagian B: Soal Essai */}
+                      {essaiQuestions.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">
+                            B. Soal Essai
+                          </h4>
+                          {essaiQuestions.map((q, esIdx) => (
+                            <div key={esIdx} className="space-y-1">
+                              {q.stimulus && (
+                                <p className="text-slate-800 leading-relaxed font-normal">
+                                  {q.stimulus}
+                                </p>
+                              )}
+                              <p className="font-bold text-slate-900">
+                                {esIdx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
+                              </p>
+                              <p className="text-[11px] italic text-slate-400 pl-4">
+                                Jawaban: _________________________________________________________________
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <h3 className="font-extrabold uppercase text-slate-900">
+                        {isSumatifBab || isStsSas
+                          ? 'C. Kunci Jawaban & Pedoman Penskoran'
+                          : 'Kunci Jawaban & Pedoman Penskoran (Skor Maks 100)'}
                       </h3>
                       <div className="paper-table-container mt-1.5">
                         <table className="paper-table">
                           <thead>
                             <tr>
                               <th>No</th>
-                              <th>TP</th>
-                              <th>Materi</th>
-                              <th>Indikator Soal</th>
-                              <th>Level</th>
-                              <th>Bentuk</th>
-                              <th>Soal</th>
+                              <th>Bentuk (Level)</th>
+                              <th>Kunci Jawaban / Poin Rubrik</th>
+                              <th>Skor</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {(customOverrides.butir_soal_kustom && customOverrides.butir_soal_kustom.length > 0
-                              ? customOverrides.butir_soal_kustom
-                              : [{ tipe_soal: 'PG' as const, tp_code: activeTps[0]?.code || 'TP.1', level_kognitif: 'C1-C2', pertanyaan: 'Butir soal siap ditulis pada form...', opsi: [] }]
-                            ).map((q, idx) => (
-                              <tr key={idx}>
-                                <td>{idx + 1}</td>
-                                <td>{q.tp_code || '-'}</td>
-                                <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
-                                <td>Menguasai indikator {q.tp_code || 'materi pokok'}</td>
-                                <td>{q.level_kognitif || 'C1-C2'}</td>
-                                <td>{q.tipe_soal === 'URAIAN' ? 'Uraian' : 'PG'}</td>
-                                <td>{idx + 1}</td>
-                              </tr>
-                            ))}
+                            {sortedQuestions.map((q, idx) => {
+                              const isPg = q.tipe_soal === 'PG';
+                              const sectionIdx = isPg
+                                ? pgQuestions.indexOf(q) + 1
+                                : essaiQuestions.indexOf(q) + 1;
+                              return (
+                                <tr key={idx}>
+                                  <td>{isPg ? `A.${sectionIdx}` : `B.${sectionIdx}`}</td>
+                                  <td>
+                                    {isPg ? 'PG' : 'Essai'} ({q.level_kognitif || 'C1-C2'})
+                                  </td>
+                                  <td>
+                                    {q.kunci_jawaban || '-'}
+                                    {q.pembahasan ? ` — ${q.pembahasan}` : ''}
+                                  </td>
+                                  <td>{q.bobot_skor || (isPg ? 4 : 10)}</td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">Naskah Soal Evaluasi</h3>
-                    <div className="mt-2 space-y-3">
-                      {(customOverrides.butir_soal_kustom && customOverrides.butir_soal_kustom.length > 0
-                        ? customOverrides.butir_soal_kustom
-                        : [{ tipe_soal: 'PG' as const, pertanyaan: '(Ketik soal Anda pada kartu di sebelah kiri...)', opsi: ['Opsi A', 'Opsi B', 'Opsi C', 'Opsi D'], kunci_jawaban: 'A' }]
-                      ).map((q, idx) => (
-                        <div key={idx} className="space-y-1">
-                          {q.stimulus && (
-                            <p className="text-slate-800 leading-relaxed">
-                              {q.stimulus}
-                            </p>
-                          )}
-                          <p className="font-bold text-slate-900">
-                            {idx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
-                          </p>
-                          {q.tipe_soal === 'PG' && q.opsi && (
-                            <ul className="pl-5 space-y-0.5 text-slate-700">
-                              {q.opsi.map((opt, oIdx) => (
-                                <li key={oIdx}>
-                                  {['A', 'B', 'C', 'D', 'E'][oIdx]}. {opt || '...'}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))}
+                      <p className="mt-1 text-[11px] text-slate-600">
+                        Nilai Akhir = (Total Skor Diperoleh / Total Skor Maksimal) × 100
+                        {isStsSas
+                          ? ' • Dilengkapi Kartu Soal & Lembar Jawab (LJK) pada file unduhan Word & PDF.'
+                          : ''}
+                      </p>
                     </div>
                   </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      Kunci Jawaban &amp; Pedoman Penskoran (Skor Maks 100)
-                    </h3>
-                    <p className="text-[11px] text-slate-600">
-                      Nilai Akhir = (Skor Diperoleh / 100) × 100
-                      {isStsSas ? ' • Dilengkapi Kartu Soal & Lembar Jawab (LJK) pada file unduhan.' : ''}
-                    </p>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Service 13: Live Preview Presensi Siswa Bulanan */}
               {activeService.id === '13_presensi' && (

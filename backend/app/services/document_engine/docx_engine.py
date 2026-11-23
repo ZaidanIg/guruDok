@@ -1497,29 +1497,43 @@ class DocxDocumentEngine(DocumentEngine):
                 ks_table.cell(r_i, 3).text = f"Kunci: {q['kunci_jawaban'][:25]}\nSkor: {q['bobot_skor']}"
             self._style_data_table(ks_table, [12, 34, 78, 36], has_header_row=True)
 
-        # Naskah Soal
+        # Naskah Soal (Terpisah: A. Soal Pilihan Ganda & B. Soal Essai)
         doc.add_page_break()
         self._add_section_heading(doc, "Naskah Soal Evaluasi")
-        p_petunjuk = doc.add_paragraph("Petunjuk Umum: Berdoalah sebelum mengerjakan. Pilih jawaban yang paling tepat untuk soal Pilihan Ganda dan jawablah secara runtut untuk soal Uraian.")
+        p_petunjuk = doc.add_paragraph("Petunjuk Umum: Berdoalah sebelum mengerjakan. Pilih jawaban yang paling tepat pada Bagian A dan jawablah secara runtut pada Bagian B.")
         p_petunjuk.paragraph_format.space_after = Pt(6)
 
-        for q in bp["questions"]:
-            if q.get("stimulus"):
-                p_stim = doc.add_paragraph(q["stimulus"])
-                p_stim.paragraph_format.space_after = Pt(2)
+        if bp["pg_questions"]:
+            self._add_section_heading(doc, "A. Soal Pilihan Ganda", level=2)
+            for q in bp["pg_questions"]:
+                if q.get("stimulus"):
+                    p_stim = doc.add_paragraph(q["stimulus"])
+                    p_stim.paragraph_format.space_after = Pt(2)
 
-            p_q = doc.add_paragraph()
-            r_no = p_q.add_run(f"{q['no']}. ")
-            r_no.bold = True
-            p_q.add_run(q["pertanyaan"])
-            p_q.paragraph_format.space_after = Pt(2)
+                p_q = doc.add_paragraph()
+                r_no = p_q.add_run(f"{q['section_no']}. ")
+                r_no.bold = True
+                p_q.add_run(q["pertanyaan"])
+                p_q.paragraph_format.space_after = Pt(2)
 
-            if q["tipe_soal"] == "PG" and q.get("opsi"):
-                for o_idx, opt_text in enumerate(q["opsi"]):
+                for o_idx, opt_text in enumerate(q.get("opsi") or []):
                     letter = letters[o_idx] if o_idx < len(letters) else str(o_idx + 1)
                     p_opt = doc.add_paragraph(f"    {letter}. {opt_text}")
                     p_opt.paragraph_format.space_after = Pt(1)
-            else:
+
+        if bp["essai_questions"]:
+            self._add_section_heading(doc, "B. Soal Essai", level=2)
+            for q in bp["essai_questions"]:
+                if q.get("stimulus"):
+                    p_stim = doc.add_paragraph(q["stimulus"])
+                    p_stim.paragraph_format.space_after = Pt(2)
+
+                p_q = doc.add_paragraph()
+                r_no = p_q.add_run(f"{q['section_no']}. ")
+                r_no.bold = True
+                p_q.add_run(q["pertanyaan"])
+                p_q.paragraph_format.space_after = Pt(2)
+
                 p_ans_line = doc.add_paragraph("    Jawaban: _________________________________________________________________")
                 p_ans_line.paragraph_format.space_after = Pt(4)
 
@@ -1531,8 +1545,9 @@ class DocxDocumentEngine(DocumentEngine):
             ans_table.cell(0, c_i).text = h_text
             self._format_header_cell(ans_table.cell(0, c_i))
         for r_i, q in enumerate(bp["questions"], start=1):
-            ans_table.cell(r_i, 0).text = str(q["no"])
-            ans_table.cell(r_i, 1).text = f"{q['tipe_soal']} ({q['level_kognitif']})"
+            ans_table.cell(r_i, 0).text = f"{q['bagian']}.{q['section_no']}"
+            bentuk_label = "PG" if q["tipe_soal"] == "PG" else "Essai"
+            ans_table.cell(r_i, 1).text = f"{bentuk_label} ({q['level_kognitif']})"
             pemb = f" — {q['pembahasan']}" if q.get("pembahasan") else ""
             ans_table.cell(r_i, 2).text = f"{q['kunci_jawaban']}{pemb}"
             ans_table.cell(r_i, 3).text = str(q["bobot_skor"])
