@@ -168,6 +168,30 @@ export class GuruDokApiClient {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
+  /**
+   * Fetches curated/collected questions from GuruDocDB question_bank.
+   */
+  async getQuestions(params: {
+    subjectId?: string;
+    chapterId?: string;
+    tipeSoal?: string;
+    limit?: number;
+  }): Promise<any[]> {
+    const query = new URLSearchParams();
+    if (params.subjectId) query.set('subject_id', params.subjectId);
+    if (params.chapterId) query.set('chapter_id', params.chapterId);
+    if (params.tipeSoal) query.set('tipe_soal', params.tipeSoal);
+    if (params.limit) query.set('limit', String(params.limit));
+    try {
+      const res = await fetch(`${this.baseUrl}/questions?${query.toString()}`);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json.data) ? json.data : [];
+    } catch {
+      return [];
+    }
+  }
+
   async loginWithGoogle(credential: string): Promise<AuthLoginResponse> {
     const res = await fetch(`${this.baseUrl}/auth/google`, {
       method: 'POST',

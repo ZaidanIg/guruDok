@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, curriculum, teachers, generator, download, auth, classrooms
+from app.api.v1.endpoints import health, curriculum, teachers, generator, download, auth, classrooms, questions
 
 api_v1_router = APIRouter()
 
@@ -10,3 +10,4 @@ api_v1_router.include_router(teachers.router)
 api_v1_router.include_router(generator.router)
 api_v1_router.include_router(download.router)
 api_v1_router.include_router(classrooms.router)
+api_v1_router.include_router(questions.router)

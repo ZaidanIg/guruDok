@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CustomCpElementItem } from '../../types';
-import { X, AlertCircle, Sparkles } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 
 interface CpElementEditorModalProps {
   isOpen: boolean;
@@ -67,9 +67,6 @@ export const CpElementEditorModal: React.FC<CpElementEditorModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-              <Sparkles className="w-4 h-4" />
-            </div>
             <h2 className="text-lg sm:text-xl font-black text-slate-800">
               {elementToEdit ? 'Edit Elemen Capaian Pembelajaran' : 'Tambah Elemen CP Baru'}
             </h2>

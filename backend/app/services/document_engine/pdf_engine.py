@@ -8,6 +8,7 @@ from app.models.curriculum import CurriculumSubject, ChapterTopic, LearningObjec
 from app.models.teacher import TeacherProfile
 from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
+from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
 
 # Official styling constants for Table Headers & Accents (BSKAP / GuruDok Standard)
 HEADER_STYLE = FontFace(emphasis="BOLD", fill_color=(217, 226, 243))  # #D9E2F3
@@ -173,6 +174,8 @@ class PdfDocumentEngine(DocumentEngine):
                 self._build_kktp(pdf, request, subject, chapter)
             elif request.service_id == ServiceIdEnum.LKPD:
                 self._build_lkpd(pdf, request, subject, chapter, tpl)
+            elif request.service_id in (ServiceIdEnum.KUIS, ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
+                self._build_exam_document(pdf, request, subject, chapter)
 
             # 3. Lembar Pengesahan
             self._add_lembar_pengesahan(pdf, teacher)
@@ -826,6 +829,109 @@ class PdfDocumentEngine(DocumentEngine):
                 r.cell(str(idx), style=BOLD_STYLE)
                 r.cell(_ascii_safe(t_text))
         pdf.ln(2)
+
+    def _build_exam_document(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+    ) -> None:
+        bp = QuestionBlueprintEngine.build_blueprint(request, subject, chapter)
+        letters = QuestionBlueprintEngine.OPTION_LETTERS
+
+        if request.service_id == ServiceIdEnum.KUIS:
+            title = "KUIS HARIAN & PENILAIAN FORMATIF"
+        elif request.service_id == ServiceIdEnum.SUMATIF_BAB:
+            title = "ASESMEN SUMATIF LINGKUP MATERI (BAB)"
+        else:
+            title = f"PENILAIAN {bp['jenis_ujian']} - PAKET {bp['paket_soal']}"
+
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(0, 6, _ascii_safe(title), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 5, _ascii_safe(f"{subject.nama_mapel} | {subject.jenjang} Kelas {subject.kelas} | Semester {request.semester}"), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.ln(3)
+
+        # Kisi-Kisi 7 Kolom (S11 & S12)
+        if request.service_id in (ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
+            self._add_section_title(pdf, "A. Kisi-Kisi Penulisan Soal (7 Kolom)")
+            pdf.set_font("Helvetica", size=7.5)
+            with pdf.table(col_widths=(10, 20, 28, 52, 18, 18, 14), line_height=4.8) as table:
+                hdr = table.row(style=HEADER_STYLE)
+                for h_col in ("No", "TP", "Materi", "Indikator Soal", "Level", "Bentuk", "Soal"):
+                    hdr.cell(h_col)
+                for row in bp["kisi_kisi"]:
+                    r = table.row()
+                    r.cell(str(row["no"]))
+                    r.cell(_ascii_safe(row["tp_code"]))
+                    r.cell(_ascii_safe(row["materi"][:30]))
+                    r.cell(_ascii_safe(row["indikator"][:60]))
+                    r.cell(_ascii_safe(row["level_kognitif"]))
+                    r.cell(_ascii_safe(row["bentuk_soal"]))
+                    r.cell(_ascii_safe(row["nomor_soal"]))
+            pdf.ln(3)
+
+        # Naskah Soal
+        pdf.add_page()
+        self._add_section_title(pdf, "Naskah Soal Evaluasi")
+        usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+        for q in bp["questions"]:
+            if q.get("stimulus"):
+                pdf.set_x(pdf.l_margin)
+                pdf.set_font("Helvetica", "I", 8.5)
+                pdf.multi_cell(usable_w, 4.8, _ascii_safe(f"Stimulus No. {q['no']}: {q['stimulus']}"))
+            pdf.set_x(pdf.l_margin)
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.multi_cell(usable_w, 5, _ascii_safe(f"{q['no']}. {q['pertanyaan']}"))
+            pdf.set_font("Helvetica", "", 8.8)
+            if q["tipe_soal"] == "PG" and q.get("opsi"):
+                for o_idx, opt_text in enumerate(q["opsi"]):
+                    letter = letters[o_idx] if o_idx < len(letters) else str(o_idx + 1)
+                    pdf.set_x(pdf.l_margin)
+                    pdf.multi_cell(usable_w, 4.6, _ascii_safe(f"   {letter}. {opt_text}"))
+            else:
+                pdf.set_x(pdf.l_margin)
+                pdf.multi_cell(usable_w, 5, "   Jawaban: ___________________________________________________________")
+            pdf.ln(1.5)
+
+        # Kunci Jawaban & Pedoman Penskoran
+        pdf.add_page()
+        self._add_section_title(pdf, "Kunci Jawaban & Pedoman Penskoran")
+        pdf.set_font("Helvetica", size=8)
+        with pdf.table(col_widths=(12, 30, 98, 20), line_height=5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h_col in ("No", "Bentuk & Level", "Kunci Jawaban & Pembahasan", "Skor"):
+                hdr.cell(h_col)
+            for q in bp["questions"]:
+                r = table.row()
+                r.cell(str(q["no"]))
+                r.cell(_ascii_safe(f"{q['tipe_soal']} ({q['level_kognitif']})"))
+                pemb = f" - {q['pembahasan']}" if q.get("pembahasan") else ""
+                r.cell(_ascii_safe(f"{q['kunci_jawaban']}{pemb}"))
+                r.cell(str(q["bobot_skor"]))
+            tot = table.row(style=BOLD_STYLE)
+            tot.cell("-")
+            tot.cell("TOTAL")
+            tot.cell("Nilai Akhir = (Skor Diperoleh / 100) x 100")
+            tot.cell(str(bp["total_skor_maksimal"]))
+
+        # LJK khusus S12
+        if request.service_id == ServiceIdEnum.STS_SAS:
+            pdf.add_page()
+            self._add_section_title(pdf, "Lembar Jawab Peserta Didik (LJK)")
+            pg_qs = [q for q in bp["questions"] if q["tipe_soal"] == "PG"]
+            if pg_qs:
+                pdf.set_font("Helvetica", size=8.5)
+                with pdf.table(col_widths=(20, 140), line_height=5) as table:
+                    hdr = table.row(style=HEADER_STYLE)
+                    hdr.cell("No")
+                    hdr.cell("Pilihan Jawaban")
+                    for q in pg_qs:
+                        r = table.row()
+                        r.cell(str(q["no"]))
+                        opts_str = "   ".join(f"[ {letters[i]} ]" for i in range(max(4, len(q.get("opsi") or []))))
+                        r.cell(opts_str)
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
         pdf.add_page()

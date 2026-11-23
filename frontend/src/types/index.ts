@@ -1,7 +1,7 @@
 export type Jenjang = 'SD' | 'SMP' | 'SMA';
 export type PaperSize = 'F4' | 'A4';
 export type OutputFormat = 'docx' | 'xlsx' | 'pdf';
-export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '13_presensi' | '15_daftar_nilai';
+export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '10_kuis' | '11_sumatif_bab' | '12_sts_sas' | '13_presensi' | '15_daftar_nilai';
 export type GenerationMode = 'template' | 'manual';
 
 export interface CustomChapterItem {
@@ -115,6 +115,19 @@ export interface CustomCpElementItem {
   deskripsi_cp: string;
 }
 
+export interface CustomQuestionItem {
+  id?: string;
+  tipe_soal: 'PG' | 'URAIAN';
+  tp_code?: string;
+  level_kognitif?: 'C1-C2' | 'C3' | 'C4-C6' | string;
+  stimulus?: string;
+  pertanyaan: string;
+  opsi: string[];
+  kunci_jawaban?: string;
+  bobot_skor?: number;
+  pembahasan?: string;
+}
+
 export interface CustomDocumentOverrides {
   custom_chapters?: CustomChapterItem[];
   custom_elemen_cp?: CustomCpElementItem[];
@@ -151,6 +164,14 @@ export interface CustomDocumentOverrides {
   kktp_nilai?: number;
   daftar_asesmen_bab?: string[];
   bobot_nilai?: Record<string, number>;
+  jenis_ujian?: 'STS' | 'SAS';
+  cakupan_bab_ids?: string[];
+  jumlah_soal_pg?: number;
+  jumlah_soal_uraian?: number;
+  tipe_soal_kuis?: 'PG' | 'CAMPURAN';
+  alokasi_waktu_menit?: number;
+  paket_soal?: 'A' | 'B';
+  butir_soal_kustom?: CustomQuestionItem[];
 }
 
 export interface DocumentGenerateRequest {

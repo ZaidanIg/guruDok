@@ -61,7 +61,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Brand Avatar Stage with Pop-Out Character & Framer-Motion Greeting */}
         <div className="relative mt-8 mb-6 flex items-center justify-center sm:mt-11 sm:mb-8">
           {/* Circular Brand Avatar Container (Clean White BG & Thin Black Border, Tanpa Box Shadow/Lightning) */}
-          <div className="relative flex h-52 w-52 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-white sm:h-64 sm:w-64">
+          <div className="relative flex h-52 w-52 items-end justify-center overflow-hidden rounded-full  bg-white sm:h-64 sm:w-64">
             {/* Base character inside circle with Clean Drop Shadow */}
             <img
               src="/character2.png"
@@ -108,7 +108,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 delay: 0.6,
               },
             }}
-            className="absolute top-8 -right-12 z-20 max-w-[112px] rounded-xl border border-slate-900 bg-white/95 px-2 py-1.5 text-left shadow-lg backdrop-blur-sm sm:top-8 sm:-right-48 sm:max-w-[220px] sm:rounded-2xl sm:px-4 sm:py-3 md:-right-54 lg:-right-60"
+            className="absolute top-8 -right-12 z-20 max-w-[112px] rounded-xl bg-white/95 px-2 py-1.5 text-left shadow-lg backdrop-blur-sm sm:top-8 sm:-right-48 sm:max-w-[220px] sm:rounded-2xl sm:px-4 sm:py-3 md:-right-54 lg:-right-60"
           >
             <div className="flex items-center sm:items-start gap-1 sm:gap-1.5">
               <span className="text-xs sm:text-base leading-none select-none" role="img" aria-label="wave">
@@ -121,10 +121,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {/* Speech Bubble Pointer Arrow (Always points left towards character avatar) */}
             <div
               className="pointer-events-none absolute -left-1 sm:-left-1.5 top-1/2 -translate-y-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white rotate-45"
-              style={{
-                borderLeft: '1.5px solid #0F172A',
-                borderBottom: '1.5px solid #0F172A',
-              }}
             />
           </motion.div>
         </div>

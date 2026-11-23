@@ -18,7 +18,6 @@ import {
   Calculator,
   ArrowUp,
   ArrowDown,
-  Sparkles,
   Layers,
   Save,
 } from 'lucide-react';
@@ -49,6 +48,7 @@ import {
 import { AddChapterModal } from '../modals/AddChapterModal';
 import { ChapterEditorModal } from '../curriculum/ChapterEditorModal';
 import { CpElementEditorModal } from '../curriculum/CpElementEditorModal';
+import { QuestionBuilderSection } from '../curriculum/QuestionBuilderSection';
 import {
   getCustomCurriculum,
   saveCustomCurriculum,
@@ -269,12 +269,16 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const isPromes = activeService.id === '06_promes';
   const isKktp = activeService.id === '07_kktp';
   const isLkpd = activeService.id === '09_lkpd';
+  const isKuis = activeService.id === '10_kuis';
+  const isSumatifBab = activeService.id === '11_sumatif_bab';
+  const isStsSas = activeService.id === '12_sts_sas';
+  const isExamService = isKuis || isSumatifBab || isStsSas;
   const isPresensi = activeService.id === '13_presensi';
   const isDaftarNilai = activeService.id === '15_daftar_nilai';
   const isClassroomService = isPresensi || isDaftarNilai;
 
   // Form Field Toggles by Service
-  const showChapterSelector = Boolean(activeService.requiresChapter || isModulAjar || isLkpd);
+  const showChapterSelector = Boolean(activeService.requiresChapter || isModulAjar || isLkpd || isKuis || isSumatifBab);
   const showAlokasiJpBab = isModulAjar;
   const showPedagogicalModel = isModulAjar;
   const isAnnualScope = isProta;
@@ -1133,7 +1137,6 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-indigo-600" />
                     1. Capaian Pembelajaran (CP) Berdasarkan Elemen
                   </h2>
                   <p className="text-[11px] font-medium text-slate-500">
@@ -1617,6 +1620,170 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             </div>
           )}
 
+          {/* Card Khusus: Pengaturan Ujian & Pembuat Soal Ala Google Form (Service 10, 11, 12) */}
+          {isExamService && (
+            <>
+              <div className="clay-card p-5 space-y-4">
+                <div className="border-b border-slate-200 pb-3">
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                    Pengaturan Naskah {isKuis ? 'Kuis Harian' : isSumatifBab ? 'Asesmen Sumatif Bab' : 'Ujian STS / SAS'}
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Atur jenis ujian, cakupan bab, waktu, dan paket soal deterministik.
+                  </p>
+                </div>
+
+                {isStsSas && (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-700">Jenis Ujian</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(['STS', 'SAS'] as const).map((ju) => (
+                          <button
+                            key={ju}
+                            type="button"
+                            onClick={() => onChangeCustomOverrides({ ...customOverrides, jenis_ujian: ju })}
+                            className={`py-2 text-xs font-bold ${
+                              (customOverrides.jenis_ujian || 'STS') === ju ? 'clay-btn-primary' : 'clay-btn-white'
+                            }`}
+                          >
+                            {ju}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-700">Alokasi Waktu (Menit)</label>
+                      <input
+                        type="number"
+                        min={15}
+                        max={240}
+                        value={customOverrides.alokasi_waktu_menit ?? 90}
+                        onChange={(e) =>
+                          onChangeCustomOverrides({
+                            ...customOverrides,
+                            alokasi_waktu_menit: Math.max(15, Math.min(240, Number(e.target.value) || 90)),
+                          })
+                        }
+                        className="clay-input w-full px-3 py-2 text-xs font-bold text-slate-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-700">Paket Soal (Acak)</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(['A', 'B'] as const).map((pk) => (
+                          <button
+                            key={pk}
+                            type="button"
+                            onClick={() => onChangeCustomOverrides({ ...customOverrides, paket_soal: pk })}
+                            className={`py-2 text-xs font-bold ${
+                              (customOverrides.paket_soal || 'A') === pk ? 'clay-btn-success' : 'clay-btn-white'
+                            }`}
+                          >
+                            Paket {pk}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {isStsSas && chapters.length > 0 && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                      Cakupan Bab yang Diujikan (Multi-Pilih)
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {chapters.map((ch) => {
+                        const selectedIds = customOverrides.cakupan_bab_ids || chapters.map((c) => c.id);
+                        const active = selectedIds.includes(ch.id);
+                        return (
+                          <button
+                            key={ch.id}
+                            type="button"
+                            onClick={() => {
+                              const nextIds = active
+                                ? selectedIds.filter((id) => id !== ch.id)
+                                : [...selectedIds, ch.id];
+                              onChangeCustomOverrides({
+                                ...customOverrides,
+                                cakupan_bab_ids: nextIds.length > 0 ? nextIds : [ch.id],
+                              });
+                            }}
+                            className={`px-2.5 py-1 text-xs font-bold ${
+                              active ? 'clay-btn-success' : 'clay-btn-white'
+                            }`}
+                          >
+                            Bab {ch.nomor_bab}: {ch.judul_bab.slice(0, 28)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {!isStsSas && (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-700">Alokasi Waktu (Menit)</label>
+                      <input
+                        type="number"
+                        min={10}
+                        max={180}
+                        value={customOverrides.alokasi_waktu_menit ?? (isKuis ? 20 : 60)}
+                        onChange={(e) =>
+                          onChangeCustomOverrides({
+                            ...customOverrides,
+                            alokasi_waktu_menit: Math.max(10, Math.min(180, Number(e.target.value) || 30)),
+                          })
+                        }
+                        className="clay-input w-full px-3 py-2 text-xs font-bold text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-slate-700">Paket Soal</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(['A', 'B'] as const).map((pk) => (
+                          <button
+                            key={pk}
+                            type="button"
+                            onClick={() => onChangeCustomOverrides({ ...customOverrides, paket_soal: pk })}
+                            className={`py-2 text-xs font-bold ${
+                              (customOverrides.paket_soal || 'A') === pk ? 'clay-btn-success' : 'clay-btn-white'
+                            }`}
+                          >
+                            Paket {pk}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <QuestionBuilderSection
+                serviceId={activeService.id as ServiceId}
+                jenjang={jenjang}
+                subjectId={selectedSubject?.id || ''}
+                chapterId={selectedChapter?.id}
+                availableTps={
+                  isStsSas
+                    ? chapters.flatMap((c) => c.tujuan_pembelajaran || [])
+                    : activeTps
+                }
+                questions={customOverrides.butir_soal_kustom || []}
+                onChangeQuestions={(nextQs) =>
+                  onChangeCustomOverrides({
+                    ...customOverrides,
+                    butir_soal_kustom: nextQs,
+                  })
+                }
+              />
+            </>
+          )}
+
           {/* Card Khusus 5: LKPD Mandiri (Aktivitas 3M & Tugas Siswa) */}
           {isLkpd && (
             <div className="clay-card p-5">
@@ -1932,16 +2099,9 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-blue-600" />
                     5. Lampiran, Asesmen &amp; Rubrik 8 Dimensi
                   </h2>
-                  <p className="text-[11px] font-medium text-slate-500">
-                    Kustomisasi langsung instrumen Asesmen 3 Tahap, form LKPD Deep Learning 3M, dan Rubrik 8 Dimensi Profil Lulusan.
-                  </p>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                  ✓ Langsung Tersertakan di Dokumen
-                </span>
               </div>
 
               <div className="mt-4 space-y-4">
@@ -3509,6 +3669,103 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                         Apa bagian yang paling menantang dan bagaimana kamu menyelesaikannya?
                       </li>
                     </ol>
+                  </div>
+                </div>
+              )}
+
+              {/* Service 10, 11, 12: Live Preview Kuis / Sumatif Bab / STS-SAS */}
+              {isExamService && (
+                <div className="mt-5 space-y-5 text-xs leading-relaxed">
+                  <div className="text-center">
+                    <h2 className="text-base font-extrabold uppercase text-slate-900">
+                      {isKuis
+                        ? 'KUIS HARIAN & PENILAIAN FORMATIF'
+                        : isSumatifBab
+                        ? 'ASESMEN SUMATIF LINGKUP MATERI (BAB)'
+                        : `PENILAIAN ${customOverrides.jenis_ujian || 'STS'} — PAKET ${customOverrides.paket_soal || 'A'}`}
+                    </h2>
+                    <p className="font-bold uppercase text-slate-700">
+                      {selectedSubject?.nama_mapel} | {jenjang} KELAS {kelas} | SEMESTER {semester}
+                    </p>
+                  </div>
+
+                  {(isSumatifBab || isStsSas) && (
+                    <div>
+                      <h3 className="font-extrabold uppercase text-slate-900">
+                        A. Tabel Kisi-Kisi Penulisan Soal (7 Kolom)
+                      </h3>
+                      <div className="paper-table-container mt-1.5">
+                        <table className="paper-table">
+                          <thead>
+                            <tr>
+                              <th>No</th>
+                              <th>TP</th>
+                              <th>Materi</th>
+                              <th>Indikator Soal</th>
+                              <th>Level</th>
+                              <th>Bentuk</th>
+                              <th>Soal</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(customOverrides.butir_soal_kustom && customOverrides.butir_soal_kustom.length > 0
+                              ? customOverrides.butir_soal_kustom
+                              : [{ tipe_soal: 'PG' as const, tp_code: activeTps[0]?.code || 'TP.1', level_kognitif: 'C1-C2', pertanyaan: 'Butir soal siap ditulis pada form...', opsi: [] }]
+                            ).map((q, idx) => (
+                              <tr key={idx}>
+                                <td>{idx + 1}</td>
+                                <td>{q.tp_code || '-'}</td>
+                                <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
+                                <td>Menguasai indikator {q.tp_code || 'materi pokok'}</td>
+                                <td>{q.level_kognitif || 'C1-C2'}</td>
+                                <td>{q.tipe_soal === 'URAIAN' ? 'Uraian' : 'PG'}</td>
+                                <td>{idx + 1}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">Naskah Soal Evaluasi</h3>
+                    <div className="mt-2 space-y-3">
+                      {(customOverrides.butir_soal_kustom && customOverrides.butir_soal_kustom.length > 0
+                        ? customOverrides.butir_soal_kustom
+                        : [{ tipe_soal: 'PG' as const, pertanyaan: '(Ketik soal Anda pada kartu di sebelah kiri...)', opsi: ['Opsi A', 'Opsi B', 'Opsi C', 'Opsi D'], kunci_jawaban: 'A' }]
+                      ).map((q, idx) => (
+                        <div key={idx} className="space-y-1">
+                          {q.stimulus && (
+                            <p className="italic text-slate-600 bg-slate-50 p-2 rounded border border-slate-200">
+                              Stimulus No. {idx + 1}: {q.stimulus}
+                            </p>
+                          )}
+                          <p className="font-bold text-slate-900">
+                            {idx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
+                          </p>
+                          {q.tipe_soal === 'PG' && q.opsi && (
+                            <ul className="pl-5 space-y-0.5 text-slate-700">
+                              {q.opsi.map((opt, oIdx) => (
+                                <li key={oIdx}>
+                                  {['A', 'B', 'C', 'D', 'E'][oIdx]}. {opt || '...'}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold uppercase text-slate-900">
+                      Kunci Jawaban &amp; Pedoman Penskoran (Skor Maks 100)
+                    </h3>
+                    <p className="text-[11px] text-slate-600">
+                      Nilai Akhir = (Skor Diperoleh / 100) × 100
+                      {isStsSas ? ' • Dilengkapi Kartu Soal & Lembar Jawab (LJK) pada file unduhan.' : ''}
+                    </p>
                   </div>
                 </div>
               )}

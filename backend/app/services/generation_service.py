@@ -10,6 +10,7 @@ from app.models.document import DocumentGenerationJob
 from app.repositories.base import ICurriculumRepository, ITeacherRepository
 from app.schemas.generation import DocumentGenerateRequest, DocumentGenerateResponse, ServiceIdEnum
 from app.services.storage_service import IStorageService
+from app.services.collection_service import CollectionService
 from app.services.document_engine.generator_factory import DocumentEngineFactory
 
 
@@ -24,6 +25,9 @@ class DocumentGenerationService:
         ServiceIdEnum.KKTP: "Kriteria Ketercapaian Tujuan Pembelajaran (KKTP)",
         ServiceIdEnum.MODUL_AJAR: "Modul Ajar / RPP Lengkap (Deep Learning 3M)",
         ServiceIdEnum.LKPD: "Lembar Kerja Peserta Didik Mandiri (LKPD)",
+        ServiceIdEnum.KUIS: "Soal Harian & Kuis Cepat",
+        ServiceIdEnum.SUMATIF_BAB: "Asesmen Sumatif Lingkup Materi (Bab)",
+        ServiceIdEnum.STS_SAS: "Soal STS & SAS (Kisi-Kisi, Kartu Soal & LJK)",
         ServiceIdEnum.PRESENSI: "Presensi Siswa Bulanan",
         ServiceIdEnum.DAFTAR_NILAI: "Buku Pengolahan Daftar Nilai Siswa",
     }
@@ -222,6 +226,8 @@ class DocumentGenerationService:
         )
         self._history.insert(0, job)
         self._persist_job_to_db(job, subject, user_id=user_id)
+        # Silent auto-persist of non-PII questions & curriculum overrides (never stores KOP Surat / student PII)
+        CollectionService(self.db).collect_from_generation(req, subject)
 
         return DocumentGenerateResponse(
             job_id=job.id,

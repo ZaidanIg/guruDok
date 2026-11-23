@@ -65,6 +65,24 @@ async def create_custom_chapter(
     """Creates a user-defined custom chapter and stores it in GuruDocDB."""
     try:
         new_chapter = service.create_custom_chapter(subject_id=subject_id, data=payload)
+        try:
+            from app.services.collection_service import CollectionService
+            CollectionService()._save_contribution(
+                subject_id=subject_id,
+                jenjang="",
+                kelas=0,
+                service_id="custom_chapter_post",
+                contribution_type="CHAPTER_TP",
+                payload={
+                    "nomor_bab": payload.nomor_bab,
+                    "semester": payload.semester,
+                    "judul_bab": payload.judul_bab,
+                    "elemen_cp": payload.elemen_cp,
+                    "alokasi_jp": payload.alokasi_jp,
+                },
+            )
+        except Exception:
+            pass
         return ApiResponse(data=new_chapter, message=f"Bab baru '{new_chapter.judul_bab}' berhasil ditambahkan.")
     except (GuruDokException, HTTPException):
         raise

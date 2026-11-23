@@ -14,6 +14,9 @@ class ServiceIdEnum(str, Enum):
     KKTP = "07_kktp"
     MODUL_AJAR = "08_modul_ajar"
     LKPD = "09_lkpd"
+    KUIS = "10_kuis"
+    SUMATIF_BAB = "11_sumatif_bab"
+    STS_SAS = "12_sts_sas"
     PRESENSI = "13_presensi"
     DAFTAR_NILAI = "15_daftar_nilai"
 
@@ -67,6 +70,42 @@ class CustomCpElementItem(BaseModel):
         return self
 
 
+class CustomQuestionItem(BaseModel):
+    """Pydantic model representing a single teacher-authored or blueprint exam question."""
+    id: Optional[str] = Field(None, max_length=80)
+    tipe_soal: str = Field("PG", max_length=20)
+    tp_code: Optional[str] = Field(None, max_length=50)
+    level_kognitif: Optional[str] = Field("C1-C2", max_length=30)
+    stimulus: Optional[str] = Field("", max_length=3000)
+    pertanyaan: str = Field(..., min_length=2, max_length=3000)
+    opsi: List[str] = Field(default_factory=list, max_length=5)
+    kunci_jawaban: Optional[str] = Field("A", max_length=1500)
+    bobot_skor: Optional[int] = Field(None, ge=0, le=100)
+    pembahasan: Optional[str] = Field("", max_length=2000)
+
+    @model_validator(mode="after")
+    def sanitize_question_fields(self):
+        self.pertanyaan = InputSanitizer.sanitize_text(self.pertanyaan, max_length=3000, allow_empty=False)
+        if self.stimulus:
+            self.stimulus = InputSanitizer.sanitize_text(self.stimulus, max_length=3000)
+        if self.tp_code:
+            self.tp_code = InputSanitizer.sanitize_text(self.tp_code, max_length=50)
+        if self.level_kognitif:
+            self.level_kognitif = InputSanitizer.sanitize_text(self.level_kognitif, max_length=30)
+        if self.kunci_jawaban:
+            self.kunci_jawaban = InputSanitizer.sanitize_text(self.kunci_jawaban, max_length=1500)
+        if self.pembahasan:
+            self.pembahasan = InputSanitizer.sanitize_text(self.pembahasan, max_length=2000)
+        if self.opsi:
+            self.opsi = [
+                InputSanitizer.sanitize_text(o, max_length=500)
+                for o in self.opsi[:5]
+                if o is not None
+            ]
+        self.tipe_soal = "URAIAN" if str(self.tipe_soal).upper() in ("URAIAN", "ISIAN", "ESSAY") else "PG"
+        return self
+
+
 class CustomDocumentOverrides(BaseModel):
     """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, assessments, and classroom rosters."""
     custom_chapters: Optional[List[CustomChapterItem]] = None
@@ -112,6 +151,16 @@ class CustomDocumentOverrides(BaseModel):
     kktp_nilai: Optional[int] = Field(75, ge=1, le=100)
     daftar_asesmen_bab: Optional[List[str]] = None
     bobot_nilai: Optional[dict] = None
+    # Fase 2B: Exam & Question Blueprint Overrides (Service 10, 11, 12)
+    jenis_ujian: Optional[str] = Field("STS", max_length=20)
+    cakupan_bab_ids: Optional[List[str]] = None
+    jumlah_soal_pg: Optional[int] = Field(None, ge=0, le=50)
+    jumlah_soal_uraian: Optional[int] = Field(None, ge=0, le=15)
+    tipe_soal_kuis: Optional[str] = Field("CAMPURAN", max_length=30)
+    bobot_level: Optional[dict] = None
+    alokasi_waktu_menit: Optional[int] = Field(90, ge=10, le=240)
+    paket_soal: Optional[str] = Field("A", max_length=10)
+    butir_soal_kustom: Optional[List[CustomQuestionItem]] = None
 
     @model_validator(mode="after")
     def sync_and_sanitize(self):

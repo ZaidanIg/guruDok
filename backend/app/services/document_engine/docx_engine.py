@@ -14,6 +14,7 @@ from app.models.curriculum import CurriculumSubject, ChapterTopic, LearningObjec
 from app.models.teacher import TeacherProfile
 from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
+from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
 
 
 def _resolve_effective_tps(chapter: Optional[ChapterTopic], request: DocumentGenerateRequest) -> List[LearningObjective]:
@@ -179,6 +180,8 @@ class DocxDocumentEngine(DocumentEngine):
                 self._build_kktp(doc, request, subject, chapter, teacher)
             elif request.service_id == ServiceIdEnum.LKPD:
                 self._build_lkpd(doc, request, subject, chapter, teacher, tpl)
+            elif request.service_id in (ServiceIdEnum.KUIS, ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
+                self._build_exam_document(doc, request, subject, chapter, teacher)
 
             self._add_lembar_pengesahan(doc, teacher)
 
@@ -1427,3 +1430,137 @@ class DocxDocumentEngine(DocumentEngine):
             for r in p.runs:
                 r.bold = True
                 r.font.size = Pt(9.5)
+
+    def _build_exam_document(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+    ):
+        """Builds Word document for Service 10 (Kuis), 11 (Sumatif Bab), and 12 (STS/SAS)."""
+        bp = QuestionBlueprintEngine.build_blueprint(request, subject, chapter)
+        letters = QuestionBlueprintEngine.OPTION_LETTERS
+
+        if request.service_id == ServiceIdEnum.KUIS:
+            main_title = "KUIS HARIAN & PENILAIAN FORMATIF"
+        elif request.service_id == ServiceIdEnum.SUMATIF_BAB:
+            main_title = "ASESMEN SUMATIF LINGKUP MATERI (BAB)"
+        else:
+            main_title = f"PENILAIAN {bp['jenis_ujian']} (SUMATIF SEMESTER) — PAKET {bp['paket_soal']}"
+
+        self._add_doc_title(doc, main_title, f"{subject.nama_mapel} | {subject.jenjang} Kelas {subject.kelas} | Semester {request.semester}")
+
+        # Identitas Ujian
+        id_table = doc.add_table(rows=4, cols=2)
+        id_rows = [
+            ("Mata Pelajaran / Fase", f"{subject.nama_mapel} ({subject.fase})"),
+            ("Lingkup Materi / Bab", ", ".join(c.judul_bab for c in bp["chapters"][:3]) or subject.nama_mapel),
+            ("Alokasi Waktu / Paket", f"{bp['alokasi_waktu_menit']} Menit | Paket {bp['paket_soal']} ({bp['pg_count']} PG, {bp['uraian_count']} Uraian)"),
+            ("Nama Siswa / Kelas", ".................................................... / Kelas ......................"),
+        ]
+        for idx, (k, v) in enumerate(id_rows):
+            id_table.cell(idx, 0).text = k
+            id_table.cell(idx, 1).text = v
+        self._style_data_table(id_table, [50, 110], has_header_row=False)
+
+        # Kisi-Kisi 7 Kolom (S11 & S12)
+        if request.service_id in (ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
+            self._add_section_heading(doc, "A. Kisi-Kisi Penulisan Soal (7 Kolom)")
+            k_table = doc.add_table(rows=len(bp["kisi_kisi"]) + 1, cols=7)
+            k_headers = ["No", "TP", "Materi", "Indikator Soal", "Level", "Bentuk", "No Soal"]
+            for c_i, h_text in enumerate(k_headers):
+                k_table.cell(0, c_i).text = h_text
+                self._format_header_cell(k_table.cell(0, c_i))
+            for r_i, row in enumerate(bp["kisi_kisi"], start=1):
+                k_table.cell(r_i, 0).text = str(row["no"])
+                k_table.cell(r_i, 1).text = row["tp_code"]
+                k_table.cell(r_i, 2).text = row["materi"][:35]
+                k_table.cell(r_i, 3).text = row["indikator"][:65]
+                k_table.cell(r_i, 4).text = row["level_kognitif"]
+                k_table.cell(r_i, 5).text = row["bentuk_soal"]
+                k_table.cell(r_i, 6).text = row["nomor_soal"]
+            self._style_data_table(k_table, [10, 20, 28, 52, 18, 18, 14], has_header_row=True)
+
+        # Kartu Soal (khusus S12)
+        if request.service_id == ServiceIdEnum.STS_SAS and bp["questions"]:
+            self._add_section_heading(doc, "B. Kartu Soal & Telaah Butir")
+            ks_table = doc.add_table(rows=min(len(bp["questions"]), 10) + 1, cols=4)
+            for c_i, h_text in enumerate(["No", "TP & Level", "Rumusan Indikator", "Kunci & Skor"]):
+                ks_table.cell(0, c_i).text = h_text
+                self._format_header_cell(ks_table.cell(0, c_i))
+            for r_i, q in enumerate(bp["questions"][:10], start=1):
+                ks_table.cell(r_i, 0).text = str(q["no"])
+                ks_table.cell(r_i, 1).text = f"{q['tp_code']}\n({q['level_kognitif']})"
+                ks_table.cell(r_i, 2).text = q["indikator"][:90]
+                ks_table.cell(r_i, 3).text = f"Kunci: {q['kunci_jawaban'][:25]}\nSkor: {q['bobot_skor']}"
+            self._style_data_table(ks_table, [12, 34, 78, 36], has_header_row=True)
+
+        # Naskah Soal
+        doc.add_page_break()
+        self._add_section_heading(doc, "Naskah Soal Evaluasi")
+        p_petunjuk = doc.add_paragraph("Petunjuk Umum: Berdoalah sebelum mengerjakan. Pilih jawaban yang paling tepat untuk soal Pilihan Ganda dan jawablah secara runtut untuk soal Uraian.")
+        p_petunjuk.paragraph_format.space_after = Pt(6)
+
+        for q in bp["questions"]:
+            if q.get("stimulus"):
+                p_stim = doc.add_paragraph()
+                r_stim = p_stim.add_run(f"Stimulus Soal No. {q['no']}: {q['stimulus']}")
+                r_stim.italic = True
+                r_stim.font.size = Pt(9.5)
+                p_stim.paragraph_format.space_after = Pt(2)
+
+            p_q = doc.add_paragraph()
+            r_no = p_q.add_run(f"{q['no']}. ")
+            r_no.bold = True
+            p_q.add_run(q["pertanyaan"])
+            p_q.paragraph_format.space_after = Pt(2)
+
+            if q["tipe_soal"] == "PG" and q.get("opsi"):
+                for o_idx, opt_text in enumerate(q["opsi"]):
+                    letter = letters[o_idx] if o_idx < len(letters) else str(o_idx + 1)
+                    p_opt = doc.add_paragraph(f"    {letter}. {opt_text}")
+                    p_opt.paragraph_format.space_after = Pt(1)
+            else:
+                p_ans_line = doc.add_paragraph("    Jawaban: _________________________________________________________________")
+                p_ans_line.paragraph_format.space_after = Pt(4)
+
+        # Kunci Jawaban & Pedoman Penskoran (Halaman Terpisah)
+        doc.add_page_break()
+        self._add_section_heading(doc, "Kunci Jawaban & Pedoman Penskoran")
+        ans_table = doc.add_table(rows=len(bp["questions"]) + 2, cols=4)
+        for c_i, h_text in enumerate(["No", "Bentuk & Level", "Kunci Jawaban & Pembahasan", "Skor Maks"]):
+            ans_table.cell(0, c_i).text = h_text
+            self._format_header_cell(ans_table.cell(0, c_i))
+        for r_i, q in enumerate(bp["questions"], start=1):
+            ans_table.cell(r_i, 0).text = str(q["no"])
+            ans_table.cell(r_i, 1).text = f"{q['tipe_soal']} ({q['level_kognitif']})"
+            pemb = f" — {q['pembahasan']}" if q.get("pembahasan") else ""
+            ans_table.cell(r_i, 2).text = f"{q['kunci_jawaban']}{pemb}"
+            ans_table.cell(r_i, 3).text = str(q["bobot_skor"])
+        last_r = len(bp["questions"]) + 1
+        ans_table.cell(last_r, 0).text = "-"
+        ans_table.cell(last_r, 1).text = "TOTAL"
+        ans_table.cell(last_r, 2).text = "Nilai Akhir = (Skor Diperoleh / 100) x 100"
+        ans_table.cell(last_r, 3).text = str(bp["total_skor_maksimal"])
+        self._style_data_table(ans_table, [12, 32, 96, 20], has_header_row=True)
+
+        # Lembar Jawab (LJK) khusus S12
+        if request.service_id == ServiceIdEnum.STS_SAS:
+            doc.add_page_break()
+            self._add_section_heading(doc, "Lembar Jawab Peserta Didik (LJK)")
+            ljk_info = doc.add_paragraph("Nama: ..............................................   No. Ujian: ....................   Kelas: ............")
+            ljk_info.paragraph_format.space_after = Pt(6)
+            pg_qs = [q for q in bp["questions"] if q["tipe_soal"] == "PG"]
+            if pg_qs:
+                ljk_tbl = doc.add_table(rows=len(pg_qs) + 1, cols=2)
+                ljk_tbl.cell(0, 0).text = "No"
+                ljk_tbl.cell(0, 1).text = "Pilihan Jawaban (Silang / Lingkari)"
+                self._format_header_cell(ljk_tbl.cell(0, 0))
+                self._format_header_cell(ljk_tbl.cell(0, 1))
+                for r_i, q in enumerate(pg_qs, start=1):
+                    opts_str = "    ".join(f"[ {letters[i]} ]" for i in range(max(4, len(q.get("opsi") or []))))
+                    ljk_tbl.cell(r_i, 0).text = str(q["no"])
+                    ljk_tbl.cell(r_i, 1).text = opts_str
+                self._style_data_table(ljk_tbl, [20, 140], has_header_row=True)
