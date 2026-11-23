@@ -24,7 +24,6 @@ import { Navbar } from './components/layout/Navbar';
 import { BottomNav } from './components/layout/BottomNav';
 import { Footer } from './components/layout/Footer';
 import { HeroSection } from './components/sections/HeroSection';
-import { QuickFilterBar } from './components/sections/QuickFilterBar';
 import { ServiceCatalog } from './components/sections/ServiceCatalog';
 import { DocumentGenerator } from './components/sections/DocumentGenerator';
 import { DocumentHistory } from './components/sections/DocumentHistory';
@@ -49,11 +48,6 @@ export const App: React.FC = () => {
 
   // Classroom Management Modal State
   const [isClassroomModalOpen, setIsClassroomModalOpen] = useState<boolean>(false);
-
-  // Katalog Filter State
-  const [quickJenjang, setQuickJenjang] = useState<Jenjang | 'ALL'>('ALL');
-  const [quickKelas, setQuickKelas] = useState<number | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Studio Generator Cascading Form State
   const [jenjang, setJenjang] = useState<Jenjang>('SMA');
@@ -261,19 +255,6 @@ export const App: React.FC = () => {
     setCustomOverrides({});
   };
 
-  // Handle Quick Filter Trigger on Katalog Page
-  const handleQuickFilterTrigger = () => {
-    if (quickJenjang !== 'ALL') {
-      setJenjang(quickJenjang);
-      const nextGrade =
-        quickKelas !== 'ALL' ? quickKelas : GRADES_BY_JENJANG[quickJenjang][0];
-      setKelas(nextGrade);
-    }
-    if (activeSection !== 'katalog') {
-      handleNavigate('katalog');
-    }
-  };
-
   // Save Teacher Profile (Disimpan di browser saja, bersifat opsional)
   const handleSaveTeacherProfile = async (updated: TeacherProfile) => {
     setTeacher(updated);
@@ -459,22 +440,10 @@ export const App: React.FC = () => {
           )}
 
           {activeSection === 'katalog' && (
-            <>
-              <QuickFilterBar
-                selectedJenjang={quickJenjang}
-                selectedKelas={quickKelas}
-                searchQuery={searchQuery}
-                onChangeJenjang={setQuickJenjang}
-                onChangeKelas={setQuickKelas}
-                onChangeSearch={setSearchQuery}
-                onTriggerSearch={handleQuickFilterTrigger}
-              />
-              <ServiceCatalog
-                selectedServiceId={selectedServiceId}
-                searchQuery={searchQuery}
-                onSelectService={handleSelectService}
-              />
-            </>
+            <ServiceCatalog
+              selectedServiceId={selectedServiceId}
+              onSelectService={handleSelectService}
+            />
           )}
 
           {activeSection === 'generator' && (

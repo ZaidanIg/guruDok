@@ -16,13 +16,13 @@ import { ServiceCatalogItem, ServiceId } from '../../types';
 
 interface ServiceCatalogProps {
   selectedServiceId: ServiceId;
-  searchQuery: string;
+  searchQuery?: string;
   onSelectService: (serviceId: ServiceId) => void;
 }
 
 export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
   selectedServiceId,
-  searchQuery,
+  searchQuery = '',
   onSelectService,
 }) => {
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
