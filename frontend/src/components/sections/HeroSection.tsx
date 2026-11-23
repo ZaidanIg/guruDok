@@ -61,7 +61,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Brand Avatar Stage with Pop-Out Character & Framer-Motion Greeting */}
         <div className="relative mt-8 mb-6 flex items-center justify-center sm:mt-11 sm:mb-8">
           {/* Circular Brand Avatar Container with Soft Gradient, Thin Black Border, & Overflow Hidden */}
-          <div className="relative flex h-56 w-56 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-gradient-to-b from-sky-100/90 via-sky-50/40 to-blue-100/60 shadow-xl sm:h-64 sm:w-64">
+          <div className="relative flex h-52 w-52 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-gradient-to-b from-sky-100/90 via-sky-50/40 to-blue-100/60 shadow-xl sm:h-64 sm:w-64">
             {/* Base character inside circle (Zoomed in ~1.65x so shoulders and body fill the circle width) */}
             <img
               src="/character2.png"
@@ -103,13 +103,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 delay: 0.6,
               },
             }}
-            className="absolute top-6 -right-1 z-20 max-w-[125px] rounded-xl border border-slate-900 bg-white/95 px-2.5 py-1.5 text-left shadow-lg backdrop-blur-sm sm:top-8 sm:-right-48 sm:max-w-[220px] sm:rounded-2xl sm:px-4 sm:py-3 md:-right-54 lg:-right-60"
+            className="absolute top-8 -right-12 z-20 max-w-[112px] rounded-xl border border-slate-900 bg-white/95 px-2 py-1.5 text-left shadow-lg backdrop-blur-sm sm:top-8 sm:-right-48 sm:max-w-[220px] sm:rounded-2xl sm:px-4 sm:py-3 md:-right-54 lg:-right-60"
           >
             <div className="flex items-center sm:items-start gap-1 sm:gap-1.5">
               <span className="text-xs sm:text-base leading-none select-none" role="img" aria-label="wave">
                 👋
               </span>
-              <p className="text-[10px] font-bold leading-tight text-slate-800 sm:text-xs sm:leading-snug">
+              <p className="text-[9.5px] font-bold leading-tight text-slate-800 sm:text-xs sm:leading-snug">
                 Selamat datang di website Administrasi guru
               </p>
             </div>
