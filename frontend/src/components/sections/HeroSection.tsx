@@ -58,24 +58,38 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           Pilih layanan dan unduh dokumennya langsung. Rapi, otomatis, dan sesuai standar BSKAP 2025.
         </p>
 
-        {/* Brand Avatar Stage with Framer-Motion Pop-up Greeting */}
-        <div className="relative my-7 flex items-center justify-center sm:my-9">
-          {/* Circular Brand Avatar Container (White BG, Thin Black Border, Waist-up Framing) */}
-          <div className="relative flex h-56 w-56 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-white shadow-xl sm:h-64 sm:w-64">
+        {/* Brand Avatar Stage with Pop-Out Character & Framer-Motion Greeting */}
+        <div className="relative mt-8 mb-6 flex items-center justify-center sm:mt-11 sm:mb-8">
+          {/* Circular Brand Avatar Container with Soft Gradient, Thin Black Border, & Overflow Hidden */}
+          <div className="relative flex h-56 w-56 items-end justify-center overflow-hidden rounded-full border-[1.5px] border-slate-900 bg-gradient-to-b from-sky-100/90 via-sky-50/40 to-blue-100/60 shadow-xl sm:h-64 sm:w-64">
+            {/* Base character inside circle (Zoomed in ~1.65x so shoulders and body fill the circle width) */}
             <img
               src="/character2.png"
               alt="Karakter Brand GuruDok"
-              className="pointer-events-none h-full w-full select-none object-cover object-top scale-110 origin-top translate-y-1 transition-transform duration-300 hover:scale-115"
+              className="pointer-events-none h-full w-full select-none object-cover object-top scale-[1.65] origin-top translate-y-3 transition-transform duration-300 hover:scale-[1.7]"
               draggable={false}
             />
           </div>
 
-          {/* Pop-up Greeting Bubble (Animated with Framer Motion) */}
+          {/* 3D Pop-Out Layer: Head, Hair, & Waving Hand overflowing gracefully over the top circle border */}
+          <div className="pointer-events-none absolute inset-0 flex items-end justify-center">
+            <img
+              src="/character2.png"
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full select-none object-cover object-top scale-[1.65] origin-top translate-y-3"
+              style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 48%, 0% 48%)' }}
+              draggable={false}
+            />
+          </div>
+
+          {/* Pop-up Greeting Bubble (Animated with Framer Motion, positioned to the side) */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.75, y: 15 }}
+            initial={{ opacity: 0, scale: 0.75, x: 10, y: 10 }}
             animate={{
               opacity: 1,
               scale: 1,
+              x: 0,
               y: [0, -6, 0],
             }}
             transition={{
@@ -89,7 +103,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 delay: 0.6,
               },
             }}
-            className="absolute -top-4 -right-4 z-20 max-w-[210px] rounded-2xl border border-slate-900 bg-white/95 px-3.5 py-2.5 text-left shadow-lg backdrop-blur-sm sm:-top-5 sm:-right-8 sm:max-w-[245px] sm:px-4 sm:py-3"
+            className="absolute -top-10 -right-2 z-20 max-w-[200px] rounded-2xl border border-slate-900 bg-white/95 px-3.5 py-2.5 text-left shadow-lg backdrop-blur-sm sm:top-6 sm:-right-44 sm:max-w-[230px] sm:px-4 sm:py-3 md:-right-52 lg:-right-56"
           >
             <div className="flex items-start gap-1.5">
               <span className="text-base sm:text-lg leading-none" role="img" aria-label="wave">
@@ -99,8 +113,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 Selamat datang di website Administrasi guru
               </p>
             </div>
-            {/* Speech Bubble Pointer Arrow */}
-            <div className="absolute -bottom-1.5 left-7 h-3 w-3 rotate-45 border-b border-r border-slate-900 bg-white" />
+            {/* Speech Bubble Pointer Arrow (Downwards on mobile, Leftwards towards teacher on desktop) */}
+            <div className="absolute -bottom-1.5 left-7 h-3 w-3 rotate-45 border-b border-r border-slate-900 bg-white sm:top-1/2 sm:-left-1.5 sm:bottom-auto sm:left-auto sm:-translate-y-1/2 sm:border-r-0 sm:border-t-0 sm:border-b sm:border-l" />
           </motion.div>
         </div>
 
