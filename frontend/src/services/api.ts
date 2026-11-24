@@ -385,6 +385,34 @@ export class GuruDokApiClient {
       }
     }, 30000);
   }
+
+  /**
+   * Renders a watermarked in-memory PDF preview from backend (does not persist to history/storage).
+   */
+  async previewDocumentPdf(
+    payload: DocumentGenerateRequest
+  ): Promise<{ buffer: ArrayBuffer; pageCount: number }> {
+    const res = await fetch(`${this.baseUrl}/documents/preview-pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      let msg = 'Gagal memuat pratinjau PDF.';
+      try {
+        const errJson = await res.json();
+        if (errJson.message) msg = errJson.message;
+      } catch {
+        // ignore
+      }
+      throw new Error(msg);
+    }
+
+    const pageCount = Number(res.headers.get('X-Preview-Page-Count') || '1') || 1;
+    const buffer = await res.arrayBuffer();
+    return { buffer, pageCount };
+  }
 }
 
 export const apiClient = new GuruDokApiClient();

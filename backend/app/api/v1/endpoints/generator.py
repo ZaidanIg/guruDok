@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.api.deps import get_generation_service, get_optional_current_user
 from app.core.exceptions import GuruDokException, InternalServerCustomError
 from app.schemas.common import ApiResponse
@@ -27,6 +27,30 @@ async def generate_document(
         raise
     except Exception as exc:
         raise InternalServerCustomError(f"Gagal melakukan generasi dokumen: {str(exc)}") from exc
+
+
+@router.post("/preview-pdf", summary="Render Watermarked In-Memory PDF Preview")
+async def preview_document_pdf(
+    payload: DocumentGenerateRequest,
+    service: DocumentGenerationService = Depends(get_generation_service),
+):
+    """Generates a watermarked in-memory PDF for exact page-by-page canvas preview without persisting to storage or history."""
+    try:
+        pdf_bytes, page_count = service.generate_preview_pdf(payload)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": 'inline; filename="preview.pdf"',
+                "Cache-Control": "no-store",
+                "X-Content-Type-Options": "nosniff",
+                "X-Preview-Page-Count": str(page_count),
+            },
+        )
+    except (GuruDokException, HTTPException):
+        raise
+    except Exception as exc:
+        raise InternalServerCustomError(f"Gagal merender pratinjau PDF: {str(exc)}") from exc
 
 
 @router.get("/history", response_model=ApiResponse[List[Dict[str, Any]]], summary="Get Generation History")

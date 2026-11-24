@@ -20,6 +20,10 @@ import {
   ArrowDown,
   Layers,
   Save,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  RefreshCw,
 } from 'lucide-react';
 import {
   ChapterTopic,
@@ -29,6 +33,7 @@ import {
   CustomDocumentOverrides,
   CustomRubrikDplItem,
   CustomTpItem,
+  DocumentGenerateRequest,
   GenerationMode,
   Jenjang,
   OutputFormat,
@@ -38,6 +43,10 @@ import {
   StudentOverrideItem,
   TeacherProfile,
 } from '../../types';
+import { apiClient } from '../../services/api';
+import { WordPagePaginator, ZoomSetting } from '../preview/WordPagePaginator';
+import { PdfCanvasPreview } from '../preview/PdfCanvasPreview';
+import { getServiceOrientation } from '../preview/paperDimensions';
 import {
   CORE_SERVICES,
   FASE_BY_GRADE,
@@ -738,21 +747,85 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
   const activeCoreServices = CORE_SERVICES.filter((s) => !s.isComingSoon);
 
-  const paperSizeClass = paperSize === 'A4' ? 'paper-sheet-a4' : 'paper-sheet-f4';
+  const [previewMode, setPreviewMode] = useState<'word' | 'pdf'>('word');
+  const [previewZoom, setPreviewZoom] = useState<ZoomSetting>('fit');
+  const [previewPageCount, setPreviewPageCount] = useState<number>(1);
+  const [pdfPreviewBuffer, setPdfPreviewBuffer] = useState<ArrayBuffer | null>(null);
+  const [isLoadingPdfPreview, setIsLoadingPdfPreview] = useState<boolean>(false);
+  const [pdfPreviewError, setPdfPreviewError] = useState<string | null>(null);
 
-  const renderWatermark = () => (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-hidden opacity-[0.045]"
-    >
-      <span className="-rotate-30 whitespace-nowrap text-3xl font-black tracking-[0.25em] text-slate-900 sm:text-5xl">
-        PREVIEW DOKUMEN
-      </span>
-    </div>
-  );
+  const pageOrientation = getServiceOrientation(activeService.id);
+
+  // Reset to live Word layout when switching service
+  useEffect(() => {
+    setPreviewMode('word');
+    setPdfPreviewBuffer(null);
+    setPdfPreviewError(null);
+  }, [activeService.id]);
+
+  const handleFetchPdfPreview = async () => {
+    if (!selectedSubject || activeService.id === 'coming_soon') return;
+    setIsLoadingPdfPreview(true);
+    setPdfPreviewError(null);
+    try {
+      const payload: DocumentGenerateRequest = {
+        service_id: activeService.id,
+        jenjang,
+        kelas,
+        subject_id: selectedSubject.id,
+        semester,
+        chapter_id: selectedChapter?.id,
+        model_pembelajaran: modelPembelajaran,
+        paper_size: paperSize,
+        output_format: 'pdf',
+        include_lkpd: includeLkpd,
+        include_asesmen: includeAsesmen,
+        include_rubrik: includeRubrik,
+        teacher_profile: teacher,
+        custom_overrides: customOverrides,
+      };
+      const { buffer, pageCount } = await apiClient.previewDocumentPdf(payload);
+      setPdfPreviewBuffer(buffer);
+      setPreviewPageCount(pageCount);
+    } catch (err) {
+      setPdfPreviewError(err instanceof Error ? err.message : 'Gagal memuat pratinjau PDF.');
+    } finally {
+      setIsLoadingPdfPreview(false);
+    }
+  };
+
+  const handleSwitchPreviewMode = (mode: 'word' | 'pdf') => {
+    setPreviewMode(mode);
+    if (mode === 'pdf') {
+      handleFetchPdfPreview();
+    }
+  };
+
+  const handleStepZoom = (delta: number) => {
+    setPreviewZoom((prev) => {
+      const base = prev === 'fit' ? 0.85 : prev;
+      return Math.min(1.25, Math.max(0.45, Math.round((base + delta) * 100) / 100));
+    });
+  };
+
+  const paginatorContentKey = JSON.stringify({
+    s: activeService.id,
+    p: paperSize,
+    j: jenjang,
+    k: kelas,
+    sub: selectedSubject?.id,
+    sem: semester,
+    ch: selectedChapter?.id,
+    m: modelPembelajaran,
+    lk: includeLkpd,
+    as: includeAsesmen,
+    rb: includeRubrik,
+    t: teacher,
+    ov: customOverrides,
+  });
 
   const renderOfficialKop = () => (
-    <div className="border-b-2 border-slate-900 pb-3 text-center">
+    <div data-keep-together="true" className="border-b-2 border-slate-900 pb-3 text-center">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-700">
         PEMERINTAH {(teacher.kabupaten_kota || 'KABUPATEN/KOTA').toUpperCase()} — DINAS PENDIDIKAN
       </p>
@@ -767,7 +840,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   );
 
   const renderOfficialPengesahan = () => (
-    <div className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-300 pt-5 text-xs">
+    <div data-keep-together="true" className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-300 pt-5 text-xs">
       <div>
         <p>Mengetahui,</p>
         <p className="font-bold">Kepala {teacher.nama_sekolah || 'Sekolah'}</p>
@@ -790,14 +863,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     </div>
   );
 
-  const renderPaperFooter = (pageStr: string) => (
-    <div className="paper-sheet-footer">
-      <span>Standar Naskah Dinas: Margin Kiri 3.0cm • Atas 2.5cm • Kanan 2.0cm • Bawah 2.5cm | Font: Arial</span>
-      <span className="font-bold text-slate-600">{pageStr}</span>
-    </div>
-  );
-
-  const renderExamPreviewSheets = () => {
+  const renderExamPreviewFlow = () => {
     const allCustom =
       customOverrides.butir_soal_kustom && customOverrides.butir_soal_kustom.length > 0
         ? customOverrides.butir_soal_kustom
@@ -821,220 +887,206 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
     return (
       <>
-        {/* LEMBAR 1: NASKAH SOAL SISWA */}
-        <div className={`paper-sheet ${paperSizeClass} relative w-full p-6 sm:p-8 lg:p-10 flex flex-col justify-between`}>
-          {renderWatermark()}
-          <div className="pointer-events-none relative z-10 flex-1">
-            {renderOfficialKop()}
+        {renderOfficialKop()}
 
-            <div className="mt-4 text-center">
-              <h2 className="text-base font-extrabold uppercase text-slate-900">
-                {isKuis
-                  ? 'KUIS HARIAN & PENILAIAN FORMATIF'
-                  : isSumatifBab
-                  ? 'ASESMEN SUMATIF LINGKUP MATERI (BAB)'
-                  : `PENILAIAN ${customOverrides.jenis_ujian || 'STS'} — PAKET ${customOverrides.paket_soal || 'A'}`}
-              </h2>
-              <p className="font-bold uppercase text-slate-700">
-                {selectedSubject?.nama_mapel} | {jenjang} KELAS {kelas} | SEMESTER {semester}
-              </p>
-            </div>
-
-            {/* Kotak Identitas Ujian Siswa */}
-            <div className="mt-3 grid grid-cols-2 gap-2 rounded border border-slate-200 bg-slate-50/50 p-2.5 text-[11px]">
-              <div className="space-y-0.5">
-                <p><span className="font-semibold text-slate-500">Mata Pelajaran:</span> {selectedSubject?.nama_mapel}</p>
-                <p><span className="font-semibold text-slate-500">Kelas / Fase:</span> Kelas {kelas} / {faseLabel}</p>
-                <p><span className="font-semibold text-slate-500">Materi Pokok:</span> {selectedChapter?.judul_bab || 'Materi Pokok Pembelajaran'}</p>
-              </div>
-              <div className="space-y-0.5">
-                <p><span className="font-semibold text-slate-500">Hari, Tanggal:</span> ............................................</p>
-                <p><span className="font-semibold text-slate-500">Alokasi Waktu:</span> {isKuis ? '30 Menit' : isSumatifBab ? '60 Menit' : '90 Menit'}</p>
-                <p><span className="font-semibold text-slate-500">Nama Siswa / No:</span> ............................................</p>
-              </div>
-            </div>
-
-            {/* Petunjuk Umum Pengerjaan */}
-            <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-2.5 text-[11px] leading-relaxed text-slate-700">
-              <p className="font-bold text-slate-900">PETUNJUK UMUM PENGERJAAN:</p>
-              <ol className="mt-1 list-decimal pl-4 space-y-0.5">
-                <li>Berdoalah sebelum mulai mengerjakan soal evaluasi.</li>
-                <li>Tuliskan identitas nama lengkap dan nomor peserta pada lembar pengerjaan.</li>
-                <li>Kerjakan soal Bagian A (Pilihan Ganda) dan Bagian B (Essai) dengan teliti, tertib, dan mandiri.</li>
-                <li>Dahulukan menjawab butir soal yang Anda anggap paling mudah.</li>
-                <li>Periksa kembali kelengkapan seluruh jawaban sebelum diserahkan kepada pengawas ujian.</li>
-              </ol>
-            </div>
-
-            {/* Bagian A: Soal Pilihan Ganda */}
-            {pgQuestions.length > 0 && (
-              <div className="mt-4 space-y-3">
-                <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1 text-xs uppercase">
-                  A. SOAL PILIHAN GANDA (Pilihlah salah satu jawaban yang paling tepat)
-                </h4>
-                {pgQuestions.map((q, pgIdx) => (
-                  <div key={pgIdx} className="space-y-1 text-xs">
-                    {q.stimulus && (
-                      <p className="text-slate-800 leading-relaxed font-normal">
-                        {q.stimulus}
-                      </p>
-                    )}
-                    <p className="font-bold text-slate-900">
-                      {pgIdx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
-                    </p>
-                    {q.opsi && (
-                      <ul className="pl-5 space-y-0.5 text-slate-700">
-                        {q.opsi.map((opt, oIdx) => (
-                          <li key={oIdx}>
-                            {['A', 'B', 'C', 'D', 'E'][oIdx]}. {opt || '...'}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Bagian B: Soal Essai */}
-            {essaiQuestions.length > 0 && (
-              <div className="mt-4 space-y-3">
-                <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1 text-xs uppercase">
-                  B. SOAL ESSAI (Jawablah pertanyaan berikut dengan singkat, jelas, dan tepat)
-                </h4>
-                {essaiQuestions.map((q, esIdx) => (
-                  <div key={esIdx} className="space-y-1 text-xs">
-                    {q.stimulus && (
-                      <p className="text-slate-800 leading-relaxed font-normal">
-                        {q.stimulus}
-                      </p>
-                    )}
-                    <p className="font-bold text-slate-900">
-                      {esIdx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
-                    </p>
-                    <p className="text-[11px] italic text-slate-400 pl-4">
-                      Jawaban: _________________________________________________________________
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {renderPaperFooter(`Kertas ${paperSize} • Lembar 1 dari 2 (Naskah Siswa)`)}
+        <div data-keep-together="true" className="mt-4 text-center">
+          <h2 className="text-base font-extrabold uppercase text-slate-900">
+            {isKuis
+              ? 'KUIS HARIAN & PENILAIAN FORMATIF'
+              : isSumatifBab
+              ? 'ASESMEN SUMATIF LINGKUP MATERI (BAB)'
+              : `PENILAIAN ${customOverrides.jenis_ujian || 'STS'} — PAKET ${customOverrides.paket_soal || 'A'}`}
+          </h2>
+          <p className="font-bold uppercase text-slate-700">
+            {selectedSubject?.nama_mapel} | {jenjang} KELAS {kelas} | SEMESTER {semester}
+          </p>
         </div>
 
-        {/* LEMBAR 2: PEGANGAN GURU (KUNCI JAWABAN & KISI-KISI) */}
-        <div className={`paper-sheet ${paperSizeClass} relative w-full p-6 sm:p-8 lg:p-10 flex flex-col justify-between`}>
-          {renderWatermark()}
-          <div className="pointer-events-none relative z-10 flex-1">
-            {/* Sub-KOP Ringkas Dokumen Pegangan Guru */}
-            <div className="border-b-2 border-slate-900 pb-2 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                PEMERINTAH {(teacher.kabupaten_kota || 'KABUPATEN/KOTA').toUpperCase()} — DINAS PENDIDIKAN
-              </p>
-              <p className="text-sm font-extrabold uppercase text-slate-900">
-                {teacher.nama_sekolah || 'NAMA SATUAN PENDIDIKAN'}
-              </p>
-              <p className="mt-0.5 text-xs font-bold uppercase tracking-wider text-blue-900 bg-blue-50 py-0.5 rounded">
-                DOKUMEN PEGANGAN GURU — KUNCI JAWABAN, PEDOMAN PENSKORAN &amp; KISI-KISI
-              </p>
-              <p className="mt-0.5 text-[10px] text-slate-500">
-                {selectedSubject?.nama_mapel} • {jenjang} Kelas {kelas} • Semester {semester} • Paket {customOverrides.paket_soal || 'A'}
-              </p>
-            </div>
-
-            {/* Bagian 1: Kunci Jawaban & Pedoman Penskoran */}
-            <div className="mt-4 space-y-2 text-xs">
-              <h3 className="font-extrabold uppercase text-slate-900">
-                1. KUNCI JAWABAN DAN PEDOMAN PENSKORAN
-              </h3>
-              <div className="paper-table-container mt-1.5">
-                <table className="paper-table">
-                  <thead>
-                    <tr>
-                      <th>No</th>
-                      <th>Bentuk &amp; Level</th>
-                      <th>Kunci Jawaban / Poin Rubrik</th>
-                      <th>Skor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedQuestions.map((q, idx) => {
-                      const isPg = q.tipe_soal === 'PG';
-                      const sectionIdx = isPg
-                        ? pgQuestions.indexOf(q) + 1
-                        : essaiQuestions.indexOf(q) + 1;
-                      return (
-                        <tr key={idx}>
-                          <td>{isPg ? `A.${sectionIdx}` : `B.${sectionIdx}`}</td>
-                          <td>
-                            {isPg ? 'PG' : 'Essai'} ({q.level_kognitif || 'C1-C2'})
-                          </td>
-                          <td>
-                            <span className="font-bold">{q.kunci_jawaban || '-'}</span>
-                            {q.pembahasan ? ` — ${q.pembahasan}` : ''}
-                          </td>
-                          <td>{q.bobot_skor || (isPg ? 4 : 10)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-[11px] text-slate-600">
-                Rumus Nilai Akhir = (Total Skor Diperoleh / Total Skor Maksimal) × 100
-                {isStsSas
-                  ? ' • Dilengkapi Kartu Soal & Lembar Jawab Komputer (LJK) pada file unduhan Word & PDF.'
-                  : ''}
-              </p>
-            </div>
-
-            {/* Bagian 2: Tabel Kisi-Kisi Penulisan Soal (7 Kolom BSKAP) */}
-            <div className="mt-4 space-y-2 text-xs">
-              <h3 className="font-extrabold uppercase text-slate-900">
-                2. TABEL KISI-KISI PENULISAN SOAL (BSKAP NO. 046/H/KR/2025)
-              </h3>
-              <div className="paper-table-container mt-1.5">
-                <table className="paper-table">
-                  <thead>
-                    <tr>
-                      <th>No</th>
-                      <th>TP</th>
-                      <th>Materi Pokok</th>
-                      <th>Indikator Soal</th>
-                      <th>Level</th>
-                      <th>Bentuk</th>
-                      <th>No Soal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedQuestions.map((q, idx) => {
-                      const isPg = q.tipe_soal === 'PG';
-                      const sectionIdx = isPg
-                        ? pgQuestions.indexOf(q) + 1
-                        : essaiQuestions.indexOf(q) + 1;
-                      return (
-                        <tr key={idx}>
-                          <td>{idx + 1}</td>
-                          <td>{q.tp_code || '-'}</td>
-                          <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
-                          <td>Menguasai indikator {q.tp_code || 'materi pokok'}</td>
-                          <td>{q.level_kognitif || 'C1-C2'}</td>
-                          <td>{isPg ? 'Pilihan Ganda' : 'Essai'}</td>
-                          <td>{isPg ? `A.${sectionIdx}` : `B.${sectionIdx}`}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Bagian 3: Lembar Pengesahan Resmi Guru */}
-            {renderOfficialPengesahan()}
+        {/* Identitas Ujian */}
+        <div data-keep-together="true" className="mt-3 grid grid-cols-2 gap-2 rounded border border-slate-200 bg-slate-50/50 p-2.5 text-[11px]">
+          <div className="space-y-0.5">
+            <p><span className="font-semibold text-slate-500">Mata Pelajaran:</span> {selectedSubject?.nama_mapel}</p>
+            <p><span className="font-semibold text-slate-500">Kelas / Fase:</span> Kelas {kelas} / {faseLabel}</p>
+            <p><span className="font-semibold text-slate-500">Materi Pokok:</span> {selectedChapter?.judul_bab || 'Materi Pokok Pembelajaran'}</p>
           </div>
-          {renderPaperFooter(`Kertas ${paperSize} • Lembar 2 dari 2 (Pegangan Guru)`)}
+          <div className="space-y-0.5">
+            <p><span className="font-semibold text-slate-500">Hari, Tanggal:</span> ............................................</p>
+            <p><span className="font-semibold text-slate-500">Alokasi Waktu:</span> {isKuis ? '30 Menit' : isSumatifBab ? '60 Menit' : '90 Menit'}</p>
+            <p><span className="font-semibold text-slate-500">Nama Siswa / No:</span> ............................................</p>
+          </div>
         </div>
+
+        {/* Petunjuk Umum */}
+        <div data-keep-together="true" className="mt-3 rounded border border-slate-200 bg-slate-50 p-2.5 text-[11px] leading-relaxed text-slate-700">
+          <p className="font-bold text-slate-900">PETUNJUK UMUM PENGERJAAN:</p>
+          <ol className="mt-1 list-decimal pl-4 space-y-0.5">
+            <li>Berdoalah sebelum mulai mengerjakan soal evaluasi.</li>
+            <li>Tuliskan identitas nama lengkap dan nomor peserta pada lembar pengerjaan.</li>
+            <li>Kerjakan soal Bagian A (Pilihan Ganda) dan Bagian B (Essai) dengan teliti, tertib, dan mandiri.</li>
+            <li>Dahulukan menjawab butir soal yang Anda anggap paling mudah.</li>
+            <li>Periksa kembali kelengkapan seluruh jawaban sebelum diserahkan kepada pengawas ujian.</li>
+          </ol>
+        </div>
+
+        {/* Bagian A: Soal Pilihan Ganda */}
+        {pgQuestions.length > 0 && (
+          <>
+            <h4
+              data-keep-with-next="true"
+              className="mt-4 font-bold text-slate-900 border-b border-slate-200 pb-1 text-xs uppercase"
+            >
+              A. SOAL PILIHAN GANDA (Pilihlah salah satu jawaban yang paling tepat)
+            </h4>
+            {pgQuestions.map((q, pgIdx) => (
+              <div key={`pg-${pgIdx}`} data-keep-together="true" className="mt-2.5 space-y-1 text-xs">
+                {q.stimulus && (
+                  <p className="text-slate-800 leading-relaxed font-normal">
+                    {q.stimulus}
+                  </p>
+                )}
+                <p className="font-bold text-slate-900">
+                  {pgIdx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
+                </p>
+                {q.opsi && (
+                  <ul className="pl-5 space-y-0.5 text-slate-700">
+                    {q.opsi.map((opt, oIdx) => (
+                      <li key={oIdx}>
+                        {['A', 'B', 'C', 'D', 'E'][oIdx]}. {opt || '...'}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* Bagian B: Soal Essai */}
+        {essaiQuestions.length > 0 && (
+          <>
+            <h4
+              data-keep-with-next="true"
+              className="mt-4 font-bold text-slate-900 border-b border-slate-200 pb-1 text-xs uppercase"
+            >
+              B. SOAL ESSAI (Jawablah pertanyaan berikut dengan singkat, jelas, dan tepat)
+            </h4>
+            {essaiQuestions.map((q, esIdx) => (
+              <div key={`es-${esIdx}`} data-keep-together="true" className="mt-2.5 space-y-1 text-xs">
+                {q.stimulus && (
+                  <p className="text-slate-800 leading-relaxed font-normal">
+                    {q.stimulus}
+                  </p>
+                )}
+                <p className="font-bold text-slate-900">
+                  {esIdx + 1}. {q.pertanyaan || '(Belum ada teks pertanyaan)'}
+                </p>
+                <p className="text-[11px] italic text-slate-400 pl-4">
+                  Jawaban: _________________________________________________________________
+                </p>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* HALAMAN BARU: KUNCI JAWABAN & KISI-KISI (PEGANGAN GURU) */}
+        <div
+          data-page-break="before"
+          data-keep-together="true"
+          className="border-b-2 border-slate-900 pb-2 text-center"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
+            PEMERINTAH {(teacher.kabupaten_kota || 'KABUPATEN/KOTA').toUpperCase()} — DINAS PENDIDIKAN
+          </p>
+          <p className="text-sm font-extrabold uppercase text-slate-900">
+            {teacher.nama_sekolah || 'NAMA SATUAN PENDIDIKAN'}
+          </p>
+          <p className="mt-0.5 text-[10px] text-slate-500">
+            {selectedSubject?.nama_mapel} • {jenjang} Kelas {kelas} • Semester {semester} • Paket {customOverrides.paket_soal || 'A'}
+          </p>
+        </div>
+
+        {/* 1. Kunci Jawaban & Pedoman Penskoran */}
+        <h3 data-keep-with-next="true" className="mt-4 font-extrabold uppercase text-slate-900 text-xs">
+          1. KUNCI JAWABAN DAN PEDOMAN PENSKORAN
+        </h3>
+        <div data-splittable-table="true" className="paper-table-container mt-1.5">
+          <table className="paper-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Bentuk &amp; Level</th>
+                <th>Kunci Jawaban / Poin Rubrik</th>
+                <th>Skor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedQuestions.map((q, idx) => {
+                const isPg = q.tipe_soal === 'PG';
+                const sectionIdx = isPg
+                  ? pgQuestions.indexOf(q) + 1
+                  : essaiQuestions.indexOf(q) + 1;
+                return (
+                  <tr key={idx}>
+                    <td>{isPg ? `A.${sectionIdx}` : `B.${sectionIdx}`}</td>
+                    <td>
+                      {isPg ? 'PG' : 'Essai'} ({q.level_kognitif || 'C1-C2'})
+                    </td>
+                    <td>
+                      <span className="font-bold">{q.kunci_jawaban || '-'}</span>
+                      {q.pembahasan ? ` — ${q.pembahasan}` : ''}
+                    </td>
+                    <td>{q.bobot_skor || (isPg ? 4 : 10)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-1 text-[11px] text-slate-600">
+          Nilai Akhir = (Total Skor Diperoleh / Total Skor Maksimal) × 100
+        </p>
+
+        {/* 2. Tabel Kisi-Kisi Penulisan Soal (7 Kolom) */}
+        <h3 data-keep-with-next="true" className="mt-4 font-extrabold uppercase text-slate-900 text-xs">
+          2. TABEL KISI-KISI PENULISAN SOAL
+        </h3>
+        <div data-splittable-table="true" className="paper-table-container mt-1.5">
+          <table className="paper-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>TP</th>
+                <th>Materi Pokok</th>
+                <th>Indikator Soal</th>
+                <th>Level</th>
+                <th>Bentuk</th>
+                <th>No Soal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedQuestions.map((q, idx) => {
+                const isPg = q.tipe_soal === 'PG';
+                const sectionIdx = isPg
+                  ? pgQuestions.indexOf(q) + 1
+                  : essaiQuestions.indexOf(q) + 1;
+                return (
+                  <tr key={idx}>
+                    <td>{idx + 1}</td>
+                    <td>{q.tp_code || '-'}</td>
+                    <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
+                    <td>Menguasai indikator {q.tp_code || 'materi pokok'}</td>
+                    <td>{q.level_kognitif || 'C1-C2'}</td>
+                    <td>{isPg ? 'Pilihan Ganda' : 'Essai'}</td>
+                    <td>{isPg ? `A.${sectionIdx}` : `B.${sectionIdx}`}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 3. Lembar Pengesahan */}
+        {renderOfficialPengesahan()}
       </>
     );
   };
@@ -2731,38 +2783,117 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           }`}
         >
           <div className="md:sticky md:top-20">
-            {/* Preview Header Bar */}
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-blue-700" />
-                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                  Live Document Preview — Kertas {paperSize} ({formatExtLabel})
-                  {isExamService && ' • 2 Lembar Terpisah'}
+            {/* Preview Toolbar (Clean MS Word-style controls) */}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchPreviewMode('word')}
+                    className={`rounded-md px-2.5 py-1 transition ${
+                      previewMode === 'word'
+                        ? 'bg-white text-blue-700 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Live Layout
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchPreviewMode('pdf')}
+                    className={`rounded-md px-2.5 py-1 transition ${
+                      previewMode === 'pdf'
+                        ? 'bg-white text-blue-700 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    PDF Asli
+                  </button>
+                </div>
+
+                <span className="text-[11px] font-bold text-slate-600">
+                  {previewPageCount} Hal • {paperSize} ({pageOrientation === 'landscape' ? 'Landscape' : 'Portrait'})
                 </span>
               </div>
-              <span className="text-[11px] font-semibold text-slate-500">
-                {isExamService
-                  ? 'Lembar 1: Naskah Soal Siswa | Lembar 2: Pegangan Guru & Kisi-Kisi'
-                  : 'Perubahan pada form di samping langsung memperbarui dokumen ini'}
-              </span>
+
+              <div className="flex items-center gap-1">
+                {previewMode === 'pdf' && (
+                  <button
+                    type="button"
+                    onClick={handleFetchPdfPreview}
+                    title="Muat ulang PDF"
+                    className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 hover:bg-slate-50"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPdfPreview ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleStepZoom(-0.1)}
+                  title="Perkecil"
+                  className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 hover:bg-slate-50"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewZoom('fit')}
+                  className={`rounded-lg border px-2 py-1 text-[11px] font-bold ${
+                    previewZoom === 'fit'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Fit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewZoom(1)}
+                  title="Ukuran 100%"
+                  className={`rounded-lg border px-2 py-1 text-[11px] font-bold ${
+                    previewZoom === 1
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Maximize2 className="h-3 w-3 inline mr-0.5" />
+                  100%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStepZoom(0.1)}
+                  title="Perbesar"
+                  className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 hover:bg-slate-50"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
 
-            {/* Scrollable Multi-Sheet Canvas Container (Anti-Select & Anti-Copy-Paste Protected) */}
-            <div
-              onCopy={(e) => e.preventDefault()}
-              onCut={(e) => e.preventDefault()}
-              onContextMenu={(e) => e.preventDefault()}
-              onDragStart={(e) => e.preventDefault()}
-              className="paper-canvas preview-protected w-full select-none"
-            >
-              {isExamService ? (
-                renderExamPreviewSheets()
-              ) : (
-                <div
-                  className={`paper-sheet ${paperSizeClass} preview-protected relative w-full min-w-0 max-w-full select-none p-6 sm:p-8 lg:p-10 flex flex-col justify-between`}
-                >
-                  {renderWatermark()}
-                  <div className="pointer-events-none relative z-10 flex-1">
+            {/* Hybrid Preview Viewport: Word Auto-Paginator or Watermarked PDF Canvas */}
+            {previewMode === 'pdf' ? (
+              <PdfCanvasPreview
+                pdfBuffer={pdfPreviewBuffer}
+                isLoading={isLoadingPdfPreview}
+                errorMsg={pdfPreviewError}
+                paperSize={paperSize}
+                orientation={pageOrientation}
+                zoom={previewZoom}
+                onRetry={handleFetchPdfPreview}
+                onPageCountChange={setPreviewPageCount}
+              />
+            ) : (
+              <WordPagePaginator
+                paperSize={paperSize}
+                orientation={pageOrientation}
+                zoom={previewZoom}
+                contentKey={paginatorContentKey}
+                onPageCountChange={setPreviewPageCount}
+              >
+                {isExamService ? (
+                  renderExamPreviewFlow()
+                ) : (
+                  <>
                     {renderOfficialKop()}
 
                     {/* 2. DYNAMIC DOCUMENT BODY BY SERVICE_ID */}
@@ -3360,7 +3491,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
                     {/* H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD) */}
                     {includeLkpd && (
-                      <div className="mt-6 border-t-2 border-dashed border-slate-300 pt-5">
+                      <div data-page-break="before" className="pt-1">
                         <div className="text-center mb-3">
                           <h4 className="text-sm font-extrabold uppercase text-slate-900">
                             {customOverrides.judul_lkpd || selectedChapter?.modul_ajar_template?.lampiran?.lkpd?.judul_lkpd || 'LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)'}
@@ -3476,7 +3607,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
                     {/* I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025) */}
                     {includeRubrik && (
-                      <div className="mt-6 border-t-2 border-dashed border-slate-300 pt-5">
+                      <div data-page-break="before" className="pt-1">
                         <div className="text-center mb-3">
                           <h4 className="text-sm font-extrabold uppercase text-slate-900">
                             LAMPIRAN 2: RUBRIK PENILAIAN 8 DIMENSI PROFIL LULUSAN
@@ -4181,13 +4312,12 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 </div>
               )}
 
-              {/* 3. LEMBAR PENGESAHAN RESMI */}
-              {renderOfficialPengesahan()}
-            </div>
-            {renderPaperFooter(`Kertas ${paperSize} • Halaman 1`)}
-          </div>
-        )}
-      </div>
+                    {/* 3. LEMBAR PENGESAHAN RESMI */}
+                    {renderOfficialPengesahan()}
+                  </>
+                )}
+              </WordPagePaginator>
+            )}
           </div>
         </div>
       </div>

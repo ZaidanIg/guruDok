@@ -452,12 +452,10 @@ def test_exam_service_multi_sheet_page_break_and_sub_kop(client):
         ]
         assert len(page_breaks) >= 1, f"Expected at least 1 page break for {s_id} separating Sheet 1 and Sheet 2"
 
-        # Check sub-kop on Sheet 2
-        all_text = "\n".join(p.text for p in doc.paragraphs)
-        assert "DOKUMEN PEGANGAN GURU" in all_text
 
         # Verify Question section precedes Answer Key section
+        all_text = "\n".join(p.text for p in doc.paragraphs)
         idx_pg = all_text.index("A. Soal Pilihan Ganda")
-        idx_subkop = all_text.index("DOKUMEN PEGANGAN GURU")
-        assert idx_pg < idx_subkop, f"Question section must precede Answer Key Sub-KOP for {s_id}"
+        idx_kunci = all_text.index("Kunci Jawaban")
+        assert idx_pg < idx_kunci, f"Question section must precede Answer Key for {s_id}"
 

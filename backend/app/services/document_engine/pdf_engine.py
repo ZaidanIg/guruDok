@@ -1,5 +1,5 @@
 import re
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from fpdf import FPDF
 from fpdf.fonts import FontFace
 
@@ -122,7 +122,24 @@ def _resolve_effective_cp_elements(subject: CurriculumSubject, request: Document
 
 
 class GuruDokPDF(FPDF):
-    """Subclass of FPDF providing standardized page numbering and margins."""
+    """Subclass of FPDF providing standardized page numbering, margins, and optional preview watermark."""
+
+    def __init__(self, *args, preview_watermark: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.preview_watermark = preview_watermark
+
+    def header(self):
+        if not self.preview_watermark:
+            return
+        with self.local_context():
+            self.set_font("Helvetica", "B", 42)
+            self.set_text_color(226, 232, 240)
+            cx = self.w / 2.0
+            cy = self.h / 2.0
+            with self.rotation(35, x=cx, y=cy):
+                text = "PREVIEW DOKUMEN"
+                tw = self.get_string_width(text)
+                self.text(cx - (tw / 2.0), cy, text)
 
     def footer(self):
         self.set_y(-15)
@@ -142,15 +159,43 @@ class PdfDocumentEngine(DocumentEngine):
         teacher: TeacherProfile,
         raw_template: Optional[dict] = None,
     ) -> bytes:
+        pdf_bytes, _ = self.generate_with_page_count(
+            request=request,
+            subject=subject,
+            chapter=chapter,
+            teacher=teacher,
+            raw_template=raw_template,
+            preview_watermark=False,
+        )
+        return pdf_bytes
+
+    def generate_with_page_count(
+        self,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+        raw_template: Optional[dict] = None,
+        preview_watermark: bool = False,
+    ) -> Tuple[bytes, int]:
         try:
-            is_landscape = request.service_id == ServiceIdEnum.PROMES
+            is_landscape = request.service_id in (
+                ServiceIdEnum.PROMES,
+                ServiceIdEnum.PRESENSI,
+                ServiceIdEnum.DAFTAR_NILAI,
+            )
             orientation = "L" if is_landscape else "P"
             if request.paper_size.value == "F4":
                 page_format = (self.F4_WIDTH_MM, self.F4_HEIGHT_MM)
             else:
                 page_format = (self.A4_WIDTH_MM, self.A4_HEIGHT_MM)
 
-            pdf = GuruDokPDF(orientation=orientation, unit="mm", format=page_format)
+            pdf = GuruDokPDF(
+                orientation=orientation,
+                unit="mm",
+                format=page_format,
+                preview_watermark=preview_watermark,
+            )
             pdf.set_margins(left=self.MARGIN_LEFT_MM, top=self.MARGIN_TOP_MM, right=self.MARGIN_RIGHT_MM)
             pdf.set_auto_page_break(auto=True, margin=self.MARGIN_BOTTOM_MM)
             pdf.add_page()
@@ -176,11 +221,15 @@ class PdfDocumentEngine(DocumentEngine):
                 self._build_lkpd(pdf, request, subject, chapter, tpl)
             elif request.service_id in (ServiceIdEnum.KUIS, ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
                 self._build_exam_document(pdf, request, subject, chapter)
+            elif request.service_id == ServiceIdEnum.PRESENSI:
+                self._build_presensi(pdf, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.DAFTAR_NILAI:
+                self._build_daftar_nilai(pdf, request, subject, teacher)
 
             # 3. Lembar Pengesahan
             self._add_lembar_pengesahan(pdf, teacher)
-
-            return bytes(pdf.output())
+            page_count = pdf.page_no()
+            return bytes(pdf.output()), page_count
 
         except Exception as e:
             raise DocumentGenerationError(f"Failed to generate PDF document: {str(e)}")
@@ -207,6 +256,13 @@ class PdfDocumentEngine(DocumentEngine):
         pdf.set_line_width(0.2)
         pdf.line(pdf.l_margin, y + 0.8, pdf.w - pdf.r_margin, y + 0.8)
         pdf.ln(5)
+
+    def _add_doc_title(self, pdf: FPDF, title: str, subtitle: str) -> None:
+        pdf.set_font("Helvetica", "B", 11.5)
+        pdf.cell(0, 6, _ascii_safe(title), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.set_font("Helvetica", "B", 9.5)
+        pdf.cell(0, 5, _ascii_safe(subtitle), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.ln(3)
 
     def _add_section_title(self, pdf: FPDF, title: str) -> None:
         pdf.ln(2)
@@ -957,6 +1013,78 @@ class PdfDocumentEngine(DocumentEngine):
                         r.cell(str(q["no"]))
                         opts_str = "   ".join(f"[ {letters[i]} ]" for i in range(max(4, len(q.get("opsi") or []))))
                         r.cell(opts_str)
+
+    def _build_presensi(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        ov = request.custom_overrides
+        rombel = (ov.nama_rombel if (ov and ov.nama_rombel) else None) or f"Kelas {subject.kelas}"
+        bulan = (ov.bulan_presensi if (ov and ov.bulan_presensi) else None) or "Juli 2026"
+        self._add_doc_title(
+            pdf,
+            "PRESENSI DAN KEHADIRAN PESERTA DIDIK",
+            f"{subject.nama_mapel} | {rombel} | Bulan {bulan} | Semester {request.semester}",
+        )
+        students = (ov.students if (ov and ov.students) else None) or []
+        rows_src = [
+            (idx, getattr(s, "nis", "-") or "-", getattr(s, "nama", f"Peserta Didik {idx}"), getattr(s, "jenis_kelamin", "L") or "L")
+            for idx, s in enumerate(students, start=1)
+        ] or [(i, f"2026{i:03d}", f"Peserta Didik {i}", "L" if i % 2 else "P") for i in range(1, 16)]
+
+        pdf.set_font("Helvetica", size=7.5)
+        col_widths = (10, 22, 58, 10) + (8,) * 12 + (11, 11, 11, 11)
+        with pdf.table(col_widths=col_widths, line_height=4.8) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("No", "NIS", "Nama Peserta Didik", "L/P", *[str(d) for d in range(1, 13)], "H", "S", "I", "A"):
+                hdr.cell(h)
+            for no, nis, nama, lp in rows_src:
+                r = table.row()
+                r.cell(str(no))
+                r.cell(_ascii_safe(nis))
+                r.cell(_ascii_safe(nama[:34]))
+                r.cell(_ascii_safe(lp))
+                for _ in range(16):
+                    r.cell("")
+
+    def _build_daftar_nilai(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        ov = request.custom_overrides
+        rombel = (ov.nama_rombel if (ov and ov.nama_rombel) else None) or f"Kelas {subject.kelas}"
+        kktp = (ov.nilai_kktp if (ov and ov.nilai_kktp is not None) else None) or 75
+        self._add_doc_title(
+            pdf,
+            "BUKU PENGOLAHAN DAFTAR NILAI PESERTA DIDIK",
+            f"{subject.nama_mapel} | {rombel} | Semester {request.semester} | KKTP: {kktp}",
+        )
+        students = (ov.students if (ov and ov.students) else None) or []
+        rows_src = [
+            (idx, getattr(s, "nis", "-") or "-", getattr(s, "nama", f"Peserta Didik {idx}"), getattr(s, "jenis_kelamin", "L") or "L")
+            for idx, s in enumerate(students, start=1)
+        ] or [(i, f"2026{i:03d}", f"Peserta Didik {i}", "L" if i % 2 else "P") for i in range(1, 16)]
+
+        pdf.set_font("Helvetica", size=7.5)
+        col_widths = (10, 22, 60, 10, 14, 14, 14, 14, 16, 16, 16, 18, 26)
+        with pdf.table(col_widths=col_widths, line_height=4.8) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("No", "NIS", "Nama Peserta Didik", "L/P", "TP 1", "TP 2", "TP 3", "TP 4", "Formatif", "STS", "SAS", "NA", "Ketuntasan"):
+                hdr.cell(h)
+            for no, nis, nama, lp in rows_src:
+                r = table.row()
+                r.cell(str(no))
+                r.cell(_ascii_safe(nis))
+                r.cell(_ascii_safe(nama[:34]))
+                r.cell(_ascii_safe(lp))
+                for _ in range(9):
+                    r.cell("")
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
         pdf.add_page()

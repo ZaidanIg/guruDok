@@ -1,6 +1,6 @@
 import time
 import re
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from psycopg.types.json import Jsonb
 
 from app.core.database import DatabaseManager, get_db_manager
@@ -12,6 +12,7 @@ from app.schemas.generation import DocumentGenerateRequest, DocumentGenerateResp
 from app.services.storage_service import IStorageService
 from app.services.collection_service import CollectionService
 from app.services.document_engine.generator_factory import DocumentEngineFactory
+from app.services.document_engine.pdf_engine import PdfDocumentEngine
 
 
 class DocumentGenerationService:
@@ -45,17 +46,14 @@ class DocumentGenerationService:
         self.db = db_manager or get_db_manager()
         self._history: List[DocumentGenerationJob] = []
 
-    def generate_document(
-        self, req: DocumentGenerateRequest, user_id: Optional[str] = None
-    ) -> DocumentGenerateResponse:
-        start_time = time.perf_counter()
-
-        # 1. Resolve Curriculum Subject
+    def _resolve_context(
+        self, req: DocumentGenerateRequest, persist_teacher: bool = True
+    ):
+        """Resolves subject, chapter, teacher profile, and raw template. Set persist_teacher=False for read-only preview."""
         subject = self.curriculum_repo.get_subject_by_id(req.subject_id)
         if not subject:
             raise CurriculumNotFoundError(f"Subject '{req.subject_id}' does not exist in master curriculum database.")
 
-        # 1b. Multi-Chapter Override (Sprint 34: Custom Chapters / Mode Kustom / Mode Modifikasi)
         if req.custom_overrides and req.custom_overrides.custom_chapters:
             from app.models.curriculum import ChapterTopic, LearningObjective
             import copy
@@ -106,12 +104,10 @@ class DocumentGenerationService:
                 )
             subject.bab_list = custom_topic_list
 
-        # 2. Resolve Chapter if requested
         chapter = None
         if req.chapter_id:
             chapter = subject.get_chapter(req.chapter_id)
             if not chapter and req.custom_overrides and req.custom_overrides.custom_chapters:
-                # If custom chapter id match fallback
                 for ch in subject.bab_list:
                     if ch.id == req.chapter_id or str(ch.nomor_bab) == str(req.chapter_id):
                         chapter = ch
@@ -119,23 +115,39 @@ class DocumentGenerationService:
             if not chapter:
                 raise CurriculumNotFoundError(f"Chapter '{req.chapter_id}' not found in subject '{subject.nama_mapel}'.")
 
-        # 3. Resolve Teacher Profile
         teacher: Optional[TeacherProfile] = None
         if req.teacher_profile:
-            existing = self.teacher_repo.find_by_phone(req.teacher_profile.no_whatsapp)
-            if existing:
-                existing.nama_guru = req.teacher_profile.nama_guru
-                existing.nip_guru = req.teacher_profile.nip_guru
-                existing.nama_sekolah = req.teacher_profile.nama_sekolah
-                existing.npsn = req.teacher_profile.npsn
-                existing.kabupaten_kota = req.teacher_profile.kabupaten_kota
-                existing.provinsi = req.teacher_profile.provinsi
-                existing.nama_kepala_sekolah = req.teacher_profile.nama_kepala_sekolah
-                existing.nip_kepala_sekolah = req.teacher_profile.nip_kepala_sekolah
-                existing.ukuran_kertas_default = req.teacher_profile.ukuran_kertas_default.value
-                teacher = self.teacher_repo.save(existing)
+            if persist_teacher:
+                existing = self.teacher_repo.find_by_phone(req.teacher_profile.no_whatsapp)
+                if existing:
+                    existing.nama_guru = req.teacher_profile.nama_guru
+                    existing.nip_guru = req.teacher_profile.nip_guru
+                    existing.nama_sekolah = req.teacher_profile.nama_sekolah
+                    existing.npsn = req.teacher_profile.npsn
+                    existing.kabupaten_kota = req.teacher_profile.kabupaten_kota
+                    existing.provinsi = req.teacher_profile.provinsi
+                    existing.nama_kepala_sekolah = req.teacher_profile.nama_kepala_sekolah
+                    existing.nip_kepala_sekolah = req.teacher_profile.nip_kepala_sekolah
+                    existing.ukuran_kertas_default = req.teacher_profile.ukuran_kertas_default.value
+                    teacher = self.teacher_repo.save(existing)
+                else:
+                    new_teacher = TeacherProfile(
+                        nama_guru=req.teacher_profile.nama_guru,
+                        nip_guru=req.teacher_profile.nip_guru,
+                        nama_sekolah=req.teacher_profile.nama_sekolah,
+                        npsn=req.teacher_profile.npsn,
+                        kabupaten_kota=req.teacher_profile.kabupaten_kota,
+                        provinsi=req.teacher_profile.provinsi,
+                        nama_kepala_sekolah=req.teacher_profile.nama_kepala_sekolah,
+                        nip_kepala_sekolah=req.teacher_profile.nip_kepala_sekolah,
+                        no_whatsapp=req.teacher_profile.no_whatsapp,
+                        email=req.teacher_profile.email,
+                        ukuran_kertas_default=req.teacher_profile.ukuran_kertas_default.value,
+                    )
+                    teacher = self.teacher_repo.save(new_teacher)
             else:
-                new_teacher = TeacherProfile(
+                teacher = TeacherProfile(
+                    id="preview-in-memory",
                     nama_guru=req.teacher_profile.nama_guru,
                     nip_guru=req.teacher_profile.nip_guru,
                     nama_sekolah=req.teacher_profile.nama_sekolah,
@@ -148,7 +160,6 @@ class DocumentGenerationService:
                     email=req.teacher_profile.email,
                     ukuran_kertas_default=req.teacher_profile.ukuran_kertas_default.value,
                 )
-                teacher = self.teacher_repo.save(new_teacher)
         elif req.teacher_id:
             teacher = self.teacher_repo.find_by_id(req.teacher_id)
             if not teacher:
@@ -169,6 +180,36 @@ class DocumentGenerationService:
                 ukuran_kertas_default=req.paper_size.value,
             )
 
+        raw_template = None
+        if req.chapter_id and hasattr(self.curriculum_repo, "get_raw_modul_template"):
+            raw_template = self.curriculum_repo.get_raw_modul_template(req.subject_id, req.chapter_id)
+        if req.service_id == ServiceIdEnum.PROMES and hasattr(self.curriculum_repo, "get_calendar_weeks"):
+            cal_weeks = self.curriculum_repo.get_calendar_weeks(req.semester)
+            raw_template = {"calendar_weeks": cal_weeks}
+
+        return subject, chapter, teacher, raw_template
+
+    def generate_preview_pdf(self, req: DocumentGenerateRequest) -> Tuple[bytes, int]:
+        """Generates a watermarked in-memory PDF preview without persisting to storage or history."""
+        subject, chapter, teacher, raw_template = self._resolve_context(req, persist_teacher=False)
+        engine = PdfDocumentEngine()
+        return engine.generate_with_page_count(
+            request=req,
+            subject=subject,
+            chapter=chapter,
+            teacher=teacher,
+            raw_template=raw_template,
+            preview_watermark=True,
+        )
+
+    def generate_document(
+        self, req: DocumentGenerateRequest, user_id: Optional[str] = None
+    ) -> DocumentGenerateResponse:
+        start_time = time.perf_counter()
+
+        # 1. Resolve Curriculum Subject, Chapter, Teacher & Template
+        subject, chapter, teacher, raw_template = self._resolve_context(req, persist_teacher=True)
+
         # 4. Engine Strategy & Output Format Selection (docx, xlsx, or pdf)
         if req.output_format:
             file_format = req.output_format.value
@@ -177,13 +218,6 @@ class DocumentGenerationService:
         engine = DocumentEngineFactory.get_engine(req.service_id, req.output_format)
 
         # 5. Generate Binary File Bytes Enriched from GuruDocDB
-        raw_template = None
-        if req.chapter_id and hasattr(self.curriculum_repo, "get_raw_modul_template"):
-            raw_template = self.curriculum_repo.get_raw_modul_template(req.subject_id, req.chapter_id)
-        if req.service_id == ServiceIdEnum.PROMES and hasattr(self.curriculum_repo, "get_calendar_weeks"):
-            cal_weeks = self.curriculum_repo.get_calendar_weeks(req.semester)
-            raw_template = {"calendar_weeks": cal_weeks}
-
         file_bytes = engine.generate(
             request=req,
             subject=subject,

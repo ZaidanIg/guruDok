@@ -125,7 +125,89 @@
     color: #FFFFFF;
   }
 
-  /* 10. Live Document Paper Sheet Preview (Multi-Sheet F4 & A4 Support) */
+  /* 10. True MS Word Page-by-Page Paper Preview (Sprint 43: A4 & F4 Portrait/Landscape) */
+  .word-canvas {
+    background-color: #E2E8F0;
+    border: 1px solid #CBD5E1;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    overflow: auto;
+    max-height: calc(100vh - 165px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .word-page-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex-shrink: 0;
+  }
+
+  .word-page-outer-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.375rem;
+    padding: 0 2px;
+  }
+
+  .word-page-scale-box {
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+    box-shadow:
+      0 8px 24px -6px rgba(15, 23, 42, 0.16),
+      0 2px 6px -1px rgba(15, 23, 42, 0.08);
+    border: 1px solid #CBD5E1;
+    background: #FFFFFF;
+  }
+
+  .word-page-sheet {
+    background: #FFFFFF;
+    font-family: Arial, 'Liberation Sans', sans-serif;
+    color: #0F172A;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  .word-content-flow {
+    font-family: Arial, 'Liberation Sans', sans-serif;
+    color: #0F172A;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .word-content-flow .paper-table-container {
+    width: 100%;
+    overflow: visible;
+    margin-top: 0.35rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .word-content-flow .paper-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .word-content-flow .paper-table th,
+  .word-content-flow .paper-table td {
+    border: 1px solid #334155;
+    padding: 4px 6px;
+    vertical-align: top;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
   .paper-canvas {
     background-color: #F1F5F9;
     border: 1px solid #CBD5E1;

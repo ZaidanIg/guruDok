@@ -53,10 +53,19 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 40** | **Fase 2B: Engine Blueprint Soal Deterministik, Bank Soal DB (`question_bank`), `CollectionService`, & Pembuat Soal Ala Google Form (S10, S11, S12)** | [plan/sprint-40-fase-2b-engine-soal-s10-s11-s12.md](../plan/sprint-40-fase-2b-engine-soal-s10-s11-s12.md) | [todo/sprint-40-todo.md](./sprint-40-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 41** | **Pemisahan Tegas Bagian A (Pilihan Ganda) & Bagian B (Essai) pada Form Generator Stacked, Bank Soal Cerdas Global, Live Preview, DOCX & PDF Engine (Nomor Direset per Bagian 1..N & 1..M)** | [plan/sprint-41-pemisahan-soal-pg-dan-essai-dua-bagian.md](../plan/sprint-41-pemisahan-soal-pg-dan-essai-dua-bagian.md) | [todo/sprint-41-todo.md](./sprint-41-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 42** | **Multi-Sheet Paper Preview (Lembar Kertas Fisik Terpisah ala Google Docs / MS Word), Pemisahan Lembar 1 (Naskah Soal) & Lembar 2 (Kunci Jawaban & Kisi-Kisi Guru), serta Standarisasi Lembar Global 15 Layanan** | [plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md](../plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md) | [todo/sprint-42-todo.md](./sprint-42-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 43** | **True MS Word Page-by-Page Live Preview (Auto-Pagination A4/F4 Portrait/Landscape + Mode Hybrid PDF Asli Canvas)** | [plan/sprint-43-true-word-pagination-live-preview-a4-f4.md](../plan/sprint-43-true-word-pagination-live-preview-a4-f4.md) | [todo/sprint-43-todo.md](./sprint-43-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 43):**
+  - **True MS Word Page-by-Page Live Preview (A4 & F4 Portrait/Landscape):**
+    1. Membuat [paperDimensions.ts](../frontend/src/components/preview/paperDimensions.ts) (dimensi fisika 96 DPI A4 `210×297mm` & F4 `215×330mm`, Portrait & Landscape, margin dinas 25/20/25/30mm).
+    2. Membuat [WordPagePaginator.tsx](../frontend/src/components/preview/WordPagePaginator.tsx) untuk auto-pagination DOM real-time (Keep-Together, Keep-With-Next, Smart Table Row Splitting + Repeat `<thead>`, Hard Page Breaks, Auto Fit-to-Width & Zoom).
+    3. Membuat mode Hybrid **PDF Asli** via [PdfCanvasPreview.tsx](../frontend/src/components/preview/PdfCanvasPreview.tsx) (`pdfjs-dist` HiDPI canvas) + endpoint baru `POST /api/v1/documents/preview-pdf` (in-memory ber-watermark, tanpa side-effect ke history/storage, mendukung Landscape Promes/Presensi/Daftar Nilai).
+    4. Membersihkan toolbar & kertas di [DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx) (tanpa footer artifisial di dalam kertas).
+  - **Verifikasi Zero-Trust:** **127/127 Pytest PASS (100%)** dan `npm run build` **0 errors**.
 
 - **2026-11-24 (Sprint 42):**
   - **Multi-Sheet Paper Preview (Lembar Kertas Fisik Terpisah & Aspek Rasio F4 vs A4):**
