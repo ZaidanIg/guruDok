@@ -130,6 +130,18 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
     requiresChapter: false,
   },
   {
+    id: '14_jurnal_mengajar',
+    codeLabel: 'Service 14',
+    title: 'Jurnal Mengajar Harian',
+    shortTitle: 'Jurnal Harian',
+    description: 'Agenda pelaksanaan mengajar harian guru dengan jadwal pertemuan otomatis & sinkronisasi TP/Bab.',
+    formats: ['DOCX', 'XLSX', 'PDF'],
+    isFree: true,
+    isComingSoon: false,
+    iconColor: 'blue',
+    requiresChapter: false,
+  },
+  {
     id: '15_daftar_nilai',
     codeLabel: 'Service 15',
     title: 'Buku Pengolahan Daftar Nilai',
@@ -144,9 +156,9 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
   {
     id: 'coming_soon',
     codeLabel: 'Segera Hadir',
-    title: '11 Service Tambahan',
+    title: '10 Service Tambahan',
     shortTitle: 'Roadmap 18 Service',
-    description: 'Template Format Soal STS/SAS, Kisi-Kisi, Jurnal Harian, Modul P5 & Paket Siap Supervisi.',
+    description: 'Deskripsi e-Rapor, Rekap Nilai Rapor, Modul P5, Administrasi Wali Kelas, & Paket Siap Supervisi.',
     formats: ['DOCX', 'XLSX', 'PDF'],
     isFree: false,
     isComingSoon: true,
@@ -262,7 +274,6 @@ export const UPCOMING_13_SERVICES = [
   { code: '13', name: 'Modul Projek Kokurikuler 8 Dimensi Profil Lulusan', format: 'DOCX' },
   { code: '14', name: 'Daftar Nilai & Olah Nilai Rapor Kurikulum Merdeka', format: 'XLSX' },
   { code: '15', name: 'Program Remedial & Pengayaan Terstruktur', format: 'DOCX' },
-  { code: '16', name: 'Jurnal Mengajar Harian & Agenda Guru', format: 'DOCX' },
   { code: '17', name: 'Buku Absensi & Rekap Kehadiran Siswa Bulanan', format: 'XLSX' },
   { code: '18', name: 'Catatan Bimbingan Konseling & Anecdotal Record', format: 'DOCX' },
 ];

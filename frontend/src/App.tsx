@@ -312,8 +312,8 @@ export const App: React.FC = () => {
     try {
       let finalOverrides: CustomDocumentOverrides = { ...customOverrides };
 
-      // Automatic Student and Rombel injection for Classroom Services
-      if (selectedServiceId === '13_presensi' || selectedServiceId === '15_daftar_nilai') {
+      // Automatic Student and Rombel injection for Classroom & Jurnal Services
+      if (selectedServiceId === '13_presensi' || selectedServiceId === '14_jurnal_mengajar' || selectedServiceId === '15_daftar_nilai') {
         const activeRombel = getActiveClassroom() || getClassrooms()[0];
         if (activeRombel) {
           if (!finalOverrides.students || finalOverrides.students.length === 0) {

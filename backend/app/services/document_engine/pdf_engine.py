@@ -9,6 +9,7 @@ from app.models.teacher import TeacherProfile
 from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
+from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
 
 # Official styling constants for Table Headers & Accents (BSKAP / GuruDok Standard)
 HEADER_STYLE = FontFace(emphasis="BOLD", fill_color=(217, 226, 243))  # #D9E2F3
@@ -182,6 +183,7 @@ class PdfDocumentEngine(DocumentEngine):
             is_landscape = request.service_id in (
                 ServiceIdEnum.PROMES,
                 ServiceIdEnum.PRESENSI,
+                ServiceIdEnum.JURNAL_MENGAJAR,
                 ServiceIdEnum.DAFTAR_NILAI,
             )
             orientation = "L" if is_landscape else "P"
@@ -223,6 +225,8 @@ class PdfDocumentEngine(DocumentEngine):
                 self._build_exam_document(pdf, request, subject, chapter)
             elif request.service_id == ServiceIdEnum.PRESENSI:
                 self._build_presensi(pdf, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.JURNAL_MENGAJAR:
+                self._build_jurnal_mengajar(pdf, request, subject, teacher)
             elif request.service_id == ServiceIdEnum.DAFTAR_NILAI:
                 self._build_daftar_nilai(pdf, request, subject, teacher)
 
@@ -1087,6 +1091,47 @@ class PdfDocumentEngine(DocumentEngine):
                 r.cell(_ascii_safe(lp))
                 for _ in range(9):
                     r.cell("")
+
+    def _build_jurnal_mengajar(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        bp = JurnalBlueprintEngine.build_blueprint(request, subject)
+        self._add_doc_title(
+            pdf,
+            "JURNAL MENGAJAR HARIAN DAN AGENDA GURU",
+            f"{subject.nama_mapel} | {bp['rombel']} | Jadwal: {bp['hari_label']} (Jam {bp['jam_mengajar']}) | Semester {request.semester}",
+        )
+        pdf.set_font("Helvetica", size=7.2)
+        col_widths = (9, 32, 24, 54, 34, 42, 26, 36, 13)
+        with pdf.table(col_widths=col_widths, line_height=4.5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in (
+                "No",
+                "Hari / Tanggal",
+                "Jam / Pert.",
+                "Tujuan Pembelajaran (TP)",
+                "Materi Pembelajaran",
+                "Ringkasan Kegiatan",
+                "Kehadiran Siswa",
+                "Hambatan & Refleksi",
+                "Paraf",
+            ):
+                hdr.cell(h)
+            for item in bp["rows"]:
+                r = table.row()
+                r.cell(item["no"])
+                r.cell(_ascii_safe(item["hari_tanggal"]))
+                r.cell(_ascii_safe(item["jam_pertemuan"]))
+                r.cell(_ascii_safe(item["tp"]))
+                r.cell(_ascii_safe(item["materi"]))
+                r.cell(_ascii_safe(item["kegiatan"]))
+                r.cell(_ascii_safe(item["kehadiran"]))
+                r.cell(_ascii_safe(item["refleksi"]))
+                r.cell("")
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
         pdf.add_page()

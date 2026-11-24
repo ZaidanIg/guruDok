@@ -30,6 +30,7 @@ class DocumentGenerationService:
         ServiceIdEnum.SUMATIF_BAB: "Asesmen Sumatif Lingkup Materi (Bab)",
         ServiceIdEnum.STS_SAS: "Soal STS & SAS (Kisi-Kisi, Kartu Soal & LJK)",
         ServiceIdEnum.PRESENSI: "Presensi Siswa Bulanan",
+        ServiceIdEnum.JURNAL_MENGAJAR: "Jurnal Mengajar Harian & Agenda Guru",
         ServiceIdEnum.DAFTAR_NILAI: "Buku Pengolahan Daftar Nilai Siswa",
     }
 

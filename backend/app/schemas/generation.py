@@ -18,6 +18,7 @@ class ServiceIdEnum(str, Enum):
     SUMATIF_BAB = "11_sumatif_bab"
     STS_SAS = "12_sts_sas"
     PRESENSI = "13_presensi"
+    JURNAL_MENGAJAR = "14_jurnal_mengajar"
     DAFTAR_NILAI = "15_daftar_nilai"
 
 
@@ -161,6 +162,11 @@ class CustomDocumentOverrides(BaseModel):
     alokasi_waktu_menit: Optional[int] = Field(90, ge=0, le=240)
     paket_soal: Optional[str] = Field("A", max_length=10)
     butir_soal_kustom: Optional[List[CustomQuestionItem]] = None
+    # Service 14: Jurnal Mengajar Harian Overrides
+    hari_mengajar: Optional[List[str]] = None
+    tanggal_mulai_semester: Optional[str] = Field(None, max_length=20)
+    jam_mengajar: Optional[str] = Field(None, max_length=30)
+    jumlah_pertemuan_jurnal: Optional[int] = Field(16, ge=4, le=48)
 
     @model_validator(mode="after")
     def sync_and_sanitize(self):
@@ -208,6 +214,11 @@ class CustomDocumentOverrides(BaseModel):
             "tugas_lkpd_merefleksi",
             "glosarium",
             "catatan_khusus",
+            "nama_rombel",
+            "wali_kelas",
+            "bulan_presensi",
+            "tanggal_mulai_semester",
+            "jam_mengajar",
         ]
         for f_name in str_fields:
             val = getattr(self, f_name)
@@ -228,6 +239,7 @@ class CustomDocumentOverrides(BaseModel):
             "soal_asesmen_proses",
             "soal_asesmen_akhir",
             "langkah_lkpd",
+            "hari_mengajar",
         ]
         for lf in list_fields:
             items = getattr(self, lf)

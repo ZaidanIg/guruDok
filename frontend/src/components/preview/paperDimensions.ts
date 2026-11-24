@@ -29,6 +29,7 @@ const MARGIN_RIGHT_MM = 20;
 export const LANDSCAPE_SERVICE_IDS = new Set<string>([
   '06_promes',
   '13_presensi',
+  '14_jurnal_mengajar',
   '15_daftar_nilai',
 ]);
 

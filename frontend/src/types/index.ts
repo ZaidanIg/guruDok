@@ -1,7 +1,7 @@
 export type Jenjang = 'SD' | 'SMP' | 'SMA';
 export type PaperSize = 'F4' | 'A4';
 export type OutputFormat = 'docx' | 'xlsx' | 'pdf';
-export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '10_kuis' | '11_sumatif_bab' | '12_sts_sas' | '13_presensi' | '15_daftar_nilai';
+export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '10_kuis' | '11_sumatif_bab' | '12_sts_sas' | '13_presensi' | '14_jurnal_mengajar' | '15_daftar_nilai';
 export type GenerationMode = 'template' | 'manual';
 
 export interface CustomChapterItem {
@@ -172,6 +172,10 @@ export interface CustomDocumentOverrides {
   alokasi_waktu_menit?: number;
   paket_soal?: 'A' | 'B';
   butir_soal_kustom?: CustomQuestionItem[];
+  hari_mengajar?: string[];
+  tanggal_mulai_semester?: string;
+  jam_mengajar?: string;
+  jumlah_pertemuan_jurnal?: number;
 }
 
 export interface DocumentGenerateRequest {

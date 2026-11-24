@@ -6,6 +6,7 @@ from docx.shared import Mm, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
 from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.section import WD_ORIENT
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls, qn
 
@@ -15,6 +16,7 @@ from app.models.teacher import TeacherProfile
 from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
+from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
 
 
 def _resolve_effective_tps(chapter: Optional[ChapterTopic], request: DocumentGenerateRequest) -> List[LearningObjective]:
@@ -120,6 +122,10 @@ class DocxDocumentEngine(DocumentEngine):
                 section.page_width = Mm(self.A4_WIDTH_MM)
                 section.page_height = Mm(self.A4_HEIGHT_MM)
 
+            if request.service_id == ServiceIdEnum.JURNAL_MENGAJAR:
+                section.orientation = WD_ORIENT.LANDSCAPE
+                section.page_width, section.page_height = section.page_height, section.page_width
+
             section.top_margin = Mm(self.MARGIN_TOP_MM)
             section.bottom_margin = Mm(self.MARGIN_BOTTOM_MM)
             section.left_margin = Mm(self.MARGIN_LEFT_MM)
@@ -182,6 +188,8 @@ class DocxDocumentEngine(DocumentEngine):
                 self._build_lkpd(doc, request, subject, chapter, teacher, tpl)
             elif request.service_id in (ServiceIdEnum.KUIS, ServiceIdEnum.SUMATIF_BAB, ServiceIdEnum.STS_SAS):
                 self._build_exam_document(doc, request, subject, chapter, teacher)
+            elif request.service_id == ServiceIdEnum.JURNAL_MENGAJAR:
+                self._build_jurnal_mengajar(doc, request, subject, teacher)
 
             self._add_lembar_pengesahan(doc, teacher)
 
@@ -1580,3 +1588,66 @@ class DocxDocumentEngine(DocumentEngine):
                     ljk_tbl.cell(r_i, 0).text = str(q["no"])
                     ljk_tbl.cell(r_i, 1).text = opts_str
                 self._style_data_table(ljk_tbl, [20, 140], has_header_row=True)
+
+    def _build_jurnal_mengajar(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        """Builds Word Landscape 9-column agenda table for Service 14 (Jurnal Mengajar Harian)."""
+        self._add_kop_surat(doc, teacher)
+        bp = JurnalBlueprintEngine.build_blueprint(request, subject)
+
+        p_title = doc.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_t = p_title.add_run("JURNAL MENGAJAR HARIAN DAN AGENDA GURU\n")
+        r_t.bold = True
+        r_t.font.size = Pt(12)
+        r_sub = p_title.add_run(
+            f"{subject.nama_mapel.upper()} | {bp['rombel']} | SEMESTER {request.semester}"
+        )
+        r_sub.bold = True
+        r_sub.font.size = Pt(10)
+
+        meta_table = doc.add_table(rows=3, cols=2)
+        meta_rows = [
+            ("Mata Pelajaran / Rombel", f"{subject.nama_mapel} — {bp['rombel']} (Fase {subject.fase})"),
+            ("Jadwal Mengajar Rutin", f"{bp['hari_label']} (Jam Ke-{bp['jam_mengajar']})"),
+            ("Mulai Semester / Total", f"{bp['tanggal_mulai']} ({bp['total_pertemuan']} Pertemuan Terjadwal)"),
+        ]
+        for idx, (k, v) in enumerate(meta_rows):
+            meta_table.cell(idx, 0).text = k
+            meta_table.cell(idx, 1).text = v
+        self._style_data_table(meta_table, [65, 195], has_header_row=False)
+
+        doc.add_paragraph()
+        headers = [
+            "No",
+            "Hari / Tanggal",
+            "Jam / Pert.",
+            "Tujuan Pembelajaran (TP)",
+            "Materi Pembelajaran",
+            "Ringkasan Kegiatan",
+            "Kehadiran Siswa",
+            "Hambatan & Refleksi",
+            "Paraf",
+        ]
+        j_table = doc.add_table(rows=len(bp["rows"]) + 1, cols=9)
+        for c_i, h_text in enumerate(headers):
+            j_table.cell(0, c_i).text = h_text
+            self._format_header_cell(j_table.cell(0, c_i))
+
+        for r_i, item in enumerate(bp["rows"], start=1):
+            j_table.cell(r_i, 0).text = item["no"]
+            j_table.cell(r_i, 1).text = item["hari_tanggal"]
+            j_table.cell(r_i, 2).text = item["jam_pertemuan"]
+            j_table.cell(r_i, 3).text = item["tp"]
+            j_table.cell(r_i, 4).text = item["materi"]
+            j_table.cell(r_i, 5).text = item["kegiatan"]
+            j_table.cell(r_i, 6).text = item["kehadiran"]
+            j_table.cell(r_i, 7).text = item["refleksi"]
+            j_table.cell(r_i, 8).text = item["paraf"]
+
+        self._style_data_table(j_table, [10, 32, 22, 50, 32, 42, 25, 34, 13], has_header_row=True)

@@ -10,6 +10,7 @@ from app.models.curriculum import CurriculumSubject, ChapterTopic, LearningObjec
 from app.models.teacher import TeacherProfile
 from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
+from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
 
 
 def _resolve_effective_tps(chapter: Optional[ChapterTopic], request: DocumentGenerateRequest) -> List[LearningObjective]:
@@ -60,6 +61,8 @@ class XlsxDocumentEngine(DocumentEngine):
                 return self._generate_kktp_xlsx(request, subject, chapter, teacher)
             if request.service_id == ServiceIdEnum.PRESENSI:
                 return self._generate_presensi_xlsx(request, subject, teacher)
+            if request.service_id == ServiceIdEnum.JURNAL_MENGAJAR:
+                return self._generate_jurnal_xlsx(request, subject, teacher)
             if request.service_id == ServiceIdEnum.DAFTAR_NILAI:
                 return self._generate_daftar_nilai_xlsx(request, subject, chapter, teacher)
             return self._generate_structured_curriculum_xlsx(request, subject, chapter, teacher, raw_template)
@@ -900,6 +903,113 @@ class XlsxDocumentEngine(DocumentEngine):
         ws.cell(row=sig_row + 1, column=10, value="Guru Mata Pelajaran")
         ws.cell(row=sig_row + 5, column=10, value=f"({teacher.nama_guru or '................................'})").font = td_bold
         ws.cell(row=sig_row + 6, column=10, value=f"NIP. {teacher.nip_guru or '-'}")
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def _generate_jurnal_xlsx(
+        self,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> bytes:
+        bp = JurnalBlueprintEngine.build_blueprint(request, subject)
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Jurnal Mengajar"
+
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+        title_font = Font(name="Arial", size=13, bold=True, color="0F172A")
+        sub_font = Font(name="Arial", size=10, bold=True, color="334155")
+        th_font = Font(name="Arial", size=9.5, bold=True, color="0F172A")
+        td_font = Font(name="Arial", size=9, color="1E293B")
+        td_bold = Font(name="Arial", size=9, bold=True, color="0F172A")
+
+        header_fill = PatternFill(start_color="D9E2F3", end_color="D9E2F3", fill_type="solid")
+        summary_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+        thin_side = Side(style="thin", color="475569")
+        cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left_align = Alignment(horizontal="left", vertical="top", wrap_text=True)
+
+        kop = teacher.get_formatted_kop()
+        ws.cell(row=1, column=1, value=f"JURNAL MENGAJAR HARIAN GURU — {subject.nama_mapel.upper()}").font = title_font
+        ws.cell(row=2, column=1, value=f"Satuan Pendidikan: {kop['nama_sekolah']} | Rombel: {bp['rombel']} | Semester {request.semester}").font = sub_font
+        ws.cell(row=3, column=1, value=f"Jadwal Rutin: {bp['hari_label']} (Jam {bp['jam_mengajar']}) | Mulai Semester: {bp['tanggal_mulai']}").font = sub_font
+
+        headers = [
+            "No",
+            "Hari / Tanggal",
+            "Jam Ke- / Pertemuan",
+            "Tujuan Pembelajaran (TP)",
+            "Materi Pembelajaran",
+            "Ringkasan Kegiatan",
+            "Kehadiran Siswa",
+            "Hambatan & Refleksi",
+            "Paraf",
+        ]
+        header_row = 5
+        for c_idx, h_text in enumerate(headers, start=1):
+            c = ws.cell(row=header_row, column=c_idx, value=h_text)
+            c.font = th_font
+            c.fill = header_fill
+            c.alignment = center_align
+            c.border = cell_border
+        ws.row_dimensions[header_row].height = 28
+
+        curr_row = header_row + 1
+        start_data_row = curr_row
+        for item in bp["rows"]:
+            vals = [
+                int(item["no"]),
+                item["hari_tanggal"],
+                item["jam_pertemuan"],
+                item["tp"],
+                item["materi"],
+                item["kegiatan"],
+                item["kehadiran"],
+                item["refleksi"],
+                item["paraf"],
+            ]
+            for c_idx, val in enumerate(vals, start=1):
+                cell = ws.cell(row=curr_row, column=c_idx, value=val)
+                cell.font = td_bold if c_idx == 1 else td_font
+                cell.alignment = center_align if c_idx in (1, 3, 9) else left_align
+                cell.border = cell_border
+            ws.row_dimensions[curr_row].height = 36
+            curr_row += 1
+
+        end_data_row = curr_row - 1
+        ws.cell(row=curr_row, column=1, value="-").alignment = center_align
+        ws.cell(row=curr_row, column=2, value="TOTAL PERTEMUAN TERJADWAL").alignment = left_align
+        ws.cell(row=curr_row, column=3, value=f"=COUNTA(B{start_data_row}:B{end_data_row})").alignment = center_align
+        for c_idx in range(1, 10):
+            c = ws.cell(row=curr_row, column=c_idx)
+            c.font = td_bold
+            c.fill = summary_fill
+            c.border = cell_border
+
+        col_widths = [5, 22, 18, 34, 24, 30, 20, 26, 10]
+        for idx_w, w in enumerate(col_widths, start=1):
+            ws.column_dimensions[get_column_letter(idx_w)].width = w
+
+        sig_row = curr_row + 2
+        city = teacher.kabupaten_kota or "Surabaya"
+        ws.cell(row=sig_row, column=2, value="Mengetahui,")
+        ws.cell(row=sig_row + 1, column=2, value="Kepala Sekolah")
+        ws.cell(row=sig_row + 5, column=2, value=f"({teacher.nama_kepala_sekolah or '................................'})").font = td_bold
+        ws.cell(row=sig_row + 6, column=2, value=f"NIP. {teacher.nip_kepala_sekolah or '-'}")
+
+        ws.cell(row=sig_row, column=7, value=f"{city}, ....................")
+        ws.cell(row=sig_row + 1, column=7, value="Guru Mata Pelajaran")
+        ws.cell(row=sig_row + 5, column=7, value=f"({teacher.nama_guru or '................................'})").font = td_bold
+        ws.cell(row=sig_row + 6, column=7, value=f"NIP. {teacher.nip_guru or '-'}")
 
         buffer = io.BytesIO()
         wb.save(buffer)

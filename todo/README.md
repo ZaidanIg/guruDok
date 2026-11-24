@@ -59,10 +59,18 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 46** | **Penggantian Fitur Bank Soal dengan Template Format Pembuatan Soal** | [plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md](../plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md) | [todo/sprint-46-todo.md](./sprint-46-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 47** | **Pembuatan Soal Manual Langsung (Hapus Template & Opsi Pilih Mode untuk Soal)** | [plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md](../plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md) | [todo/sprint-47-todo.md](./sprint-47-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 48** | **Perbaikan Alokasi Waktu (`0`), Integrasi Live Preview, & Validasi Preview PDF** | [plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md](../plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md) | [todo/sprint-48-todo.md](./sprint-48-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 49** | **Service 14: Jurnal Mengajar Harian (DOCX, XLSX, PDF Landscape 9 Kolom & Live Preview)** | [plan/sprint-49-service-14-jurnal-mengajar-harian.md](../plan/sprint-49-service-14-jurnal-mengajar-harian.md) | [todo/sprint-49-todo.md](./sprint-49-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 49):**
+  - Mengimplementasikan **Service 14: Jurnal Mengajar Harian (`14_jurnal_mengajar`)** secara penuh di Backend & Frontend:
+    - Menambahkan `ServiceIdEnum.JURNAL_MENGAJAR` dan overrides jadwal (`hari_mengajar`, `tanggal_mulai_semester`, `jam_mengajar`, `jumlah_pertemuan_jurnal`) beserta sanitasi XSS pada [generation.py](../backend/app/schemas/generation.py), serta mendaftarkan display name di [generation_service.py](../backend/app/services/generation_service.py).
+    - Membuat [jurnal_blueprint.py](../backend/app/services/document_engine/jurnal_blueprint.py) untuk penjadwalan tanggal pertemuan otomatis dari Bab/TP semester aktif, dan mengimplementasikan tabel resmi 9 kolom berorientasi Landscape pada [docx_engine.py](../backend/app/services/document_engine/docx_engine.py), [xlsx_engine.py](../backend/app/services/document_engine/xlsx_engine.py) (`=COUNTA`), serta [pdf_engine.py](../backend/app/services/document_engine/pdf_engine.py).
+    - Mengaktifkan kartu Service 14 di [services.ts](../frontend/src/constants/services.ts), tipe di [index.ts](../frontend/src/types/index.ts), ukuran kertas Landscape di [paperDimensions.ts](../frontend/src/components/preview/paperDimensions.ts), injeksi rombel di [App.tsx](../frontend/src/App.tsx), serta Form Jadwal & Live Preview 9 kolom di [DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx).
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **133/133 PASS (100%)**.
 
 - **2026-11-24 (Sprint 48):**
   - Memperbaiki validasi & input **Alokasi Waktu (Menit)** agar bisa diset ke `0` di [generation.py](../backend/app/schemas/generation.py), [question_blueprint.py](../backend/app/services/document_engine/question_blueprint.py), dan [DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx), serta menghubungkannya *real-time* ke Live Preview dan [pdf_engine.py](../backend/app/services/document_engine/pdf_engine.py).

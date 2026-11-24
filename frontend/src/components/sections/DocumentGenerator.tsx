@@ -24,6 +24,7 @@ import {
   ZoomOut,
   Maximize2,
   RefreshCw,
+  Calendar,
 } from 'lucide-react';
 import {
   ChapterTopic,
@@ -283,6 +284,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const isStsSas = activeService.id === '12_sts_sas';
   const isExamService = isKuis || isSumatifBab || isStsSas;
   const isPresensi = activeService.id === '13_presensi';
+  const isJurnal = activeService.id === '14_jurnal_mengajar';
   const isDaftarNilai = activeService.id === '15_daftar_nilai';
   const isClassroomService = isPresensi || isDaftarNilai;
 
@@ -1850,6 +1852,139 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Card Khusus 1B: Jurnal Mengajar Harian (Service 14) */}
+          {isJurnal && (
+            <div className="clay-card p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <h3 className="text-sm font-bold text-slate-800">
+                    Jadwal &amp; Parameter Jurnal Mengajar
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  9 Kolom Resmi
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Rombel / Kelas Sasaran
+                  </label>
+                  <input
+                    type="text"
+                    value={customOverrides.nama_rombel ?? activeClassroom?.nama_rombel ?? `Kelas ${kelas}`}
+                    onChange={(e) =>
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        nama_rombel: e.target.value,
+                      })
+                    }
+                    placeholder={`Contoh: ${kelas}A / VII-A`}
+                    className="clay-input w-full px-3.5 py-2.5 text-sm font-medium text-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Tanggal Mulai Semester
+                  </label>
+                  <input
+                    type="date"
+                    value={
+                      customOverrides.tanggal_mulai_semester ||
+                      (semester === 1 ? '2026-07-13' : '2027-01-04')
+                    }
+                    onChange={(e) =>
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        tanggal_mulai_semester: e.target.value,
+                      })
+                    }
+                    className="clay-input w-full px-3.5 py-2.5 text-sm font-medium text-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Hari Mengajar dalam Seminggu
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'] as const).map((hari) => {
+                    const currentDays = customOverrides.hari_mengajar || ['Senin', 'Kamis'];
+                    const isSelected = currentDays.includes(hari);
+                    return (
+                      <button
+                        key={hari}
+                        type="button"
+                        onClick={() => {
+                          const nextDays = isSelected
+                            ? currentDays.length > 1
+                              ? currentDays.filter((d) => d !== hari)
+                              : currentDays
+                            : [...currentDays, hari];
+                          onChangeCustomOverrides({
+                            ...customOverrides,
+                            hari_mengajar: nextDays,
+                          });
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        {hari}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Jam Mengajar (Jam Ke-)
+                  </label>
+                  <input
+                    type="text"
+                    value={customOverrides.jam_mengajar ?? '1-2'}
+                    onChange={(e) =>
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        jam_mengajar: e.target.value,
+                      })
+                    }
+                    placeholder="Contoh: 1-2 atau 3-4"
+                    className="clay-input w-full px-3.5 py-2.5 text-sm font-medium text-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Jumlah Pertemuan (4–48)
+                  </label>
+                  <input
+                    type="number"
+                    min={4}
+                    max={48}
+                    value={customOverrides.jumlah_pertemuan_jurnal ?? 16}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      onChangeCustomOverrides({
+                        ...customOverrides,
+                        jumlah_pertemuan_jurnal: Number.isNaN(val) ? 16 : Math.max(4, Math.min(48, val)),
+                      });
+                    }}
+                    className="clay-input w-full px-3.5 py-2.5 text-sm font-medium text-slate-800"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -4231,6 +4366,140 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </p>
                 </div>
               )}
+
+              {/* Service 14: Live Preview Jurnal Mengajar Harian */}
+              {activeService.id === '14_jurnal_mengajar' && (() => {
+                const dayNameMap: Record<string, number> = {
+                  Minggu: 0,
+                  Senin: 1,
+                  Selasa: 2,
+                  Rabu: 3,
+                  Kamis: 4,
+                  Jumat: 5,
+                  Sabtu: 6,
+                };
+                const dayNamesId = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const monthNamesId = [
+                  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+                ];
+                const activeDays = customOverrides.hari_mengajar || ['Senin', 'Kamis'];
+                const targetWeekdays = new Set(activeDays.map((d) => dayNameMap[d]).filter((n) => n !== undefined));
+                if (targetWeekdays.size === 0) {
+                  targetWeekdays.add(1);
+                  targetWeekdays.add(4);
+                }
+                const startIso = customOverrides.tanggal_mulai_semester || (semester === 1 ? '2026-07-13' : '2027-01-04');
+                const parsedStart = new Date(`${startIso}T00:00:00`);
+                const startDate = Number.isNaN(parsedStart.getTime())
+                  ? new Date(semester === 1 ? '2026-07-13T00:00:00' : '2027-01-04T00:00:00')
+                  : parsedStart;
+
+                const totalPertemuan = Math.max(4, Math.min(48, customOverrides.jumlah_pertemuan_jurnal ?? 16));
+                const jamStr = customOverrides.jam_mengajar || '1-2';
+                const rombelLabel = customOverrides.nama_rombel || activeClassroom?.nama_rombel || `Kelas ${kelas}`;
+
+                const tpEntries = currentSemesterChapters.flatMap((bab) =>
+                  (bab.tujuan_pembelajaran || []).map((tp) => ({
+                    tpText: `${tp.code}: ${tp.deskripsi}`,
+                    materi: `Bab ${bab.nomor_bab}: ${bab.judul_bab}`,
+                  }))
+                );
+                const effectiveTpEntries =
+                  tpEntries.length > 0
+                    ? tpEntries
+                    : [
+                        {
+                          tpText: `TP.${kelas}.1.1: Memahami konsep inti ${selectedSubject?.nama_mapel || 'Pembelajaran'}`,
+                          materi: selectedSubject?.nama_mapel || 'Materi Pokok',
+                        },
+                      ];
+
+                const scheduledRows: Array<{
+                  no: number;
+                  tanggal: string;
+                  jam: string;
+                  tpText: string;
+                  materi: string;
+                }> = [];
+                const cursor = new Date(startDate.getTime());
+                let guard = 0;
+                while (scheduledRows.length < totalPertemuan && guard < 240) {
+                  if (targetWeekdays.has(cursor.getDay())) {
+                    const idx = scheduledRows.length;
+                    const item = effectiveTpEntries[idx % effectiveTpEntries.length];
+                    const tglStr = `${dayNamesId[cursor.getDay()]}, ${String(cursor.getDate()).padStart(2, '0')} ${monthNamesId[cursor.getMonth()]} ${cursor.getFullYear()}`;
+                    scheduledRows.push({
+                      no: idx + 1,
+                      tanggal: tglStr,
+                      jam: `Jam ${jamStr} (Pert. ${idx + 1})`,
+                      tpText: item.tpText,
+                      materi: item.materi,
+                    });
+                  }
+                  cursor.setDate(cursor.getDate() + 1);
+                  guard++;
+                }
+
+                return (
+                  <div className="mt-5 space-y-4 text-xs leading-relaxed">
+                    <div data-keep-together="true" className="text-center">
+                      <h2 className="text-base font-extrabold uppercase text-slate-900">
+                        JURNAL MENGAJAR HARIAN DAN AGENDA GURU
+                      </h2>
+                      <p className="font-bold uppercase text-slate-700">
+                        {selectedSubject?.nama_mapel} | {rombelLabel} | SEMESTER {semester}
+                      </p>
+                    </div>
+
+                    <div data-keep-together="true" className="paper-table-container">
+                      <table className="paper-table">
+                        <tbody>
+                          <tr>
+                            <th className="w-1/4 text-left">Mata Pelajaran / Rombel</th>
+                            <td className="w-1/4 font-semibold">{selectedSubject?.nama_mapel} — {rombelLabel}</td>
+                            <th className="w-1/4 text-left">Jadwal Rutin</th>
+                            <td className="w-1/4 font-semibold">{activeDays.join(', ')} (Jam {jamStr})</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div data-splittable-table="true" className="paper-table-container">
+                      <table className="paper-table text-[10.5px]">
+                        <thead>
+                          <tr>
+                            <th className="w-8 text-center">No</th>
+                            <th className="w-28 text-left">Hari / Tanggal</th>
+                            <th className="w-24 text-center">Jam / Pert.</th>
+                            <th className="text-left">Tujuan Pembelajaran (TP)</th>
+                            <th className="w-32 text-left">Materi Pembelajaran</th>
+                            <th className="w-36 text-left">Ringkasan Kegiatan</th>
+                            <th className="w-24 text-left">Kehadiran Siswa</th>
+                            <th className="w-28 text-left">Hambatan &amp; Refleksi</th>
+                            <th className="w-12 text-center">Paraf</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scheduledRows.map((row) => (
+                            <tr key={row.no}>
+                              <td className="text-center font-bold">{row.no}</td>
+                              <td className="font-semibold">{row.tanggal}</td>
+                              <td className="text-center">{row.jam}</td>
+                              <td>{row.tpText}</td>
+                              <td className="font-semibold">{row.materi}</td>
+                              <td>Memahami konsep, diskusi eksploratif, aplikasi studi kasus, dan refleksi.</td>
+                              <td>Hadir lengkap / .... siswa tidak hadir</td>
+                              <td>Pembelajaran berjalan kondusif sesuai target TP.</td>
+                              <td />
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Service 15: Live Preview Buku Pengolahan Daftar Nilai */}
               {activeService.id === '15_daftar_nilai' && (
