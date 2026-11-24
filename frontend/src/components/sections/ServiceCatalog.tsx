@@ -66,7 +66,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
             Katalog Layanan Administrasi Guru
           </h1>
           <p className="mt-1 text-xs font-medium text-slate-500 sm:text-sm">
-            Pilih layanan di bawah ini untuk membuka Studio Generator beserta pratinjau dokumen langsung.
+            Pilih layanan di bawah ini untuk membuat dokumen.
           </p>
         </div>
       </div>

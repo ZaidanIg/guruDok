@@ -1108,7 +1108,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             <span className="font-bold text-slate-800">{activeService.title}</span>
           </div>
           <h1 className="mt-1 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-            Studio Generator: {activeService.title}
+            {activeService.title}
           </h1>
         </div>
 
