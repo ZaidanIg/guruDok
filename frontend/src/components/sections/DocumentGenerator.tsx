@@ -1204,59 +1204,61 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             mobileViewMode === 'preview' ? 'hidden md:block' : 'block'
           }`}
         >
-          {/* Mode Banner & Crash-Safe Status (Sprint 34) */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
-                    generationMode === 'template'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-slate-800 text-white'
-                  }`}
-                >
-                  {generationMode === 'template' ? 'Gunakan Template' : 'Buat Manual'}
-                </span>
-                <span className="text-xs text-slate-600">
-                  {generationMode === 'template'
-                    ? 'Standar BSKAP No. 046/2025 & SIBI (dapat dimodifikasi bebas)'
-                    : 'Penyusunan mandiri / kustom'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {justSavedNotification ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md animate-in fade-in duration-200">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Tersimpan
+          {/* Mode Banner & Crash-Safe Status (Sprint 34) - Hidden on direct manual Exam services */}
+          {!isExamService && (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+                      generationMode === 'template'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-slate-800 text-white'
+                    }`}
+                  >
+                    {generationMode === 'template' ? 'Gunakan Template' : 'Buat Manual'}
                   </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                    <Save className="h-3 w-3 text-slate-400" />
-                    Tersimpan di browser
+                  <span className="text-xs text-slate-600">
+                    {generationMode === 'template'
+                      ? 'Standar BSKAP No. 046/2025 & SIBI (dapat dimodifikasi bebas)'
+                      : 'Penyusunan mandiri / kustom'}
                   </span>
-                )}
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleResetCurriculum}
-                  title={generationMode === 'template' ? 'Reset ke Template BSKAP 2025' : 'Bersihkan seluruh bab'}
-                  className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-                >
-                  <RotateCcw className="inline mr-1 h-3 w-3" />
-                  {generationMode === 'template' ? 'Reset Template' : 'Bersihkan'}
-                </button>
+                <div className="flex items-center gap-2">
+                  {justSavedNotification ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md animate-in fade-in duration-200">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Tersimpan
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                      <Save className="h-3 w-3 text-slate-400" />
+                      Tersimpan di browser
+                    </span>
+                  )}
 
-                <button
-                  type="button"
-                  onClick={onBackToCatalog}
-                  className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
-                >
-                  Ganti Mode
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleResetCurriculum}
+                    title={generationMode === 'template' ? 'Reset ke Template BSKAP 2025' : 'Bersihkan seluruh bab'}
+                    className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  >
+                    <RotateCcw className="inline mr-1 h-3 w-3" />
+                    {generationMode === 'template' ? 'Reset Template' : 'Bersihkan'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onBackToCatalog}
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+                  >
+                    Ganti Mode
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Card 1: Parameter Kurikulum & Format Cetak */}
           <div className="clay-card p-5">

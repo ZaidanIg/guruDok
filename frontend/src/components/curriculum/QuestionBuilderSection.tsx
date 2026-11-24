@@ -5,9 +5,7 @@ import {
   ArrowUp,
   ArrowDown,
   Copy,
-  FileText,
   ArrowRightLeft,
-  RotateCcw,
 } from 'lucide-react';
 import {
   CustomQuestionItem,
@@ -51,13 +49,11 @@ export const createEmptyQuestion = (
 };
 
 export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
-  serviceId,
   jenjang,
   availableTps,
   questions,
   onChangeQuestions,
 }) => {
-  const [templateNotice, setTemplateNotice] = useState<string | null>(null);
   const [openStimulusMap, setOpenStimulusMap] = useState<Record<string, boolean>>({});
 
   const defaultTpCode = availableTps[0]?.code || '';
@@ -176,61 +172,6 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
     const currentKeyIdx = OPTION_LETTERS.indexOf((q.kunci_jawaban || 'A') as any);
     const nextKey = currentKeyIdx >= nextOpsi.length ? 'A' : (q.kunci_jawaban || 'A');
     updateById(id, { opsi: nextOpsi, kunci_jawaban: nextKey });
-  };
-
-  const applyTemplateFormat = (pgCount: number, essaiCount: number, label: string, blankMode = false) => {
-    const optCount = jenjang === 'SMA' ? 5 : 4;
-    const tps =
-      availableTps.length > 0
-        ? availableTps
-        : [{ code: 'TP.1.1', deskripsi: 'Memahami konsep inti materi pembelajaran.', alokasi_jp: 4 }];
-
-    const levels: Array<'C1-C2' | 'C3' | 'C4-C6'> = ['C1-C2', 'C3', 'C4-C6'];
-    const totalPgScore = essaiCount > 0 ? 70 : 100;
-    const totalEssaiScore = 100 - totalPgScore;
-    const basePgWeight = pgCount > 0 ? Math.floor(totalPgScore / pgCount) : 0;
-    const remPg = pgCount > 0 ? totalPgScore - basePgWeight * pgCount : 0;
-    const baseEsWeight = essaiCount > 0 ? Math.floor(totalEssaiScore / essaiCount) : 0;
-    const remEs = essaiCount > 0 ? totalEssaiScore - baseEsWeight * essaiCount : 0;
-
-    const draftPg: IdentifiedQuestionItem[] = Array.from({ length: pgCount }, (_, i) => {
-      const tp = tps[i % tps.length];
-      return {
-        id: `q-pg-tpl-${Date.now()}-${i}`,
-        tipe_soal: 'PG',
-        tp_code: tp.code,
-        level_kognitif: levels[i % levels.length],
-        stimulus: '',
-        pertanyaan: blankMode ? '' : `Manakah pernyataan yang paling tepat mengenai ${tp.deskripsi}?`,
-        opsi: Array.from({ length: optCount }, (__, o) =>
-          blankMode ? '' : `Pilihan ${OPTION_LETTERS[o]} terkait ${tp.code}`
-        ),
-        kunci_jawaban: 'A',
-        bobot_skor: basePgWeight + (i < remPg ? 1 : 0),
-        pembahasan: blankMode ? '' : `Mengacu pada indikator ${tp.code}.`,
-      };
-    });
-
-    const draftEssai: IdentifiedQuestionItem[] = Array.from({ length: essaiCount }, (_, i) => {
-      const tp = tps[(i + pgCount) % tps.length];
-      return {
-        id: `q-es-tpl-${Date.now()}-${i}`,
-        tipe_soal: 'URAIAN',
-        tp_code: tp.code,
-        level_kognitif: levels[(i + 1) % levels.length],
-        stimulus: '',
-        pertanyaan: blankMode ? '' : `Jelaskan dan berikan contoh penerapan dari: ${tp.deskripsi}`,
-        opsi: [],
-        kunci_jawaban: blankMode ? '' : `Penjelasan runtut sesuai capaian indikator ${tp.code}.`,
-        bobot_skor: baseEsWeight + (i < remEs ? 1 : 0),
-        pembahasan: blankMode ? '' : `Mengacu pada indikator ${tp.code}.`,
-      };
-    });
-
-    onChangeQuestions([...draftPg, ...draftEssai]);
-    setTemplateNotice(
-      `${label} diterapkan: ${pgCount} Pilihan Ganda (Bagian A) & ${essaiCount} Essai (Bagian B).`
-    );
   };
 
   const renderQuestionCard = (q: IdentifiedQuestionItem, sectionIdx: number, isPg: boolean) => {
@@ -454,67 +395,15 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
 
   return (
     <div className="clay-card space-y-6 p-5">
-      {/* Header Bilah Kontrol & Template Format Soal */}
-      <div className="space-y-3 border-b border-slate-200 pb-4">
-        <div>
-          <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-            Template Format Pembuatan Soal
-          </h2>
-          <p className="text-[11px] font-medium text-slate-500">
-            Pilih format kerangka soal di bawah (Bagian A: Pilihan Ganda &amp; Bagian B: Essai), lalu isi butir soal dan kunci jawabannya.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => applyTemplateFormat(4, 1, 'Format Kuis Cepat')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold ${
-              serviceId === '10_kuis' ? 'clay-btn-primary' : 'clay-btn-white text-slate-700'
-            }`}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            <span>Format Kuis (4 PG + 1 Essai)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTemplateFormat(10, 3, 'Format Sumatif Bab')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold ${
-              serviceId === '11_sumatif_bab' ? 'clay-btn-primary' : 'clay-btn-white text-slate-700'
-            }`}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            <span>Format Sumatif (10 PG + 3 Essai)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTemplateFormat(15, 5, 'Format STS / SAS')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold ${
-              serviceId === '12_sts_sas' ? 'clay-btn-primary' : 'clay-btn-white text-slate-700'
-            }`}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            <span>Format STS/SAS (15 PG + 5 Essai)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTemplateFormat(1, 1, 'Format Kosong', true)}
-            className="clay-btn-white inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-600"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Format Kosong (1 PG + 1 Essai)</span>
-          </button>
-        </div>
+      {/* Header Judul Pembuatan Soal */}
+      <div className="border-b border-slate-200 pb-3">
+        <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+          Pembuatan Soal Evaluasi
+        </h2>
+        <p className="text-[11px] font-medium text-slate-500">
+          Susun butir soal secara manual pada Bagian A (Pilihan Ganda) dan Bagian B (Essai).
+        </p>
       </div>
-
-      {templateNotice && (
-        <div className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
-          <span>{templateNotice}</span>
-          <button type="button" onClick={() => setTemplateNotice(null)} className="text-[11px] font-bold underline">
-            Tutup
-          </button>
-        </div>
-      )}
 
       {/* SEKSI 1: BAGIAN A - SOAL PILIHAN GANDA */}
       <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-4 space-y-4">

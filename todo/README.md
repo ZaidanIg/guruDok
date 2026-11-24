@@ -57,10 +57,16 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 44** | **Optimasi Aset Home, Keep-Alive Tab Navigasi, & Badge Cache Allow Tersimpan di Akun** | [plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md](../plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md) | [todo/sprint-44-todo.md](./sprint-44-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 45** | **Pemasangan `asset\hero-clay-3d.png` sebagai Favicon (`favicon.ico`) & Logo Brand Website** | [plan/sprint-45-favicon-dan-logo-brand-hero-clay.md](../plan/sprint-45-favicon-dan-logo-brand-hero-clay.md) | [todo/sprint-45-todo.md](./sprint-45-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 46** | **Penggantian Fitur Bank Soal dengan Template Format Pembuatan Soal** | [plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md](../plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md) | [todo/sprint-46-todo.md](./sprint-46-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 47** | **Pembuatan Soal Manual Langsung (Hapus Template & Opsi Pilih Mode untuk Soal)** | [plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md](../plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md) | [todo/sprint-47-todo.md](./sprint-47-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 47):**
+  - Menghapus seluruh tombol preset template pada [QuestionBuilderSection.tsx](../frontend/src/components/curriculum/QuestionBuilderSection.tsx) agar guru langsung menyusun butir soal manual (Bagian A PG & Bagian B Essai).
+  - Meniadakan modal pop-up pemilihan **"Gunakan Template / Buat Manual"** di [App.tsx](../frontend/src/App.tsx) dan menyembunyikan Mode Banner di [DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx) khusus untuk layanan soal (`10_kuis`, `11_sumatif_bab`, `12_sts_sas`).
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **129/129 PASS (100%)**.
 
 - **2026-11-24 (Sprint 46):**
   - Menghapus fitur UI **Ambil dari Bank Soal** pada [QuestionBuilderSection.tsx](../frontend/src/components/curriculum/QuestionBuilderSection.tsx) dan menyelaraskan teks pada [services.ts](../frontend/src/constants/services.ts).

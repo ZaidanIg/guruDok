@@ -212,8 +212,14 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Select Service from Home or Katalog -> Opens Mode Selection Pop-up Modal
+  // Select Service from Home or Katalog -> Opens Mode Selection Pop-up Modal (except Exam Services: direct Manual)
   const handleSelectService = (serviceId: ServiceId) => {
+    const isDirectManualExam =
+      serviceId === '10_kuis' || serviceId === '11_sumatif_bab' || serviceId === '12_sts_sas';
+    if (isDirectManualExam) {
+      applyServiceSelection(serviceId, 'manual');
+      return;
+    }
     if (activeSection !== 'generator') {
       setPendingServiceId(serviceId);
       setIsModeModalOpen(true);
