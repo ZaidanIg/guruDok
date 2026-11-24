@@ -449,7 +449,7 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
               className="clay-btn-white inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>+ Tambah Soal PG Lagi</span>
+              <span>Tambah Soal</span>
             </button>
           </div>
         )}
@@ -499,7 +499,7 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
               className="clay-btn-white inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-800"
             >
               <Plus className="h-3.5 w-3.5 text-emerald-600" />
-              <span>+ Tambah Soal Essai Lagi</span>
+              <span>Tambah Essai</span>
             </button>
           </div>
         )}
