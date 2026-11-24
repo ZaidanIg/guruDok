@@ -5,10 +5,9 @@ import {
   ArrowUp,
   ArrowDown,
   Copy,
-  Database,
-  Loader2,
   FileText,
   ArrowRightLeft,
+  RotateCcw,
 } from 'lucide-react';
 import {
   CustomQuestionItem,
@@ -16,7 +15,6 @@ import {
   LearningObjective,
   ServiceId,
 } from '../../types';
-import { apiClient } from '../../services/api';
 
 export type IdentifiedQuestionItem = CustomQuestionItem & { id: string };
 
@@ -55,14 +53,11 @@ export const createEmptyQuestion = (
 export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
   serviceId,
   jenjang,
-  subjectId,
-  chapterId,
   availableTps,
   questions,
   onChangeQuestions,
 }) => {
-  const [isLoadingBank, setIsLoadingBank] = useState(false);
-  const [bankNotice, setBankNotice] = useState<string | null>(null);
+  const [templateNotice, setTemplateNotice] = useState<string | null>(null);
   const [openStimulusMap, setOpenStimulusMap] = useState<Record<string, boolean>>({});
 
   const defaultTpCode = availableTps[0]?.code || '';
@@ -183,102 +178,59 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
     updateById(id, { opsi: nextOpsi, kunci_jawaban: nextKey });
   };
 
-  const handleFillDraftFromTp = () => {
+  const applyTemplateFormat = (pgCount: number, essaiCount: number, label: string, blankMode = false) => {
     const optCount = jenjang === 'SMA' ? 5 : 4;
     const tps =
       availableTps.length > 0
         ? availableTps
         : [{ code: 'TP.1.1', deskripsi: 'Memahami konsep inti materi pembelajaran.', alokasi_jp: 4 }];
 
-    const pgCount = serviceId === '10_kuis' ? 4 : serviceId === '11_sumatif_bab' ? 5 : 10;
-    const essaiCount = serviceId === '10_kuis' ? 1 : serviceId === '11_sumatif_bab' ? 2 : 5;
     const levels: Array<'C1-C2' | 'C3' | 'C4-C6'> = ['C1-C2', 'C3', 'C4-C6'];
+    const totalPgScore = essaiCount > 0 ? 70 : 100;
+    const totalEssaiScore = 100 - totalPgScore;
+    const basePgWeight = pgCount > 0 ? Math.floor(totalPgScore / pgCount) : 0;
+    const remPg = pgCount > 0 ? totalPgScore - basePgWeight * pgCount : 0;
+    const baseEsWeight = essaiCount > 0 ? Math.floor(totalEssaiScore / essaiCount) : 0;
+    const remEs = essaiCount > 0 ? totalEssaiScore - baseEsWeight * essaiCount : 0;
 
     const draftPg: IdentifiedQuestionItem[] = Array.from({ length: pgCount }, (_, i) => {
       const tp = tps[i % tps.length];
       return {
-        id: `q-pg-draft-${Date.now()}-${i}`,
+        id: `q-pg-tpl-${Date.now()}-${i}`,
         tipe_soal: 'PG',
         tp_code: tp.code,
         level_kognitif: levels[i % levels.length],
         stimulus: '',
-        pertanyaan: `Manakah pernyataan yang paling tepat mengenai ${tp.deskripsi}?`,
-        opsi: Array.from({ length: optCount }, (__, o) => `Pilihan ${OPTION_LETTERS[o]} terkait ${tp.code}`),
+        pertanyaan: blankMode ? '' : `Manakah pernyataan yang paling tepat mengenai ${tp.deskripsi}?`,
+        opsi: Array.from({ length: optCount }, (__, o) =>
+          blankMode ? '' : `Pilihan ${OPTION_LETTERS[o]} terkait ${tp.code}`
+        ),
         kunci_jawaban: 'A',
-        pembahasan: `Mengacu pada indikator ${tp.code}.`,
+        bobot_skor: basePgWeight + (i < remPg ? 1 : 0),
+        pembahasan: blankMode ? '' : `Mengacu pada indikator ${tp.code}.`,
       };
     });
 
     const draftEssai: IdentifiedQuestionItem[] = Array.from({ length: essaiCount }, (_, i) => {
       const tp = tps[(i + pgCount) % tps.length];
       return {
-        id: `q-es-draft-${Date.now()}-${i}`,
+        id: `q-es-tpl-${Date.now()}-${i}`,
         tipe_soal: 'URAIAN',
         tp_code: tp.code,
         level_kognitif: levels[(i + 1) % levels.length],
         stimulus: '',
-        pertanyaan: `Jelaskan dan berikan contoh penerapan dari: ${tp.deskripsi}`,
+        pertanyaan: blankMode ? '' : `Jelaskan dan berikan contoh penerapan dari: ${tp.deskripsi}`,
         opsi: [],
-        kunci_jawaban: `Penjelasan runtut sesuai capaian indikator ${tp.code}.`,
-        pembahasan: `Mengacu pada indikator ${tp.code}.`,
+        kunci_jawaban: blankMode ? '' : `Penjelasan runtut sesuai capaian indikator ${tp.code}.`,
+        bobot_skor: baseEsWeight + (i < remEs ? 1 : 0),
+        pembahasan: blankMode ? '' : `Mengacu pada indikator ${tp.code}.`,
       };
     });
 
     onChangeQuestions([...draftPg, ...draftEssai]);
-    setBankNotice(`Draf soal berhasil dibuat: ${pgCount} Soal PG (Bagian A) & ${essaiCount} Soal Essai (Bagian B).`);
-  };
-
-  const handleImportFromBank = async () => {
-    setIsLoadingBank(true);
-    setBankNotice(null);
-    try {
-      const fetched = await apiClient.getQuestions({
-        subjectId,
-        chapterId,
-        limit: 30,
-      });
-
-      if (!fetched || fetched.length === 0) {
-        setBankNotice('Belum ada butir soal tersimpan untuk mata pelajaran ini di Bank Soal.');
-        return;
-      }
-
-      // Bersihkan teks kotor dan map data
-      const cleanedItems: IdentifiedQuestionItem[] = fetched.map((f: any, idx: number) => {
-        const rawStimulus = (f.stimulus || '').replace(/^Uji Bank Soal \d+:\s*/i, '').trim();
-        const rawPertanyaan = (f.pertanyaan || '').replace(/^Uji Bank Soal \d+:\s*/i, '').trim();
-        const isPg = f.tipe_soal !== 'URAIAN';
-        return {
-          id: `q-bank-${f.id || idx}`,
-          tipe_soal: isPg ? 'PG' : 'URAIAN',
-          tp_code: f.tp_code || defaultTpCode,
-          level_kognitif: f.level_kognitif || 'C1-C2',
-          stimulus: rawStimulus,
-          pertanyaan: rawPertanyaan,
-          opsi: Array.isArray(f.opsi) ? f.opsi : [],
-          kunci_jawaban: f.kunci_jawaban || (isPg ? 'A' : ''),
-          bobot_skor: f.bobot_skor ?? undefined,
-          pembahasan: f.pembahasan || '',
-        };
-      });
-
-      const fetchedPg = cleanedItems.filter((q) => q.tipe_soal === 'PG');
-      const fetchedEssai = cleanedItems.filter((q) => q.tipe_soal === 'URAIAN');
-
-      // Filter existing meaningful questions
-      const existingPg = pgItems.filter((q) => q.pertanyaan.trim().length > 0);
-      const existingEssai = essaiItems.filter((q) => q.pertanyaan.trim().length > 0);
-
-      const mergedPg = existingPg.length > 0 ? [...existingPg, ...fetchedPg] : (fetchedPg.length > 0 ? fetchedPg : pgItems);
-      const mergedEssai = existingEssai.length > 0 ? [...existingEssai, ...fetchedEssai] : (fetchedEssai.length > 0 ? fetchedEssai : essaiItems);
-
-      onChangeQuestions([...mergedPg, ...mergedEssai]);
-      setBankNotice(
-        `Berhasil memuat ${cleanedItems.length} butir dari Bank Soal: ${fetchedPg.length} PG (Bagian A) & ${fetchedEssai.length} Essai (Bagian B)!`
-      );
-    } finally {
-      setIsLoadingBank(false);
-    }
+    setTemplateNotice(
+      `${label} diterapkan: ${pgCount} Pilihan Ganda (Bagian A) & ${essaiCount} Essai (Bagian B).`
+    );
   };
 
   const renderQuestionCard = (q: IdentifiedQuestionItem, sectionIdx: number, isPg: boolean) => {
@@ -502,45 +454,63 @@ export const QuestionBuilderSection: React.FC<QuestionBuilderSectionProps> = ({
 
   return (
     <div className="clay-card space-y-6 p-5">
-      {/* Header Bilah Kontrol Global */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+      {/* Header Bilah Kontrol & Template Format Soal */}
+      <div className="space-y-3 border-b border-slate-200 pb-4">
         <div>
           <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-            Pembuatan Soal Evaluasi
+            Template Format Pembuatan Soal
           </h2>
           <p className="text-[11px] font-medium text-slate-500">
-            Format terpisah: Bagian A (Pilihan Ganda) &amp; Bagian B (Essai). Kisi-Kisi &amp; Penskoran otomatis terhitung.
+            Pilih format kerangka soal di bawah (Bagian A: Pilihan Ganda &amp; Bagian B: Essai), lalu isi butir soal dan kunci jawabannya.
           </p>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={handleFillDraftFromTp}
-            className="clay-btn-white inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700"
+            onClick={() => applyTemplateFormat(4, 1, 'Format Kuis Cepat')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold ${
+              serviceId === '10_kuis' ? 'clay-btn-primary' : 'clay-btn-white text-slate-700'
+            }`}
           >
-            <FileText className="h-3.5 w-3.5 text-blue-600" />
-            <span>Isi Draf dari TP</span>
+            <FileText className="h-3.5 w-3.5" />
+            <span>Format Kuis (4 PG + 1 Essai)</span>
           </button>
           <button
             type="button"
-            onClick={handleImportFromBank}
-            disabled={isLoadingBank}
-            className="clay-btn-white inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 disabled:opacity-60"
+            onClick={() => applyTemplateFormat(10, 3, 'Format Sumatif Bab')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold ${
+              serviceId === '11_sumatif_bab' ? 'clay-btn-primary' : 'clay-btn-white text-slate-700'
+            }`}
           >
-            {isLoadingBank ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
-            ) : (
-              <Database className="h-3.5 w-3.5 text-emerald-600" />
-            )}
-            <span>Ambil dari Bank Soal</span>
+            <FileText className="h-3.5 w-3.5" />
+            <span>Format Sumatif (10 PG + 3 Essai)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => applyTemplateFormat(15, 5, 'Format STS / SAS')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold ${
+              serviceId === '12_sts_sas' ? 'clay-btn-primary' : 'clay-btn-white text-slate-700'
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>Format STS/SAS (15 PG + 5 Essai)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => applyTemplateFormat(1, 1, 'Format Kosong', true)}
+            className="clay-btn-white inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-600"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Format Kosong (1 PG + 1 Essai)</span>
           </button>
         </div>
       </div>
 
-      {bankNotice && (
+      {templateNotice && (
         <div className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
-          <span>{bankNotice}</span>
-          <button type="button" onClick={() => setBankNotice(null)} className="text-[11px] font-bold underline">
+          <span>{templateNotice}</span>
+          <button type="button" onClick={() => setTemplateNotice(null)} className="text-[11px] font-bold underline">
             Tutup
           </button>
         </div>

@@ -146,7 +146,7 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
     codeLabel: 'Segera Hadir',
     title: '11 Service Tambahan',
     shortTitle: 'Roadmap 18 Service',
-    description: 'Bank Soal STS/SAS, Kisi-Kisi, Jurnal Harian, Modul P5 & Paket Siap Supervisi.',
+    description: 'Template Format Soal STS/SAS, Kisi-Kisi, Jurnal Harian, Modul P5 & Paket Siap Supervisi.',
     formats: ['DOCX', 'XLSX', 'PDF'],
     isFree: false,
     isComingSoon: true,

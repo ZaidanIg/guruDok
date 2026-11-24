@@ -56,10 +56,16 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 43** | **True MS Word Page-by-Page Live Preview (Auto-Pagination A4/F4 Portrait/Landscape + Mode Hybrid PDF Asli Canvas)** | [plan/sprint-43-true-word-pagination-live-preview-a4-f4.md](../plan/sprint-43-true-word-pagination-live-preview-a4-f4.md) | [todo/sprint-43-todo.md](./sprint-43-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 44** | **Optimasi Aset Home, Keep-Alive Tab Navigasi, & Badge Cache Allow Tersimpan di Akun** | [plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md](../plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md) | [todo/sprint-44-todo.md](./sprint-44-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 45** | **Pemasangan `asset\hero-clay-3d.png` sebagai Favicon (`favicon.ico`) & Logo Brand Website** | [plan/sprint-45-favicon-dan-logo-brand-hero-clay.md](../plan/sprint-45-favicon-dan-logo-brand-hero-clay.md) | [todo/sprint-45-todo.md](./sprint-45-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 46** | **Penggantian Fitur Bank Soal dengan Template Format Pembuatan Soal** | [plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md](../plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md) | [todo/sprint-46-todo.md](./sprint-46-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 46):**
+  - Menghapus fitur UI **Ambil dari Bank Soal** pada [QuestionBuilderSection.tsx](../frontend/src/components/curriculum/QuestionBuilderSection.tsx) dan menyelaraskan teks pada [services.ts](../frontend/src/constants/services.ts).
+  - Menambahkan 4 preset **Template Format Pembuatan Soal** (`4 PG + 1 Essai`, `10 PG + 3 Essai`, `15 PG + 5 Essai`, dan `1 PG + 1 Essai` Format Kosong) lengkap dengan distribusi TP aktif, level kognitif (`C1-C2`, `C3`, `C4-C6`), opsi sesuai jenjang, serta bobot skor total 100.
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **129/129 PASS (100%)**.
 
 - **2026-11-24 (Sprint 45):**
   - Mengonversi [hero-clay-3d.png](../asset/hero-clay-3d.png) menjadi `favicon.ico` (`8.6 KB`, multi-size 16/32/48px), `apple-touch-icon.png` (`9.0 KB`, 180×180px), dan `logo-brand.webp` (`5.1 KB`, 96×96px).
