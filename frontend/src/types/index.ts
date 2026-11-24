@@ -251,6 +251,7 @@ export interface AuthUser {
   full_name: string;
   avatar_url?: string | null;
   role: string;
+  cache_allowed?: boolean;
 }
 
 export interface AuthLoginResponse {

@@ -413,6 +413,29 @@ export class GuruDokApiClient {
     const buffer = await res.arrayBuffer();
     return { buffer, pageCount };
   }
+
+  /**
+   * Saves cache consent preference to the authenticated user's GuruDok account.
+   */
+  async saveCacheConsent(allowed: boolean = true): Promise<AuthUser | null> {
+    const token = this.getAuthToken();
+    if (!token) return null;
+    try {
+      const res = await fetch(`${this.baseUrl}/auth/cache-consent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ allowed }),
+      });
+      if (!res.ok) return null;
+      const json: ApiEnvelope<AuthUser> = await res.json();
+      return json.data || null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const apiClient = new GuruDokApiClient();

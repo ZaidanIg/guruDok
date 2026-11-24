@@ -268,9 +268,9 @@ export const UPCOMING_13_SERVICES = [
 ];
 
 export const SERVICE_ICON_PACK: Record<string, string> = {
-  '03_cp_tp': '/icons/cp-icon.png',
-  '04_atp': '/icons/atp-icon.png',
-  '08_modul_ajar': '/icons/modul-icon.png',
-  '05_prota': '/icons/prota-icon.png',
-  '06_promes': '/icons/promes-icon.png',
+  '03_cp_tp': '/icons/cp-icon.webp',
+  '04_atp': '/icons/atp-icon.webp',
+  '08_modul_ajar': '/icons/modul-icon.webp',
+  '05_prota': '/icons/prota-icon.webp',
+  '06_promes': '/icons/promes-icon.webp',
 };

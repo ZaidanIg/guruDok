@@ -54,10 +54,20 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 41** | **Pemisahan Tegas Bagian A (Pilihan Ganda) & Bagian B (Essai) pada Form Generator Stacked, Bank Soal Cerdas Global, Live Preview, DOCX & PDF Engine (Nomor Direset per Bagian 1..N & 1..M)** | [plan/sprint-41-pemisahan-soal-pg-dan-essai-dua-bagian.md](../plan/sprint-41-pemisahan-soal-pg-dan-essai-dua-bagian.md) | [todo/sprint-41-todo.md](./sprint-41-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 42** | **Multi-Sheet Paper Preview (Lembar Kertas Fisik Terpisah ala Google Docs / MS Word), Pemisahan Lembar 1 (Naskah Soal) & Lembar 2 (Kunci Jawaban & Kisi-Kisi Guru), serta Standarisasi Lembar Global 15 Layanan** | [plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md](../plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md) | [todo/sprint-42-todo.md](./sprint-42-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 43** | **True MS Word Page-by-Page Live Preview (Auto-Pagination A4/F4 Portrait/Landscape + Mode Hybrid PDF Asli Canvas)** | [plan/sprint-43-true-word-pagination-live-preview-a4-f4.md](../plan/sprint-43-true-word-pagination-live-preview-a4-f4.md) | [todo/sprint-43-todo.md](./sprint-43-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 44** | **Optimasi Aset Home, Keep-Alive Tab Navigasi, & Badge Cache Allow Tersimpan di Akun** | [plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md](../plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md) | [todo/sprint-44-todo.md](./sprint-44-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 44):**
+  - **Optimasi Aset Home (~4.05 MB → ~83 KB) & Keep-Alive Navigasi:**
+    1. Mengecilkan dan mengompresi 5 ikon layanan (`1000×1000` → `160×160` WebP/PNG, 6.1–8.3 KB/file) dan `character2` (`1024×1536` → `512×768` WebP/PNG, ~48 KB).
+    2. Menerapkan CSS Keep-Alive (`block`/`hidden`) di [App.tsx](../frontend/src/App.tsx) pada tab `home` dan `katalog` agar kembali ke Home menghasilkan **0 request baru** di DevTools.
+  - **Badge Permintaan Cache Allow Tersimpan di Akun:**
+    1. Membuat [CacheConsentBadge.tsx](../frontend/src/components/modals/CacheConsentBadge.tsx), [cacheConsent.ts](../frontend/src/services/cacheConsent.ts), dan Service Worker [sw.js](../frontend/public/sw.js) untuk menyimpan aset ke Cache Storage.
+    2. Menambahkan kolom `users.cache_allowed` + endpoint `POST /api/v1/auth/cache-consent` di [auth_service.py](../backend/app/services/auth_service.py) dan [auth.py](../backend/app/api/v1/endpoints/auth.py) agar izin cache tersimpan permanen di akun pengguna.
+  - **Verifikasi Zero-Trust:** **129/129 Pytest PASS (100%)** dan Frontend `npm run build` **0 errors**.
 
 - **2026-11-24 (Sprint 43):**
   - **True MS Word Page-by-Page Live Preview (A4 & F4 Portrait/Landscape):**

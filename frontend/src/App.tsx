@@ -32,7 +32,14 @@ import { SuccessDownloadModal } from './components/modals/SuccessDownloadModal';
 import { GoogleLoginModal } from './components/modals/GoogleLoginModal';
 import { ClassroomManagementModal } from './components/modals/ClassroomManagementModal';
 import { ServiceModeSelectionModal } from './components/modals/ServiceModeSelectionModal';
+import { CacheConsentBadge } from './components/modals/CacheConsentBadge';
 import { getClassrooms, getActiveClassroom, StudentItem } from './services/classroomStorage';
+import {
+  dismissSessionCachePrompt,
+  enableAndWarmAssetCache,
+  isLocalCacheAllowed,
+  isSessionCachePromptDismissed,
+} from './services/cacheConsent';
 
 const STORAGE_KEY_TEACHER = 'gurudok_teacher_profile_v2';
 
@@ -84,9 +91,11 @@ export const App: React.FC = () => {
   const [lastResult, setLastResult] = useState<DocumentGenerateResponse | null>(null);
   const [history, setHistory] = useState<HistoryDocumentItem[]>([]);
 
-  // Google Auth Gate State
+  // Google Auth Gate & Cache Consent State
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [isCacheBadgeVisible, setIsCacheBadgeVisible] = useState<boolean>(false);
+  const [isSavingCacheConsent, setIsSavingCacheConsent] = useState<boolean>(false);
   const [pendingAction, setPendingAction] = useState<
     | { type: 'generate' }
     | { type: 'download'; fileUrl: string; filename: string }
@@ -150,10 +159,29 @@ export const App: React.FC = () => {
     };
   }, [selectedSubject?.id, semester]);
 
-  // Load Google Auth Session & History on mount, and enforce session protection on shared file links
+  // Load Google Auth Session & History on mount, sync cache consent, and enforce session protection on shared file links
   useEffect(() => {
-    apiClient.getCurrentUser().then((user) => {
-      setAuthUser(user);
+    const localAllowed = isLocalCacheAllowed();
+    if (localAllowed) {
+      enableAndWarmAssetCache();
+    }
+
+    apiClient.getCurrentUser().then(async (user) => {
+      if (user?.cache_allowed) {
+        setAuthUser(user);
+        setIsCacheBadgeVisible(false);
+        enableAndWarmAssetCache();
+      } else if (user && localAllowed) {
+        const synced = await apiClient.saveCacheConsent(true);
+        setAuthUser(synced || { ...user, cache_allowed: true });
+        setIsCacheBadgeVisible(false);
+      } else {
+        setAuthUser(user);
+        if (!localAllowed && !isSessionCachePromptDismissed()) {
+          setIsCacheBadgeVisible(true);
+        }
+      }
+
       apiClient.getHistory().then(setHistory);
 
       // Check URL query parameters for shared file download: ?download_file=... or ?download=...
@@ -387,7 +415,17 @@ export const App: React.FC = () => {
   };
 
   const handleGoogleLoginSuccess = async (user: AuthUser) => {
-    setAuthUser(user);
+    let resolvedUser = user;
+    if (user.cache_allowed) {
+      setIsCacheBadgeVisible(false);
+      enableAndWarmAssetCache();
+    } else if (isLocalCacheAllowed()) {
+      const synced = await apiClient.saveCacheConsent(true);
+      if (synced) resolvedUser = synced;
+      setIsCacheBadgeVisible(false);
+    }
+
+    setAuthUser(resolvedUser);
     setIsLoginModalOpen(false);
     const updatedHistory = await apiClient.getHistory();
     setHistory(updatedHistory);
@@ -403,6 +441,29 @@ export const App: React.FC = () => {
         setErrorMsg('Gagal mengunduh berkas setelah login.');
       }
     }
+  };
+
+  const handleAllowCacheConsent = async () => {
+    setIsSavingCacheConsent(true);
+    try {
+      await enableAndWarmAssetCache();
+      if (authUser) {
+        const updatedUser = await apiClient.saveCacheConsent(true);
+        if (updatedUser) {
+          setAuthUser(updatedUser);
+        } else {
+          setAuthUser((prev) => (prev ? { ...prev, cache_allowed: true } : prev));
+        }
+      }
+      setIsCacheBadgeVisible(false);
+    } finally {
+      setIsSavingCacheConsent(false);
+    }
+  };
+
+  const handleDismissCacheConsent = () => {
+    dismissSessionCachePrompt();
+    setIsCacheBadgeVisible(false);
   };
 
   const handleLogout = () => {
@@ -429,22 +490,22 @@ export const App: React.FC = () => {
           onLogout={handleLogout}
         />
 
-        {/* Multi-Page Content Router */}
+        {/* Multi-Page Content Router (Keep-Alive on Home & Catalog to prevent icon re-requests) */}
         <main>
-          {activeSection === 'home' && (
+          <div className={activeSection === 'home' ? 'block' : 'hidden'}>
             <HeroSection
               onOpenCatalog={() => handleNavigate('katalog')}
               onOpenHistory={() => handleNavigate('riwayat')}
               onSelectService={handleSelectService}
             />
-          )}
+          </div>
 
-          {activeSection === 'katalog' && (
+          <div className={activeSection === 'katalog' ? 'block' : 'hidden'}>
             <ServiceCatalog
               selectedServiceId={selectedServiceId}
               onSelectService={handleSelectService}
             />
-          )}
+          </div>
 
           {activeSection === 'generator' && (
             <DocumentGenerator
@@ -504,6 +565,14 @@ export const App: React.FC = () => {
 
       {/* Mobile Fixed Bottom Navigation */}
       <BottomNav activeSection={activeSection} onNavigate={handleNavigate} />
+
+      {/* First-Visit Cache Allow Consent Badge (Synced with User Account) */}
+      <CacheConsentBadge
+        isVisible={isCacheBadgeVisible}
+        isSaving={isSavingCacheConsent}
+        onAllow={handleAllowCacheConsent}
+        onDismiss={handleDismissCacheConsent}
+      />
 
       {/* Modal 1: Lengkapi Profil Sekolah Anda */}
       <SchoolProfileModal

@@ -12,6 +12,9 @@ from fastapi import HTTPException, status
 from app.core.config import settings
 from app.core.database import DatabaseManager, get_db_manager
 
+# Fallback store for unit tests / offline DB mode
+_IN_MEMORY_CACHE_CONSENT: Dict[str, bool] = {}
+
 
 def _b64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
@@ -30,7 +33,7 @@ class AuthService:
         self._ensure_auth_columns()
 
     def _ensure_auth_columns(self) -> None:
-        """Ensures google_sub and avatar_url columns exist on users table."""
+        """Ensures google_sub, avatar_url, and cache consent columns exist on users table."""
         try:
             with self.db.get_connection() as conn:
                 with conn.cursor() as cur:
@@ -38,7 +41,9 @@ class AuthService:
                         """
                         ALTER TABLE users
                             ADD COLUMN IF NOT EXISTS google_sub VARCHAR(128) UNIQUE,
-                            ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+                            ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+                            ADD COLUMN IF NOT EXISTS cache_allowed BOOLEAN NOT NULL DEFAULT FALSE,
+                            ADD COLUMN IF NOT EXISTS cache_allowed_at TIMESTAMPTZ;
                         """
                     )
         except Exception:
@@ -81,18 +86,20 @@ class AuthService:
                             full_name = EXCLUDED.full_name,
                             avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
                             updated_at = NOW()
-                        RETURNING id, email, full_name, avatar_url, role;
+                        RETURNING id, email, full_name, avatar_url, role, COALESCE(cache_allowed, FALSE) AS cache_allowed;
                         """,
                         (google_sub, email.lower(), full_name, avatar_url),
                     )
                     row = cur.fetchone()
                     if row:
+                        uid = str(row["id"])
                         return {
-                            "id": str(row["id"]),
+                            "id": uid,
                             "email": row["email"],
                             "full_name": row["full_name"],
                             "avatar_url": row.get("avatar_url"),
                             "role": row.get("role") or "teacher",
+                            "cache_allowed": bool(row.get("cache_allowed", False) or _IN_MEMORY_CACHE_CONSENT.get(uid, False)),
                         }
         except Exception:
             pass
@@ -103,6 +110,86 @@ class AuthService:
             "full_name": full_name,
             "avatar_url": avatar_url,
             "role": "teacher",
+            "cache_allowed": bool(_IN_MEMORY_CACHE_CONSENT.get(fallback_id, False)),
+        }
+
+    def get_user_with_preferences(self, user_claims: Dict[str, Any]) -> Dict[str, Any]:
+        """Resolves latest persisted user preferences (including cache_allowed) from GuruDocDB."""
+        uid = str(user_claims["id"])
+        cache_allowed = bool(user_claims.get("cache_allowed", False) or _IN_MEMORY_CACHE_CONSENT.get(uid, False))
+        try:
+            with self.db.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT id, email, full_name, avatar_url, role, COALESCE(cache_allowed, FALSE) AS cache_allowed
+                        FROM users
+                        WHERE id::text = %s OR email = %s
+                        LIMIT 1;
+                        """,
+                        (uid, str(user_claims.get("email", "")).lower()),
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        return {
+                            "id": str(row["id"]),
+                            "email": row["email"],
+                            "full_name": row["full_name"],
+                            "avatar_url": row.get("avatar_url"),
+                            "role": row.get("role") or "teacher",
+                            "cache_allowed": bool(row.get("cache_allowed", False) or cache_allowed),
+                        }
+        except Exception:
+            pass
+
+        return {
+            "id": uid,
+            "email": user_claims["email"],
+            "full_name": user_claims.get("full_name") or user_claims["email"],
+            "avatar_url": user_claims.get("avatar_url"),
+            "role": user_claims.get("role", "teacher"),
+            "cache_allowed": cache_allowed,
+        }
+
+    def save_cache_consent(self, user_claims: Dict[str, Any], allowed: bool) -> Dict[str, Any]:
+        """Persists cache_allowed preference for the user account in GuruDocDB."""
+        uid = str(user_claims["id"])
+        email = str(user_claims.get("email", "")).lower()
+        _IN_MEMORY_CACHE_CONSENT[uid] = bool(allowed)
+        try:
+            with self.db.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        UPDATE users
+                        SET cache_allowed = %s,
+                            cache_allowed_at = CASE WHEN %s THEN NOW() ELSE cache_allowed_at END,
+                            updated_at = NOW()
+                        WHERE id::text = %s OR email = %s
+                        RETURNING id, email, full_name, avatar_url, role, COALESCE(cache_allowed, FALSE) AS cache_allowed;
+                        """,
+                        (bool(allowed), bool(allowed), uid, email),
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        return {
+                            "id": str(row["id"]),
+                            "email": row["email"],
+                            "full_name": row["full_name"],
+                            "avatar_url": row.get("avatar_url"),
+                            "role": row.get("role") or "teacher",
+                            "cache_allowed": bool(row.get("cache_allowed", allowed)),
+                        }
+        except Exception:
+            pass
+
+        return {
+            "id": uid,
+            "email": user_claims["email"],
+            "full_name": user_claims.get("full_name") or user_claims["email"],
+            "avatar_url": user_claims.get("avatar_url"),
+            "role": user_claims.get("role", "teacher"),
+            "cache_allowed": bool(allowed),
         }
 
     def create_access_token(self, user: Dict[str, Any]) -> str:
@@ -116,6 +203,7 @@ class AuthService:
             "name": user["full_name"],
             "avatar_url": user.get("avatar_url"),
             "role": user.get("role", "teacher"),
+            "cache_allowed": bool(user.get("cache_allowed", False)),
             "iat": now,
             "exp": exp,
         }
@@ -157,6 +245,7 @@ class AuthService:
                 "full_name": payload.get("name") or payload["email"],
                 "avatar_url": payload.get("avatar_url"),
                 "role": payload.get("role", "teacher"),
+                "cache_allowed": bool(payload.get("cache_allowed", False)),
             }
         except Exception:
             return None

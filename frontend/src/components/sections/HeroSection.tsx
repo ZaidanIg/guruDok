@@ -64,7 +64,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="relative flex h-52 w-52 items-end justify-center overflow-hidden rounded-full  bg-white sm:h-64 sm:w-64">
             {/* Base character inside circle with Clean Drop Shadow */}
             <img
-              src="/character2.png"
+              src="/character2.webp"
               alt="Karakter Brand GuruDok"
               className="pointer-events-none h-full w-full select-none object-cover object-top scale-[1.65] origin-top translate-y-3 transition-transform duration-300 hover:scale-[1.7]"
               style={{
@@ -77,7 +77,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* 3D Pop-Out Layer: Head, Hair, & Waving Hand overflowing circle (Tanpa drop-shadow pada cut edge agar bebas bug garis) */}
           <div className="pointer-events-none absolute inset-0 flex items-end justify-center">
             <img
-              src="/character2.png"
+              src="/character2.webp"
               alt=""
               aria-hidden="true"
               className="h-full w-full select-none object-cover object-top scale-[1.65] origin-top translate-y-3"
