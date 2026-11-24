@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <img
             src="/logo-brand.webp"
-            alt="Logo GuruDok.id"
+            alt="Logo GuruDok.guru"
             className="h-7 w-7 rounded-md object-contain select-none"
             draggable={false}
           />

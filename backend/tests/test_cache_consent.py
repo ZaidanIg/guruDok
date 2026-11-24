@@ -21,7 +21,7 @@ def test_cache_consent_persists_per_user_account(client):
     auth_svc = AuthService()
     test_user = {
         "id": "00000000-0000-0000-0000-000000000444",
-        "email": "guru.cache44@gurudok.id",
+        "email": "guru.cache44@gurudok.guru",
         "full_name": "Guru Cache Tester",
         "avatar_url": None,
         "role": "teacher",

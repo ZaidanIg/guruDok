@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <img
             src="/logo-brand.webp"
-            alt="Logo GuruDok.id"
+            alt="Logo GuruDok.guru"
             className="h-9 w-9 rounded-lg object-contain drop-shadow-sm select-none"
             draggable={false}
           />

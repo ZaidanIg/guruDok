@@ -1,6 +1,6 @@
 # GuruDok Frontend (Vite + React + TypeScript + Tailwind CSS Claymorphism)
 
-Antarmuka web responsif (Desktop & Mobile) untuk platform otomasi administrasi guru **GuruDok.id**, dibangun dengan gaya visual **Claymorphism (Soft 3D Tactile)** sesuai referensi desain resmi di folder `asset/`.
+Antarmuka web responsif (Desktop & Mobile) untuk platform otomasi administrasi guru **GuruDok.guru**, dibangun dengan gaya visual **Claymorphism (Soft 3D Tactile)** sesuai referensi desain resmi di folder `asset/`.
 
 ---
 

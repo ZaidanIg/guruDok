@@ -32,7 +32,7 @@ def _parse_cors_origins() -> List[str]:
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
-        "https://gurudok.id",
+        "https://gurudok.guru",
     ]
     raw = os.getenv("CORS_ORIGINS", "").strip()
     if not raw:
@@ -96,7 +96,7 @@ class Settings(BaseModel):
     r2_access_key_id: str = os.getenv("R2_ACCESS_KEY_ID", "")
     r2_secret_access_key: str = os.getenv("R2_SECRET_ACCESS_KEY", "")
     r2_bucket_name: str = os.getenv("R2_BUCKET_NAME", "gurudok-documents")
-    r2_public_url: str = os.getenv("R2_PUBLIC_URL", "https://files.gurudok.id")
+    r2_public_url: str = os.getenv("R2_PUBLIC_URL", "https://files.gurudok.guru")
 
 
 settings = Settings()
