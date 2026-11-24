@@ -143,3 +143,25 @@ def test_preview_pdf_security_xss_and_not_found(client):
         },
     )
     assert nf_res.status_code == 404
+
+
+def test_preview_pdf_without_teacher_profile_and_alokasi_zero(client):
+    """TDD Sprint 48: preview-pdf accepts missing teacher_profile and alokasi_waktu_menit=0."""
+    res = client.post(
+        "/api/v1/documents/preview-pdf",
+        json={
+            "service_id": "10_kuis",
+            "jenjang": "SMA",
+            "kelas": 11,
+            "subject_id": "SMA-K11-INF",
+            "semester": 1,
+            "chapter_id": "INF-K11-B01",
+            "paper_size": "A4",
+            "output_format": "pdf",
+            "custom_overrides": {
+                "alokasi_waktu_menit": 0,
+            },
+        },
+    )
+    assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
+    assert res.content[:5] == b"%PDF-"

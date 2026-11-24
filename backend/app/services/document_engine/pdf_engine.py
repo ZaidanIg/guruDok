@@ -907,6 +907,8 @@ class PdfDocumentEngine(DocumentEngine):
         pdf.cell(0, 6, _ascii_safe(title), new_x="LMARGIN", new_y="NEXT", align="C")
         pdf.set_font("Helvetica", "B", 10)
         pdf.cell(0, 5, _ascii_safe(f"{subject.nama_mapel} | {subject.jenjang} Kelas {subject.kelas} | Semester {request.semester}"), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.set_font("Helvetica", "", 9)
+        pdf.cell(0, 5, _ascii_safe(f"Alokasi Waktu: {bp['alokasi_waktu_menit']} Menit | Paket {bp['paket_soal']}"), new_x="LMARGIN", new_y="NEXT", align="C")
         pdf.ln(3)
 
         # 1. Halaman Pertama: Naskah Soal Evaluasi Siswa

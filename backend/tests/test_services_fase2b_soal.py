@@ -459,3 +459,33 @@ def test_exam_service_multi_sheet_page_break_and_sub_kop(client):
         idx_kunci = all_text.index("Kunci Jawaban")
         assert idx_pg < idx_kunci, f"Question section must precede Answer Key for {s_id}"
 
+
+def test_exam_alokasi_waktu_zero_accepted_and_rendered(client):
+    """TDD Sprint 48: alokasi_waktu_menit=0 must be accepted (HTTP 201) and preserved without reverting to 90."""
+    res = client.post(
+        "/api/v1/documents/generate",
+        json={
+            "service_id": "10_kuis",
+            "jenjang": "SMA",
+            "kelas": 11,
+            "subject_id": "SMA-K11-INF",
+            "semester": 1,
+            "chapter_id": "INF-K11-B01",
+            "paper_size": "F4",
+            "output_format": "docx",
+            "custom_overrides": {
+                "alokasi_waktu_menit": 0,
+                "butir_soal_kustom": _sample_questions(),
+            },
+        },
+    )
+    assert res.status_code == 201, f"Expected 201 for alokasi_waktu_menit=0, got {res.status_code}: {res.text}"
+    dl = client.get(res.json()["data"]["download_url"])
+    assert dl.status_code == 200
+    doc = Document(BytesIO(dl.content))
+    combined = "\n".join(p.text for p in doc.paragraphs) + "\n" + "\n".join(
+        c.text for t in doc.tables for r in t.rows for c in r.cells
+    )
+    assert "0 Menit" in combined
+    assert "90 Menit" not in combined
+

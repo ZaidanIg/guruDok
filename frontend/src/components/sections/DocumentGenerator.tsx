@@ -768,6 +768,36 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     setIsLoadingPdfPreview(true);
     setPdfPreviewError(null);
     try {
+      const sanitizedOverrides: CustomDocumentOverrides = { ...customOverrides };
+
+      // Sanitize custom question items so half-typed/empty cards don't trigger HTTP 422 in preview
+      if (sanitizedOverrides.butir_soal_kustom && sanitizedOverrides.butir_soal_kustom.length > 0) {
+        sanitizedOverrides.butir_soal_kustom = sanitizedOverrides.butir_soal_kustom.map((q) => ({
+          ...q,
+          pertanyaan:
+            q.pertanyaan && q.pertanyaan.trim().length >= 2
+              ? q.pertanyaan
+              : '(Belum ada teks pertanyaan)',
+        }));
+      }
+
+      // Sanitize custom CP / TP items if incomplete
+      if (sanitizedOverrides.custom_elemen_cp) {
+        sanitizedOverrides.custom_elemen_cp = sanitizedOverrides.custom_elemen_cp.filter(
+          (el) => el.kode_elemen?.trim() && el.nama_elemen?.trim().length >= 2 && el.deskripsi_cp?.trim().length >= 5
+        );
+      }
+
+      // Include teacher_profile only when required fields meet backend Zero-Trust schema constraints
+      const hasCompleteProfile = Boolean(
+        teacher.nama_guru?.trim().length >= 2 &&
+          teacher.nama_sekolah?.trim().length >= 3 &&
+          teacher.kabupaten_kota?.trim().length >= 3 &&
+          teacher.provinsi?.trim().length >= 3 &&
+          teacher.nama_kepala_sekolah?.trim().length >= 2 &&
+          (teacher.no_whatsapp || '').replace(/\D/g, '').length >= 9
+      );
+
       const payload: DocumentGenerateRequest = {
         service_id: activeService.id,
         jenjang,
@@ -781,8 +811,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         include_lkpd: includeLkpd,
         include_asesmen: includeAsesmen,
         include_rubrik: includeRubrik,
-        teacher_profile: teacher,
-        custom_overrides: customOverrides,
+        teacher_profile: hasCompleteProfile ? teacher : undefined,
+        custom_overrides: sanitizedOverrides,
       };
       const { buffer, pageCount } = await apiClient.previewDocumentPdf(payload);
       setPdfPreviewBuffer(buffer);
@@ -911,13 +941,16 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           </div>
           <div className="space-y-0.5">
             <p><span className="font-semibold text-slate-500">Hari, Tanggal:</span> ............................................</p>
-            <p><span className="font-semibold text-slate-500">Alokasi Waktu:</span> {isKuis ? '30 Menit' : isSumatifBab ? '60 Menit' : '90 Menit'}</p>
+            <p>
+              <span className="font-semibold text-slate-500">Alokasi Waktu:</span>{' '}
+              {customOverrides.alokasi_waktu_menit ?? (isKuis ? 20 : isSumatifBab ? 60 : 90)} Menit
+            </p>
             <p><span className="font-semibold text-slate-500">Nama Siswa / No:</span> ............................................</p>
           </div>
         </div>
 
         {/* Petunjuk Umum */}
-        <div data-keep-together="true" className="mt-3 rounded border border-slate-200 bg-slate-50 p-2.5 text-[11px] leading-relaxed text-slate-700">
+        <div data-keep-together="true" className="mt-3 p-2.5 text-[11px] leading-relaxed text-slate-700">
           <p className="font-bold text-slate-900">PETUNJUK UMUM PENGERJAAN:</p>
           <ol className="mt-1 list-decimal pl-4 space-y-0.5">
             <li>Berdoalah sebelum mulai mengerjakan soal evaluasi.</li>
@@ -2012,15 +2045,17 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       <label className="mb-1 block text-xs font-bold text-slate-700">Alokasi Waktu (Menit)</label>
                       <input
                         type="number"
-                        min={15}
+                        min={0}
                         max={240}
                         value={customOverrides.alokasi_waktu_menit ?? 90}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const val = raw === '' ? 0 : Math.max(0, Math.min(240, Number(raw) || 0));
                           onChangeCustomOverrides({
                             ...customOverrides,
-                            alokasi_waktu_menit: Math.max(15, Math.min(240, Number(e.target.value) || 90)),
-                          })
-                        }
+                            alokasi_waktu_menit: val,
+                          });
+                        }}
                         className="clay-input w-full px-3 py-2 text-xs font-bold text-slate-800"
                       />
                     </div>
@@ -2085,15 +2120,17 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       <label className="mb-1 block text-xs font-bold text-slate-700">Alokasi Waktu (Menit)</label>
                       <input
                         type="number"
-                        min={10}
-                        max={180}
+                        min={0}
+                        max={240}
                         value={customOverrides.alokasi_waktu_menit ?? (isKuis ? 20 : 60)}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const val = raw === '' ? 0 : Math.max(0, Math.min(240, Number(raw) || 0));
                           onChangeCustomOverrides({
                             ...customOverrides,
-                            alokasi_waktu_menit: Math.max(10, Math.min(180, Number(e.target.value) || 30)),
-                          })
-                        }
+                            alokasi_waktu_menit: val,
+                          });
+                        }}
                         className="clay-input w-full px-3 py-2 text-xs font-bold text-slate-800"
                       />
                     </div>

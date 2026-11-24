@@ -339,13 +339,24 @@ export const App: React.FC = () => {
         }
       }
 
+      if (finalOverrides.butir_soal_kustom && finalOverrides.butir_soal_kustom.length > 0) {
+        finalOverrides.butir_soal_kustom = finalOverrides.butir_soal_kustom.map((q) => ({
+          ...q,
+          pertanyaan:
+            q.pertanyaan && q.pertanyaan.trim().length >= 2
+              ? q.pertanyaan
+              : '(Belum ada teks pertanyaan)',
+        }));
+      }
+
       const hasCustomOverrides = Object.keys(finalOverrides).length > 0;
       const hasCompleteProfile = Boolean(
-        teacher.nama_guru.trim() &&
-          teacher.nama_sekolah.trim() &&
-          teacher.kabupaten_kota.trim() &&
-          teacher.nama_kepala_sekolah.trim() &&
-          teacher.no_whatsapp.trim()
+        teacher.nama_guru.trim().length >= 2 &&
+          teacher.nama_sekolah.trim().length >= 3 &&
+          teacher.kabupaten_kota.trim().length >= 3 &&
+          teacher.provinsi.trim().length >= 3 &&
+          teacher.nama_kepala_sekolah.trim().length >= 2 &&
+          teacher.no_whatsapp.replace(/\D/g, '').length >= 9
       );
 
       const response = await apiClient.generateDocument({

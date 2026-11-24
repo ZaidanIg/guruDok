@@ -234,7 +234,11 @@ class QuestionBlueprintEngine:
         ]
 
         jenis_ujian = (overrides.jenis_ujian if overrides and overrides.jenis_ujian else "STS").upper()
-        alokasi_waktu = int(overrides.alokasi_waktu_menit or 90) if overrides else 90
+        alokasi_waktu = (
+            int(overrides.alokasi_waktu_menit)
+            if (overrides and overrides.alokasi_waktu_menit is not None)
+            else 90
+        )
 
         return {
             "service_id": request.service_id.value,

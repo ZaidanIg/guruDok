@@ -58,10 +58,16 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 45** | **Pemasangan `asset\hero-clay-3d.png` sebagai Favicon (`favicon.ico`) & Logo Brand Website** | [plan/sprint-45-favicon-dan-logo-brand-hero-clay.md](../plan/sprint-45-favicon-dan-logo-brand-hero-clay.md) | [todo/sprint-45-todo.md](./sprint-45-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 46** | **Penggantian Fitur Bank Soal dengan Template Format Pembuatan Soal** | [plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md](../plan/sprint-46-template-format-pembuatan-soal-tanpa-bank-soal.md) | [todo/sprint-46-todo.md](./sprint-46-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 47** | **Pembuatan Soal Manual Langsung (Hapus Template & Opsi Pilih Mode untuk Soal)** | [plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md](../plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md) | [todo/sprint-47-todo.md](./sprint-47-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 48** | **Perbaikan Alokasi Waktu (`0`), Integrasi Live Preview, & Validasi Preview PDF** | [plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md](../plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md) | [todo/sprint-48-todo.md](./sprint-48-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 48):**
+  - Memperbaiki validasi & input **Alokasi Waktu (Menit)** agar bisa diset ke `0` di [generation.py](../backend/app/schemas/generation.py), [question_blueprint.py](../backend/app/services/document_engine/question_blueprint.py), dan [DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx), serta menghubungkannya *real-time* ke Live Preview dan [pdf_engine.py](../backend/app/services/document_engine/pdf_engine.py).
+  - Memperbaiki payload `handleFetchPdfPreview` ([DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx)) dan `executeGenerateDocument` ([App.tsx](../frontend/src/App.tsx)) agar `teacher_profile` hanya dikirim bila lengkap dan kartu soal kosong disanitasi, sehingga mode **PDF Asli** tidak memicu error *Validasi input formulir gagal (HTTP 422)*.
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **131/131 PASS (100%)**.
 
 - **2026-11-24 (Sprint 47):**
   - Menghapus seluruh tombol preset template pada [QuestionBuilderSection.tsx](../frontend/src/components/curriculum/QuestionBuilderSection.tsx) agar guru langsung menyusun butir soal manual (Bagian A PG & Bagian B Essai).

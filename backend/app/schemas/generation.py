@@ -158,7 +158,7 @@ class CustomDocumentOverrides(BaseModel):
     jumlah_soal_uraian: Optional[int] = Field(None, ge=0, le=15)
     tipe_soal_kuis: Optional[str] = Field("CAMPURAN", max_length=30)
     bobot_level: Optional[dict] = None
-    alokasi_waktu_menit: Optional[int] = Field(90, ge=10, le=240)
+    alokasi_waktu_menit: Optional[int] = Field(90, ge=0, le=240)
     paket_soal: Optional[str] = Field("A", max_length=10)
     butir_soal_kustom: Optional[List[CustomQuestionItem]] = None
 
