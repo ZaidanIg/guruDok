@@ -107,6 +107,36 @@ class CustomQuestionItem(BaseModel):
         return self
 
 
+class CustomJurnalRowItem(BaseModel):
+    """Pydantic model representing a single editable row in Service 14 (Jurnal Mengajar Harian)."""
+    no: Optional[int] = Field(None, ge=1, le=200)
+    hari_tanggal: str = Field(..., min_length=1, max_length=120)
+    jam_pertemuan: str = Field("", max_length=80)
+    tp: str = Field("", max_length=1000)
+    materi: str = Field("", max_length=500)
+    kegiatan: str = Field("", max_length=1500)
+    kehadiran: str = Field("", max_length=250)
+    refleksi: str = Field("", max_length=1000)
+    paraf: str = Field("", max_length=80)
+
+    @model_validator(mode="after")
+    def sanitize_jurnal_row(self):
+        self.hari_tanggal = InputSanitizer.sanitize_text(self.hari_tanggal, max_length=120, allow_empty=False)
+        for field_name, limit in (
+            ("jam_pertemuan", 80),
+            ("tp", 1000),
+            ("materi", 500),
+            ("kegiatan", 1500),
+            ("kehadiran", 250),
+            ("refleksi", 1000),
+            ("paraf", 80),
+        ):
+            val = getattr(self, field_name)
+            if val:
+                setattr(self, field_name, InputSanitizer.sanitize_text(val, max_length=limit))
+        return self
+
+
 class CustomDocumentOverrides(BaseModel):
     """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, assessments, and classroom rosters."""
     custom_chapters: Optional[List[CustomChapterItem]] = None
@@ -167,6 +197,7 @@ class CustomDocumentOverrides(BaseModel):
     tanggal_mulai_semester: Optional[str] = Field(None, max_length=20)
     jam_mengajar: Optional[str] = Field(None, max_length=30)
     jumlah_pertemuan_jurnal: Optional[int] = Field(16, ge=4, le=48)
+    custom_jurnal_rows: Optional[List[CustomJurnalRowItem]] = Field(None, max_length=60)
 
     @model_validator(mode="after")
     def sync_and_sanitize(self):

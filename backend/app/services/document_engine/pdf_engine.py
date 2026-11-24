@@ -1131,7 +1131,7 @@ class PdfDocumentEngine(DocumentEngine):
                 r.cell(_ascii_safe(item["kegiatan"]))
                 r.cell(_ascii_safe(item["kehadiran"]))
                 r.cell(_ascii_safe(item["refleksi"]))
-                r.cell("")
+                r.cell(_ascii_safe(item["paraf"]))
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
         pdf.add_page()

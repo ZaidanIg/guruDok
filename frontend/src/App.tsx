@@ -349,6 +349,14 @@ export const App: React.FC = () => {
         }));
       }
 
+      if (finalOverrides.custom_jurnal_rows && finalOverrides.custom_jurnal_rows.length > 0) {
+        finalOverrides.custom_jurnal_rows = finalOverrides.custom_jurnal_rows.map((row, idx) => ({
+          ...row,
+          no: idx + 1,
+          hari_tanggal: row.hari_tanggal?.trim() || `Pertemuan Ke-${idx + 1}`,
+        }));
+      }
+
       const hasCustomOverrides = Object.keys(finalOverrides).length > 0;
       const hasCompleteProfile = Boolean(
         teacher.nama_guru.trim().length >= 2 &&

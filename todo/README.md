@@ -60,10 +60,17 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 47** | **Pembuatan Soal Manual Langsung (Hapus Template & Opsi Pilih Mode untuk Soal)** | [plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md](../plan/sprint-47-pembuatan-soal-manual-langsung-tanpa-template.md) | [todo/sprint-47-todo.md](./sprint-47-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 48** | **Perbaikan Alokasi Waktu (`0`), Integrasi Live Preview, & Validasi Preview PDF** | [plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md](../plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md) | [todo/sprint-48-todo.md](./sprint-48-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 49** | **Service 14: Jurnal Mengajar Harian (DOCX, XLSX, PDF Landscape 9 Kolom & Live Preview)** | [plan/sprint-49-service-14-jurnal-mengajar-harian.md](../plan/sprint-49-service-14-jurnal-mengajar-harian.md) | [todo/sprint-49-todo.md](./sprint-49-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 50** | **Full CRUD Baris Jurnal Mengajar Harian (Service 14)** | [plan/sprint-50-crud-jurnal-mengajar-harian.md](../plan/sprint-50-crud-jurnal-mengajar-harian.md) | [todo/sprint-50-todo.md](./sprint-50-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 50):**
+  - Menambahkan kemampuan **Full CRUD & Reorder** baris pertemuan pada **Service 14: Jurnal Mengajar Harian (`14_jurnal_mengajar`)**:
+    - Menambahkan model `CustomJurnalRowItem` & field `custom_jurnal_rows` dengan sanitasi Anti-XSS (`InputSanitizer`) pada [generation.py](../backend/app/schemas/generation.py), memprioritaskannya pada [jurnal_blueprint.py](../backend/app/services/document_engine/jurnal_blueprint.py), serta merender kolom `Paraf` pada [pdf_engine.py](../backend/app/services/document_engine/pdf_engine.py).
+    - Membuat komponen [JurnalEditorSection.tsx](../frontend/src/components/curriculum/JurnalEditorSection.tsx) (Tambah Pertemuan, Edit semua 9 kolom + Quick-Pick TP Kurikulum, Geser Naik/Turun, Duplikat, Hapus, & Reset ke Jadwal Otomatis) dan menyinkronkannya *real-time* ke Live Preview serta sanitasi payload di [DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx) & [App.tsx](../frontend/src/App.tsx).
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **134/134 PASS (100%)**.
 
 - **2026-11-24 (Sprint 49):**
   - Mengimplementasikan **Service 14: Jurnal Mengajar Harian (`14_jurnal_mengajar`)** secara penuh di Backend & Frontend:

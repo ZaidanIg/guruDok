@@ -113,34 +113,50 @@ class JurnalBlueprintEngine:
                 }
             ]
 
-        # Generate scheduled teaching dates matching selected weekdays
-        scheduled_dates: List[date] = []
-        cursor = start_dt
-        guard = 0
-        while len(scheduled_dates) < total_pertemuan and guard < 240:
-            if cursor.weekday() in target_weekdays:
-                scheduled_dates.append(cursor)
-            cursor += timedelta(days=1)
-            guard += 1
-
         rows: List[Dict[str, str]] = []
-        for idx, dt in enumerate(scheduled_dates, start=1):
-            item = tp_entries[(idx - 1) % len(tp_entries)]
-            hari_nama = INT_TO_WEEKDAY_NAME[dt.weekday()]
-            tgl_str = f"{hari_nama}, {dt.day:02d} {MONTH_NAMES_ID[dt.month]} {dt.year}"
-            rows.append(
-                {
-                    "no": str(idx),
-                    "hari_tanggal": tgl_str,
-                    "jam_pertemuan": f"Jam {jam_mengajar} (Pert. {idx})",
-                    "tp": f"{item['tp_code']}: {item['tp_desc']}",
-                    "materi": item["materi"],
-                    "kegiatan": "Memahami konsep, diskusi eksploratif, aplikasi studi kasus, dan refleksi.",
-                    "kehadiran": "Hadir lengkap / .... siswa tidak hadir",
-                    "refleksi": "Pembelajaran berjalan kondusif sesuai target TP.",
-                    "paraf": "",
-                }
-            )
+        if ov and ov.custom_jurnal_rows:
+            for idx, r_item in enumerate(ov.custom_jurnal_rows, start=1):
+                rows.append(
+                    {
+                        "no": str(idx),
+                        "hari_tanggal": r_item.hari_tanggal,
+                        "jam_pertemuan": r_item.jam_pertemuan or f"Jam {jam_mengajar} (Pert. {idx})",
+                        "tp": r_item.tp or "-",
+                        "materi": r_item.materi or "-",
+                        "kegiatan": r_item.kegiatan or "-",
+                        "kehadiran": r_item.kehadiran or "-",
+                        "refleksi": r_item.refleksi or "-",
+                        "paraf": r_item.paraf or "",
+                    }
+                )
+        else:
+            # Generate scheduled teaching dates matching selected weekdays
+            scheduled_dates: List[date] = []
+            cursor = start_dt
+            guard = 0
+            while len(scheduled_dates) < total_pertemuan and guard < 240:
+                if cursor.weekday() in target_weekdays:
+                    scheduled_dates.append(cursor)
+                cursor += timedelta(days=1)
+                guard += 1
+
+            for idx, dt in enumerate(scheduled_dates, start=1):
+                item = tp_entries[(idx - 1) % len(tp_entries)]
+                hari_nama = INT_TO_WEEKDAY_NAME[dt.weekday()]
+                tgl_str = f"{hari_nama}, {dt.day:02d} {MONTH_NAMES_ID[dt.month]} {dt.year}"
+                rows.append(
+                    {
+                        "no": str(idx),
+                        "hari_tanggal": tgl_str,
+                        "jam_pertemuan": f"Jam {jam_mengajar} (Pert. {idx})",
+                        "tp": f"{item['tp_code']}: {item['tp_desc']}",
+                        "materi": item["materi"],
+                        "kegiatan": "Memahami konsep, diskusi eksploratif, aplikasi studi kasus, dan refleksi.",
+                        "kehadiran": "Hadir lengkap / .... siswa tidak hadir",
+                        "refleksi": "Pembelajaran berjalan kondusif sesuai target TP.",
+                        "paraf": "",
+                    }
+                )
 
         hari_label = ", ".join(INT_TO_WEEKDAY_NAME[w] for w in target_weekdays)
         return {

@@ -128,6 +128,18 @@ export interface CustomQuestionItem {
   pembahasan?: string;
 }
 
+export interface CustomJurnalRowItem {
+  no?: number;
+  hari_tanggal: string;
+  jam_pertemuan: string;
+  tp: string;
+  materi: string;
+  kegiatan: string;
+  kehadiran: string;
+  refleksi: string;
+  paraf: string;
+}
+
 export interface CustomDocumentOverrides {
   custom_chapters?: CustomChapterItem[];
   custom_elemen_cp?: CustomCpElementItem[];
@@ -176,6 +188,7 @@ export interface CustomDocumentOverrides {
   tanggal_mulai_semester?: string;
   jam_mengajar?: string;
   jumlah_pertemuan_jurnal?: number;
+  custom_jurnal_rows?: CustomJurnalRowItem[];
 }
 
 export interface DocumentGenerateRequest {
