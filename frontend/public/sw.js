@@ -1,5 +1,5 @@
 const CACHE_NAME = 'gurudok-static-v1';
-const STATIC_ASSET_PATTERN = /\/(icons\/.*\.(webp|png)|character2\.(webp|png)|doc-(word|excel|pdf)-clay\.png)$/i;
+const STATIC_ASSET_PATTERN = /\/(icons\/.*\.(webp|png)|character2\.(webp|png)|logo-brand\.webp|apple-touch-icon\.png|favicon\.ico|doc-(word|excel|pdf)-clay\.png)$/i;
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

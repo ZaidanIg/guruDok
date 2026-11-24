@@ -55,10 +55,16 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 42** | **Multi-Sheet Paper Preview (Lembar Kertas Fisik Terpisah ala Google Docs / MS Word), Pemisahan Lembar 1 (Naskah Soal) & Lembar 2 (Kunci Jawaban & Kisi-Kisi Guru), serta Standarisasi Lembar Global 15 Layanan** | [plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md](../plan/sprint-42-multi-sheet-paper-preview-dan-pemisahan-kunci-jawaban.md) | [todo/sprint-42-todo.md](./sprint-42-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 43** | **True MS Word Page-by-Page Live Preview (Auto-Pagination A4/F4 Portrait/Landscape + Mode Hybrid PDF Asli Canvas)** | [plan/sprint-43-true-word-pagination-live-preview-a4-f4.md](../plan/sprint-43-true-word-pagination-live-preview-a4-f4.md) | [todo/sprint-43-todo.md](./sprint-43-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 44** | **Optimasi Aset Home, Keep-Alive Tab Navigasi, & Badge Cache Allow Tersimpan di Akun** | [plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md](../plan/sprint-44-optimasi-aset-keep-alive-dan-cache-consent-akun.md) | [todo/sprint-44-todo.md](./sprint-44-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 45** | **Pemasangan `asset\hero-clay-3d.png` sebagai Favicon (`favicon.ico`) & Logo Brand Website** | [plan/sprint-45-favicon-dan-logo-brand-hero-clay.md](../plan/sprint-45-favicon-dan-logo-brand-hero-clay.md) | [todo/sprint-45-todo.md](./sprint-45-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-24 (Sprint 45):**
+  - Mengonversi [hero-clay-3d.png](../asset/hero-clay-3d.png) menjadi `favicon.ico` (`8.6 KB`, multi-size 16/32/48px), `apple-touch-icon.png` (`9.0 KB`, 180×180px), dan `logo-brand.webp` (`5.1 KB`, 96×96px).
+  - Memasang favicon pada [index.html](../frontend/index.html) serta logo brand pada [Navbar.tsx](../frontend/src/components/layout/Navbar.tsx) & [Footer.tsx](../frontend/src/components/layout/Footer.tsx), lengkap dengan pre-cache di [sw.js](../frontend/public/sw.js) & [cacheConsent.ts](../frontend/src/services/cacheConsent.ts).
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **129/129 PASS (100%)**.
 
 - **2026-11-24 (Sprint 44):**
   - **Optimasi Aset Home (~4.05 MB → ~83 KB) & Keep-Alive Navigasi:**

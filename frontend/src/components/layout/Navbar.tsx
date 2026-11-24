@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BookOpen, UserCheck, LogIn, LogOut, ChevronDown, School, Users } from 'lucide-react';
+import { UserCheck, LogIn, LogOut, ChevronDown, School, Users } from 'lucide-react';
 import { AuthUser, TeacherProfile } from '../../types';
 
 interface NavbarProps {
@@ -50,9 +50,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => onNavigate('home')}
           className="flex items-center gap-2.5 text-left focus:outline-none"
         >
-          <div className="clay-icon-blue flex h-9 w-9 items-center justify-center rounded-lg">
-            <BookOpen className="h-4 w-4 text-white" />
-          </div>
+          <img
+            src="/logo-brand.webp"
+            alt="Logo GuruDok.id"
+            className="h-9 w-9 rounded-lg object-contain drop-shadow-sm select-none"
+            draggable={false}
+          />
           <div>
             <span className="text-lg font-extrabold tracking-tight text-slate-900">
               GuruDok<span className="text-blue-700">.id</span>

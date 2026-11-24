@@ -1,14 +1,16 @@
 import React from 'react';
-import { BookOpen } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
     <footer className="mt-12 border-t border-slate-200 bg-white pb-20 md:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
         <div className="flex items-center gap-2.5">
-          <div className="clay-icon-blue flex h-7 w-7 items-center justify-center rounded-md">
-            <BookOpen className="h-3.5 w-3.5 text-white" />
-          </div>
+          <img
+            src="/logo-brand.webp"
+            alt="Logo GuruDok.id"
+            className="h-7 w-7 rounded-md object-contain select-none"
+            draggable={false}
+          />
           <span className="text-sm font-extrabold tracking-tight text-slate-900">
             GuruDok<span className="text-blue-700">.id</span>
           </span>

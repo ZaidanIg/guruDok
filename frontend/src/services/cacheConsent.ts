@@ -3,6 +3,9 @@ const LOCAL_CACHE_ALLOWED_KEY = 'gurudok_cache_allowed_v1';
 const SESSION_DISMISSED_KEY = 'gurudok_cache_prompt_dismissed_v1';
 
 const HOME_STATIC_ASSETS = [
+  '/favicon.ico',
+  '/logo-brand.webp',
+  '/apple-touch-icon.png',
   '/character2.webp',
   '/character2.png',
   '/icons/cp-icon.webp',
