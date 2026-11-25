@@ -62,10 +62,15 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 49** | **Service 14: Jurnal Mengajar Harian (DOCX, XLSX, PDF Landscape 9 Kolom & Live Preview)** | [plan/sprint-49-service-14-jurnal-mengajar-harian.md](../plan/sprint-49-service-14-jurnal-mengajar-harian.md) | [todo/sprint-49-todo.md](./sprint-49-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 50** | **Full CRUD Baris Jurnal Mengajar Harian (Service 14)** | [plan/sprint-50-crud-jurnal-mengajar-harian.md](../plan/sprint-50-crud-jurnal-mengajar-harian.md) | [todo/sprint-50-todo.md](./sprint-50-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 51** | **Optimasi & Integrasi 10 Ikon 3D Clay Terbaru (`asset/icon-pack/*.jpg`)** | [plan/sprint-51-integrasi-optimasi-10-icon-clay-baru.md](../plan/sprint-51-integrasi-optimasi-10-icon-clay-baru.md) | [todo/sprint-51-todo.md](./sprint-51-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 52** | **Penyeragaman Brand Title Menjadi `GuruDok` (Hapus `.id`)** | [plan/sprint-52-ubah-brand-title-gurudok.md](../plan/sprint-52-ubah-brand-title-gurudok.md) | [todo/sprint-52-todo.md](./sprint-52-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-25 (Sprint 52):**
+  - Menghapus akhiran `.id` dan menyelaraskan brand title menjadi **`GuruDok`** (beserta `alt="Logo GuruDok"`) pada [Navbar.tsx](../frontend/src/components/layout/Navbar.tsx) dan [Footer.tsx](../frontend/src/components/layout/Footer.tsx).
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **134/134 PASS (100%)**.
 
 - **2026-11-25 (Sprint 51):**
   - Mengonversi & mengompresi 10 ikon 3D Clay terbaru dari `asset/icon-pack/*.jpg` ke **`160×160` RGBA transparan (`.webp` 8.6–11.7 KB/file + `.png`)** di `frontend/public/icons/` menggunakan *outer flood-fill border transparency* agar teks & kertas putih di dalam ikon tetap utuh.

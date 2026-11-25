@@ -52,16 +52,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <img
             src="/logo-brand.webp"
-            alt="Logo GuruDok.guru"
+            alt="Logo GuruDok"
             className="h-9 w-9 rounded-lg object-contain drop-shadow-sm select-none"
             draggable={false}
           />
           <div>
             <span className="text-lg font-extrabold tracking-tight text-slate-900">
-              GuruDok<span className="text-blue-700">.id</span>
-            </span>
-            <span className="ml-2 hidden rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 lg:inline-block">
-              BSKAP 046/2025
+              GuruDok
             </span>
           </div>
         </button>
@@ -188,7 +185,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-800">
-                      Profil KOP Sekolah
+                      Profil Sekolah
                     </p>
                     <p className="truncate text-[11px] font-medium text-slate-500">
                       {teacher.nama_sekolah

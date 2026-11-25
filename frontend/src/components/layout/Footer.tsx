@@ -7,12 +7,12 @@ export const Footer: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <img
             src="/logo-brand.webp"
-            alt="Logo GuruDok.guru"
+            alt="Logo GuruDok"
             className="h-7 w-7 rounded-md object-contain select-none"
             draggable={false}
           />
           <span className="text-sm font-extrabold tracking-tight text-slate-900">
-            GuruDok<span className="text-blue-700">.id</span>
+            GuruDok
           </span>
         </div>
 
