@@ -2,9 +2,20 @@ import { ServiceCatalogItem, TeacherProfile } from '../types';
 
 export const CORE_SERVICES: ServiceCatalogItem[] = [
   {
+    id: '01_data_kelas',
+    codeLabel: 'Service 01',
+    title: 'Data Kelas & Rombel Saya',
+    shortTitle: 'Data Kelas',
+    description: 'Kelola data peserta didik per rombel (manual atau unggah Excel .xlsx) untuk Presensi, Jurnal, & Nilai.',
+    formats: ['XLSX'],
+    isFree: true,
+    iconColor: 'green',
+    requiresChapter: false,
+  },
+  {
     id: '03_cp_tp',
     codeLabel: 'Service 03',
-    title: 'CP dan TP Resmi BSKAP',
+    title: 'CP dan TP',
     shortTitle: 'CP & TP',
     description: 'Pemetaan Capaian & Tujuan Pembelajaran resmi terbaru per elemen sesuai Kepka BSKAP 046/2025.',
     formats: ['DOCX', 'XLSX', 'PDF'],
@@ -84,9 +95,9 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
   {
     id: '10_kuis',
     codeLabel: 'Service 10',
-    title: 'Soal Harian & Kuis Cepat',
+    title: 'Soal Harian & Kuis',
     shortTitle: 'Kuis Harian',
-    description: 'Pembuat soal ala Google Form untuk kuis cepat 5–15 butir lengkap dengan Kunci Jawaban terpisah.',
+    description: 'Pembuat soal untuk kuis 5–15 butir lengkap dengan Kunci Jawaban terpisah.',
     formats: ['DOCX', 'PDF'],
     isFree: true,
     isComingSoon: false,
@@ -155,10 +166,10 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
   },
   {
     id: 'coming_soon',
-    codeLabel: 'Segera Hadir',
-    title: '10 Service Tambahan',
+    codeLabel: 'Tahap Akhir',
+    title: '4 Layanan Tambahan',
     shortTitle: 'Roadmap 18 Service',
-    description: 'Deskripsi e-Rapor, Rekap Nilai Rapor, Modul P5, Administrasi Wali Kelas, & Paket Siap Supervisi.',
+    description: 'Template Administrasi Kelas, Deskripsi e-Rapor, Rekap Nilai Rapor Final, & Paket Siap Supervisi (ZIP/PDF).',
     formats: ['DOCX', 'XLSX', 'PDF'],
     isFree: false,
     isComingSoon: true,
@@ -268,14 +279,11 @@ export const DELAPAN_DIMENSI_PROFIL_LULUSAN: DimensiProfilLulusanItem[] = [
   },
 ];
 
-export const UPCOMING_13_SERVICES = [
-  { code: '01', name: 'Kalender Pendidikan & Analisis Minggu Efektif', format: 'XLSX' },
-  { code: '02', name: 'Jadwal Pelajaran & Alokasi JP Permendikdasmen 13/2025', format: 'XLSX' },
-  { code: '13', name: 'Modul Projek Kokurikuler 8 Dimensi Profil Lulusan', format: 'DOCX' },
-  { code: '14', name: 'Daftar Nilai & Olah Nilai Rapor Kurikulum Merdeka', format: 'XLSX' },
-  { code: '15', name: 'Program Remedial & Pengayaan Terstruktur', format: 'DOCX' },
-  { code: '17', name: 'Buku Absensi & Rekap Kehadiran Siswa Bulanan', format: 'XLSX' },
-  { code: '18', name: 'Catatan Bimbingan Konseling & Anecdotal Record', format: 'DOCX' },
+export const UPCOMING_SERVICES = [
+  { code: '02', name: 'Template Administrasi Kelas (Struktur, Piket, Denah)', format: 'DOCX / PDF' },
+  { code: '16', name: 'Deskripsi Capaian Kompetensi (e-Rapor Generator)', format: 'XLSX' },
+  { code: '17', name: 'Rekap Nilai Rapor Final & Peringkat Kelas', format: 'XLSX' },
+  { code: '18', name: 'Paket Siap Supervisi (Master Bundle All-in-One)', format: 'ZIP / PDF' },
 ];
 
 export const SERVICE_ICON_PACK: Record<string, string> = {

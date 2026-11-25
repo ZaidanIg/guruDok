@@ -10,24 +10,28 @@ import {
   X,
   CheckSquare,
   ClipboardList,
+  Users,
 } from 'lucide-react';
-import { CORE_SERVICES, UPCOMING_13_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
+import { CORE_SERVICES, UPCOMING_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceCatalogItem, ServiceId } from '../../types';
 
 interface ServiceCatalogProps {
   selectedServiceId: ServiceId;
   searchQuery?: string;
   onSelectService: (serviceId: ServiceId) => void;
+  onOpenClassroomModal?: () => void;
 }
 
 export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
   selectedServiceId,
   searchQuery = '',
   onSelectService,
+  onOpenClassroomModal,
 }) => {
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
 
   const renderIcon = (item: ServiceCatalogItem) => {
+    if (item.id === '01_data_kelas') return <Users className="h-5 w-5 text-white" />;
     if (item.id === '06_promes') return <FileSpreadsheet className="h-5 w-5 text-white" />;
     if (item.id === '08_modul_ajar') return <BookOpen className="h-5 w-5 text-white" />;
     if (item.id === '05_prota') return <Calendar className="h-5 w-5 text-white" />;
@@ -59,9 +63,6 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
       {/* Katalog Layanan Dokumen */}
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-blue-700">
-            Langkah 1 — Pilih Jenis Dokumen
-          </p>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
             Katalog Layanan Administrasi Guru
           </h1>
@@ -134,7 +135,16 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                     onClick={() => setShowRoadmapModal(true)}
                     className="clay-btn-white flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold text-slate-700"
                   >
-                    <span>Daftar 13 Layanan Fase 2</span>
+                    <span>Daftar 4 Layanan Tersisa</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                ) : item.id === '01_data_kelas' ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenClassroomModal?.()}
+                    className="clay-btn-success flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold"
+                  >
+                    <span>Kelola Data Kelas</span>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 ) : (
@@ -167,15 +177,15 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
 
             <div>
               <h3 className="text-lg font-extrabold text-slate-900">
-                Daftar 13 Layanan Administrasi Tambahan (Roadmap Fase 2)
+                Daftar 4 Layanan Tambahan (Menuju 18 Service Lengkap)
               </h3>
               <p className="mt-1 text-xs font-medium text-slate-500">
-                Total 18 layanan administrasi guru sesuai spesifikasi dokumen sekolah.
+                Melengkapi 14 layanan aktif saat ini menjadi total 18 layanan administrasi guru sesuai spesifikasi.
               </p>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {UPCOMING_13_SERVICES.map((srv) => (
+              {UPCOMING_SERVICES.map((srv) => (
                 <div
                   key={srv.code}
                   className="clay-subcard flex items-center justify-between px-3.5 py-2.5"

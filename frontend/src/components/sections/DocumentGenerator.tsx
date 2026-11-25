@@ -58,7 +58,10 @@ import { AddChapterModal } from '../modals/AddChapterModal';
 import { ChapterEditorModal } from '../curriculum/ChapterEditorModal';
 import { CpElementEditorModal } from '../curriculum/CpElementEditorModal';
 import { QuestionBuilderSection } from '../curriculum/QuestionBuilderSection';
-import { JurnalEditorSection, buildDefaultJurnalRows } from '../curriculum/JurnalEditorSection';
+import { JurnalEditorSection } from '../curriculum/JurnalEditorSection';
+import { CurriculumPlanningPreviews } from '../preview/services/CurriculumPlanningPreviews';
+import { AssessmentLkpdPreviews } from '../preview/services/AssessmentLkpdPreviews';
+import { ClassroomTrackingPreviews } from '../preview/services/ClassroomTrackingPreviews';
 import {
   getCustomCurriculum,
   saveCustomCurriculum,
@@ -112,6 +115,7 @@ interface DocumentGeneratorProps {
   onResetCustomOverrides: () => void;
   onOpenProfileModal: () => void;
   onOpenClassroomModal?: () => void;
+  onChangeGenerationMode?: (mode: GenerationMode) => void;
   onBackToCatalog: () => void;
   onGenerate: () => void;
   onChapterCreated: (newChapter: ChapterTopic) => void;
@@ -153,6 +157,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   onResetCustomOverrides,
   onOpenProfileModal,
   onOpenClassroomModal,
+  onChangeGenerationMode,
   onBackToCatalog,
   onGenerate,
   onChapterCreated,
@@ -618,6 +623,40 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     triggerSaveAlert();
   };
 
+  const handleSwitchGenerationMode = (nextMode: GenerationMode) => {
+    if (nextMode === generationMode) return;
+    onChangeGenerationMode?.(nextMode);
+    if (!selectedSubject) return;
+
+    const cached = getCustomCurriculum(nextMode, selectedSubject.id);
+    if (cached) {
+      onChangeCustomOverrides({
+        ...customOverrides,
+        custom_chapters: cached,
+      });
+    } else if (nextMode === 'template') {
+      const sourceList =
+        chapters && chapters.length > 0
+          ? chapters
+          : selectedSubject.bab_list && selectedSubject.bab_list.length > 0
+          ? selectedSubject.bab_list
+          : [];
+      const converted = convertChapterTopicsToCustom(sourceList);
+      saveCustomCurriculum(nextMode, selectedSubject.id, converted);
+      onChangeCustomOverrides({
+        ...customOverrides,
+        custom_chapters: converted,
+      });
+    } else {
+      saveCustomCurriculum(nextMode, selectedSubject.id, []);
+      onChangeCustomOverrides({
+        ...customOverrides,
+        custom_chapters: [],
+      });
+    }
+    triggerSaveAlert();
+  };
+
   const handleOpenAddCp = () => {
     setCpEditing(null);
     setIsCpEditorOpen(true);
@@ -747,7 +786,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       ? ['JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES']
       : ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN'];
 
-  const activeCoreServices = CORE_SERVICES.filter((s) => !s.isComingSoon);
+  const activeCoreServices = CORE_SERVICES.filter((s) => !s.isComingSoon && s.id !== '01_data_kelas');
 
   const [previewMode, setPreviewMode] = useState<'word' | 'pdf'>('word');
   const [previewZoom, setPreviewZoom] = useState<ZoomSetting>('fit');
@@ -766,7 +805,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   }, [activeService.id]);
 
   const handleFetchPdfPreview = async () => {
-    if (!selectedSubject || activeService.id === 'coming_soon') return;
+    if (!selectedSubject || activeService.id === 'coming_soon' || activeService.id === '01_data_kelas') return;
     setIsLoadingPdfPreview(true);
     setPdfPreviewError(null);
     try {
@@ -1248,25 +1287,63 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             mobileViewMode === 'preview' ? 'hidden md:block' : 'block'
           }`}
         >
-          {/* Mode Banner & Crash-Safe Status (Sprint 34) - Hidden on direct manual Exam services */}
-          {!isExamService && (
+          {/* Sticky Top Action Bar: Akses Download 1-Klik tanpa perlu scroll ke bawah */}
+          <div className="sticky top-[68px] z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200/90 bg-white/95 px-4 py-3 shadow-md backdrop-blur">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700 truncate">
+                {activeService.codeLabel} • {outputFormat.toUpperCase()} ({paperSize})
+              </p>
+              <p className="text-xs font-extrabold text-slate-900 truncate">
+                {selectedSubject?.nama_mapel || activeService.shortTitle}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className="clay-btn-primary inline-flex shrink-0 items-center gap-2 px-4 py-2 text-xs font-extrabold disabled:opacity-60"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Menyusun...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="h-3.5 w-3.5" />
+                  <span>Download Dokumen</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Mode Banner & Switcher In-Place (Hanya untuk Layanan Kurikulum 03-09) */}
+          {isCurriculumService && (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchGenerationMode('template')}
+                    className={`rounded-lg px-3 py-1 transition ${
                       generationMode === 'template'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-slate-800 text-white'
+                        ? 'bg-blue-700 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    {generationMode === 'template' ? 'Gunakan Template' : 'Buat Manual'}
-                  </span>
-                  <span className="text-xs text-slate-600">
-                    {generationMode === 'template'
-                      ? 'Standar BSKAP No. 046/2025 & SIBI (dapat dimodifikasi bebas)'
-                      : 'Penyusunan mandiri / kustom'}
-                  </span>
+                    Template BSKAP
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchGenerationMode('manual')}
+                    className={`rounded-lg px-3 py-1 transition ${
+                      generationMode === 'manual'
+                        ? 'bg-slate-800 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Buat Manual
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -1278,7 +1355,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
                       <Save className="h-3 w-3 text-slate-400" />
-                      Tersimpan di browser
+                      Auto-save
                     </span>
                   )}
 
@@ -1286,18 +1363,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     type="button"
                     onClick={handleResetCurriculum}
                     title={generationMode === 'template' ? 'Reset ke Template BSKAP 2025' : 'Bersihkan seluruh bab'}
-                    className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                    className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                   >
                     <RotateCcw className="inline mr-1 h-3 w-3" />
                     {generationMode === 'template' ? 'Reset Template' : 'Bersihkan'}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={onBackToCatalog}
-                    className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
-                  >
-                    Ganti Mode
                   </button>
                 </div>
               </div>
@@ -1536,7 +1605,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                    1. Capaian Pembelajaran (CP) Berdasarkan Elemen
+                    2. Capaian Pembelajaran (CP) Berdasarkan Elemen
                   </h2>
                   <p className="text-[11px] font-medium text-slate-500">
                     Kelola rumusan elemen dan narasi CP fase ini sesuai BSKAP 046/2025 atau kurikulum sekolah Anda.
@@ -1626,7 +1695,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-                    2. Lingkup Materi / Bab &amp; Alokasi JP
+                    3. Lingkup Materi / Bab &amp; Alokasi JP
                   </h2>
                   <p className="text-[11px] font-medium text-slate-500">
                     Kontrol penuh CRUD bab, urutan materi, alokasi JP, dan butir TP yang tersinkronisasi lintas layanan.
@@ -2288,10 +2357,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
                     {isModulAjar
-                      ? '3. Editor Tujuan Pembelajaran (TP) Bab Terpilih'
+                      ? '4. Editor Tujuan Pembelajaran (TP) Bab Terpilih'
                       : isKktp
-                      ? '3. Editor Butir Tujuan Pembelajaran & KKTP'
-                      : '3. Editor Capaian & Tujuan Pembelajaran (TP)'}
+                      ? '4. Editor Butir Tujuan Pembelajaran & KKTP'
+                      : '4. Editor Capaian & Tujuan Pembelajaran (TP)'}
                   </h2>
                   <p className="text-[11px] font-medium text-slate-500">
                     Tambah, ubah, atau hapus butir TP sesuai kebutuhan kurikulum Anda.
@@ -2384,7 +2453,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               >
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-                    4. Kustomisasi Isi Dokumen &amp; Pedagogis
+                    5. Kustomisasi Isi Dokumen &amp; Pedagogis
                   </h2>
                   <p className="text-[11px] font-medium text-slate-500">
                     Kesiapan murid, topik kontekstual, pertanyaan pemantik &amp; catatan.
@@ -2515,7 +2584,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div>
                   <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                    5. Lampiran, Asesmen &amp; Rubrik 8 Dimensi
+                    6. Lampiran, Asesmen &amp; Rubrik 8 Dimensi
                   </h2>
                 </div>
               </div>
@@ -2959,1504 +3028,74 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   <>
                     {renderOfficialKop()}
 
-                    {/* 2. DYNAMIC DOCUMENT BODY BY SERVICE_ID */}
-                    {activeService.id === '03_cp_tp' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      CAPAIAN PEMBELAJARAN DAN TUJUAN PEMBELAJARAN
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — FASE {faseCode} (KELAS {kelas})
-                    </p>
-                  </div>
-
-                  {/* Identitas Dokumen */}
-                  <div className="paper-table-container">
-                    <table className="paper-table">
-                      <tbody>
-                        <tr>
-                          <th className="w-1/3 text-left">Mata Pelajaran</th>
-                          <td>{selectedSubject?.nama_mapel}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Jenjang / Fase / Kelas</th>
-                          <td>
-                            {jenjang} / {faseLabel} / Kelas {kelas}
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Alokasi Waktu</th>
-                          <td>
-                            {selectedSubject?.total_alokasi_jp_tahun || 108} JP/Tahun ({jpPerMinggu}{' '}
-                            JP/Minggu × {durasiMenitJp} Menit)
-                          </td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Dasar Hukum</th>
-                          <td>
-                            Kepka BSKAP Kemendikdasmen No. 046/H/KR/2025 &amp; Permendikdasmen No. 13/2025
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* 1. Rasional */}
-                  <div>
-                    <h3 className="font-extrabold text-slate-900">
-                      1. Rasional Mata Pelajaran {selectedSubject?.nama_mapel}
-                    </h3>
-                    <p className="mt-1 text-justify text-slate-800">
-                      {selectedSubject?.rasional_bskap ||
-                        `Mata pelajaran ${selectedSubject?.nama_mapel} membekali peserta didik dengan kemampuan berpikir kritis, analitis, kreatif, serta keterampilan pemecahan masalah secara sistematis sesuai perkembangan ilmu pengetahuan dan teknologi.`}
-                    </p>
-                  </div>
-
-                  {/* 2. Tujuan Mata Pelajaran */}
-                  <div>
-                    <h3 className="font-extrabold text-slate-900">
-                      2. Tujuan Mata Pelajaran {selectedSubject?.nama_mapel}
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-10 text-center">No</th>
-                            <th>Rumusan Tujuan Mata Pelajaran</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(selectedSubject?.tujuan_bskap
-                            ? selectedSubject.tujuan_bskap
-                                .split(';')
-                                .map((s) => s.trim())
-                                .filter(Boolean)
-                            : [
-                                `Menguasai konsep dan prinsip esensial ${selectedSubject?.nama_mapel} pada ${faseLabel}.`,
-                                `Mengembangkan keterampilan inkuiri, penalaran kritis, dan kolaborasi dalam memecahkan persoalan kontekstual.`,
-                                `Menumbuhkan karakter mandiri, kreatif, dan bertanggung jawab sesuai 8 Dimensi Profil Lulusan.`,
-                              ]
-                          ).map((tuj, idx) => (
-                            <tr key={idx}>
-                              <td className="text-center font-bold">{idx + 1}</td>
-                              <td>{tuj}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* 3. Karakteristik & 4. CP Fase Berdasarkan Elemen */}
-                  <div>
-                    <h3 className="font-extrabold text-slate-900">
-                      3. Karakteristik &amp; 4. Capaian Pembelajaran {faseLabel} Berdasarkan Elemen
-                    </h3>
-                    <p className="mt-1 text-slate-800">
-                      {selectedSubject?.karakteristik_bskap || effectiveKarakteristikMateri}
-                    </p>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-2">
-                        <thead>
-                          <tr>
-                            <th className="w-1/4">Elemen</th>
-                            <th>Deskripsi Capaian Pembelajaran Resmi (BSKAP 046/2025)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeCpElements.map((el, i) => (
-                            <tr key={i}>
-                              <td className="font-bold">{el.nama_elemen}</td>
-                              <td>{el.deskripsi_cp}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* 5. Pemetaan CP & TP Per Bab */}
-                  <div>
-                    <h3 className="font-extrabold text-slate-900">
-                      5. Pemetaan Capaian dan Tujuan Pembelajaran Semester {semester}
-                    </h3>
-                    {currentSemesterChapters.map((bab) => {
-                      const isCurrentSelected = bab.id === selectedChapter?.id;
-                      const babTps = isCurrentSelected ? activeTps : bab.tujuan_pembelajaran;
-                      const babJp = isCurrentSelected ? currentAlokasiJp : bab.alokasi_jp;
-                      return (
-                        <div key={bab.id} className="mt-3">
-                          <p className="font-bold text-blue-900">
-                            BAB {bab.nomor_bab}: {bab.judul_bab.toUpperCase()} (Semester {bab.semester})
-                          </p>
-                          <div className="paper-table-container">
-                            <table className="paper-table mt-1">
-                              <thead>
-                                <tr>
-                                  <th className="w-1/4">KATEGORI</th>
-                                  <th>RUMUSAN</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td className="font-bold">Elemen</td>
-                                  <td>{bab.elemen_cp || officialElements[0]?.nama_elemen}</td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Kalimat CP</td>
-                                  <td>
-                                    Peserta didik mampu menguasai konsep {bab.judul_bab} pada elemen{' '}
-                                    {bab.elemen_cp || officialElements[0]?.nama_elemen} serta
-                                    menerapkannya secara kontekstual.
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Tujuan Pembelajaran</td>
-                                  <td>
-                                    <ol className="list-decimal pl-4 space-y-1">
-                                      {babTps.map((t, idx) => (
-                                        <li key={idx}>
-                                          <strong>[{t.code}]</strong> {t.deskripsi} ({t.alokasi_jp} JP)
-                                        </li>
-                                      ))}
-                                    </ol>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Alokasi Waktu</td>
-                                  <td className="font-bold">{babJp} Jam Pelajaran (JP)</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {activeService.id === '04_atp' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      ALUR TUJUAN PEMBELAJARAN (ATP)
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — FASE {faseCode} KELAS {kelas}
-                    </p>
-                  </div>
-
-                  {/* Capaian Pembelajaran Fase Berdasarkan Elemen */}
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      CAPAIAN PEMBELAJARAN FASE {faseCode} BERDASARKAN ELEMEN
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-1/4">Elemen</th>
-                            <th>Capaian Pembelajaran</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeCpElements.map((el, i) => (
-                            <tr key={i}>
-                              <td className="font-bold">{el.nama_elemen}</td>
-                              <td>{el.deskripsi_cp}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Per-Bab Structured Block Table matching ATP_-_Informatika_11.docx */}
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      RINCIAN ALUR TUJUAN PEMBELAJARAN SEMESTER {semester}
-                    </h3>
-                    {currentSemesterChapters.map((bab) => {
-                      const isCurrentSelected = bab.id === selectedChapter?.id;
-                      const babTps = isCurrentSelected ? activeTps : bab.tujuan_pembelajaran;
-                      const babJp = isCurrentSelected ? currentAlokasiJp : bab.alokasi_jp;
-                      return (
-                        <div key={bab.id} className="mt-3">
-                          <div className="paper-table-container">
-                            <table className="paper-table">
-                              <thead>
-                                <tr>
-                                  <th colSpan={2} className="text-left">
-                                    BAB {bab.nomor_bab}: {bab.judul_bab.toUpperCase()} (SEMESTER {bab.semester})
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td className="w-1/3 font-bold">Elemen</td>
-                                  <td>{bab.elemen_cp || officialElements[0]?.nama_elemen}</td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Capaian Pembelajaran Pertahun</td>
-                                  <td>
-                                    Memahami, menerapkan, dan mengevaluasi konsep {bab.judul_bab} pada{' '}
-                                    {selectedSubject?.nama_mapel} Kelas {kelas}.
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">
-                                    Fase {faseCode} / Alur Tujuan Pembelajaran
-                                  </td>
-                                  <td>
-                                    <ol className="list-decimal pl-4 space-y-1">
-                                      {babTps.map((t, i) => (
-                                        <li key={i}>
-                                          <strong>{t.code}:</strong> {t.deskripsi} ({t.alokasi_jp} JP)
-                                        </li>
-                                      ))}
-                                    </ol>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Jumlah Jam</td>
-                                  <td className="font-bold">
-                                    {babJp} JP ({Math.max(1, Math.round(babJp / jpPerMinggu))} Pertemuan)
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Kata Kunci</td>
-                                  <td>
-                                    {bab.judul_bab}, {bab.elemen_cp || 'Konsep Inti'}, Analisis Kontekstual
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Topik / Konten Inti</td>
-                                  <td>
-                                    {isCurrentSelected ? effectiveTopikKontekstual : bab.judul_bab}
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Glosarium</td>
-                                  <td>
-                                    {bab.judul_bab}: Lingkup kompetensi utama pada mata pelajaran{' '}
-                                    {selectedSubject?.nama_mapel} Kelas {kelas}.
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td className="font-bold">Dimensi Profil Lulusan</td>
-                                  <td>{(bab.dimensi_profil_lulusan || activeDimensions).join(', ')}</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Rasional & Catatan ATP */}
-                  <div className="space-y-2 border-t border-slate-300 pt-3">
-                    <p>
-                      <strong>Rasional Penyusunan Alur Tujuan Pembelajaran:</strong> Penyusunan ATP{' '}
-                      {selectedSubject?.nama_mapel} Kelas {kelas} dilakukan secara berjenjang dari
-                      kompetensi fondasi menuju aplikasi kontekstual dan evaluasi reflektif.
-                    </p>
-                    {customOverrides.catatan_khusus && (
-                      <p>
-                        <strong>Catatan Khusus Penggunaan ATP:</strong>{' '}
-                        {customOverrides.catatan_khusus}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeService.id === '08_modul_ajar' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      MODUL AJAR DEEP LEARNING
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      {selectedSubject?.nama_mapel.toUpperCase()} — BAB {selectedChapter?.nomor_bab || 1}:{' '}
-                      {(selectedChapter?.judul_bab || '').toUpperCase()}
-                    </p>
-                  </div>
-
-                  {/* A. Identitas Modul */}
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">A. Identitas Modul</h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <tbody>
-                          <tr>
-                            <th className="w-1/3 text-left">Nama Penyusun</th>
-                            <td>
-                              {teacher.nama_guru || 'Nama Guru Anda'} (NIP. {teacher.nip_guru || '-'})
-                            </td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Institusi / Sekolah</th>
-                            <td>{teacher.nama_sekolah || 'Nama Sekolah Anda'}</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Tahun Penyusunan / Semester</th>
-                            <td>
-                              Tahun Ajaran 2025/2026 / Semester {semester} (
-                              {semester === 1 ? 'Ganjil' : 'Genap'})
-                            </td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Jenjang / Fase / Kelas</th>
-                            <td>
-                              {jenjang} / {faseLabel} / Kelas {kelas}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Mata Pelajaran</th>
-                            <td>{selectedSubject?.nama_mapel}</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Bab / Materi Pokok</th>
-                            <td>
-                              Bab {selectedChapter?.nomor_bab || 1}: {selectedChapter?.judul_bab}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Alokasi Waktu</th>
-                            <td>
-                              {currentAlokasiJp} JP ({pertemuanCount} Pertemuan × {jpPerMinggu} JP @{' '}
-                              {durasiMenitJp} Menit)
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* B. Identifikasi Kesiapan Peserta Didik & C. Karakteristik Materi */}
-                  <div className="space-y-2.5">
-                    <div>
-                      <h3 className="font-extrabold uppercase text-slate-900">
-                        B. Identifikasi Kesiapan Peserta Didik
-                      </h3>
-                      <p className="mt-1 text-slate-800">{effectiveKesiapanMurid}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold uppercase text-slate-900">
-                        C. Karakteristik Materi Pelajaran
-                      </h3>
-                      <p className="mt-1 text-slate-800">{effectiveKarakteristikMateri}</p>
-                    </div>
-                  </div>
-
-                  {/* D. Dimensi Profil Lulusan */}
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      D. Dimensi Profil Lulusan Pembelajaran
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-1/3">Dimensi Profil Lulusan</th>
-                            <th>Implementasi pada Pembelajaran Bab Ini</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeDimensions.map((dim, i) => (
-                            <tr key={i}>
-                              <td className="font-bold">{dim}</td>
-                              <td>
-                                Dikembangkan melalui aktivitas diskusi, eksplorasi konsep{' '}
-                                {selectedChapter?.judul_bab}, dan refleksi pemecahan masalah.
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* DESAIN PEMBELAJARAN */}
-                  <div className="space-y-3 border-t-2 border-slate-800 pt-3">
-                    <h3 className="text-sm font-extrabold uppercase text-slate-900">
-                      DESAIN PEMBELAJARAN
-                    </h3>
-
-                    <div className="paper-table-container">
-                      <table className="paper-table">
-                        <tbody>
-                          <tr>
-                            <th className="w-1/3 text-left">A. Capaian Pembelajaran (CP)</th>
-                            <td>
-                              <strong>
-                                Elemen {selectedChapter?.elemen_cp || officialElements[0]?.nama_elemen}:
-                              </strong>{' '}
-                              {officialElements[0]?.deskripsi_cp}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">B. Lintas Disiplin Ilmu</th>
-                            <td>{effectiveLintasDisiplin}</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">C. Tujuan Pembelajaran (TP)</th>
-                            <td>
-                              <ol className="list-decimal pl-4 space-y-1">
-                                {activeTps.map((tp, idx) => (
-                                  <li key={idx}>
-                                    <strong>Pertemuan {idx + 1} [{tp.code}]:</strong> {tp.deskripsi} (
-                                    {tp.alokasi_jp} JP)
-                                  </li>
-                                ))}
-                              </ol>
-                            </td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">D. Topik Pembelajaran Kontekstual</th>
-                            <td>{effectiveTopikKontekstual}</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">E. Kerangka Pembelajaran</th>
-                            <td>
-                              <p>
-                                <strong>Model Pedagogis:</strong> {modelPembelajaran}
-                              </p>
-                              <p className="mt-1">
-                                <strong>Pertanyaan Pemantik:</strong>{' '}
-                                {effectivePemantik.join(' | ')}
-                              </p>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* F. Langkah-Langkah Pembelajaran Berdiferensiasi */}
-                    <div>
-                      <h4 className="font-extrabold uppercase text-slate-900">
-                        F. Langkah-Langkah Pembelajaran Berdiferensiasi (Pendekatan Deep Learning 3M)
-                      </h4>
-                      {activeTps.map((tp, idx) => (
-                        <div key={idx} className="paper-table-container">
-                          <table className="paper-table mt-2">
-                            <thead>
-                              <tr>
-                                <th colSpan={2} className="text-left">
-                                  PERTEMUAN {idx + 1} — Fokus TP: [{tp.code}] {tp.deskripsi} (
-                                  {tp.alokasi_jp} JP)
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td className="w-1/4 font-bold">1. Kegiatan Pendahuluan (15%)</td>
-                                <td>
-                                  Guru membuka kelas dengan salam, doa, presensi, apersepsi mengaitkan
-                                  pengalaman nyata siswa dengan topik {selectedChapter?.judul_bab},
-                                  serta menyampaikan pertanyaan pemantik:{' '}
-                                  <em>&ldquo;{effectivePemantik[idx % effectivePemantik.length]}&rdquo;</em>.
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">
-                                  2. Kegiatan Inti — Memahami, Mengaplikasi, Merefleksi (70%)
-                                </td>
-                                <td>
-                                  <ul className="list-disc pl-4 space-y-1">
-                                    <li>
-                                      <strong>Memahami (Mindful Learning):</strong> Peserta didik
-                                      mengeksplorasi konsep dan literatur terkait {tp.deskripsi}.
-                                    </li>
-                                    <li>
-                                      <strong>Mengaplikasi (Meaningful Learning):</strong> Peserta
-                                      didik bekerja dalam kelompok mengerjakan studi kasus / LKPD
-                                      tentang {selectedChapter?.judul_bab}.
-                                    </li>
-                                    <li>
-                                      <strong>Merefleksi (Joyful Learning):</strong> Kelompok
-                                      mempresentasikan hasil karya dan melakukan evaluasi pemahaman
-                                      bersama guru.
-                                    </li>
-                                  </ul>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">3. Kegiatan Penutup (15%)</td>
-                                <td>
-                                  Peserta didik bersama guru menyimpulkan poin penting pertemuan{' '}
-                                  {idx + 1}, melakukan refleksi singkat, dan menerima informasi materi
-                                  pertemuan berikutnya.
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* G. Asesmen Pembelajaran */}
-                    {includeAsesmen && (
-                      <div>
-                        <h4 className="font-extrabold uppercase text-slate-900">
-                          G. Asesmen Pembelajaran &amp; Butir Soal
-                        </h4>
-                        <div className="paper-table-container">
-                          <table className="paper-table mt-1.5">
-                            <thead>
-                              <tr>
-                                <th className="w-1/4">Jenis Asesmen</th>
-                                <th>Teknik &amp; Butir Soal Instrumen</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td className="font-bold">1. Asesmen Awal (Diagnostik)</td>
-                                <td>
-                                  <p className="font-semibold">Soal Asesmen Awal:</p>
-                                  <ol className="list-decimal pl-4">
-                                    {effectiveSoalAwal.map((s, i) => (
-                                      <li key={i}>{s}</li>
-                                    ))}
-                                  </ol>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">2. Asesmen Proses (Formatif)</td>
-                                <td>
-                                  <p className="font-semibold">Soal / Tugas Asesmen Proses:</p>
-                                  <ol className="list-decimal pl-4">
-                                    {effectiveSoalProses.map((s, i) => (
-                                      <li key={i}>{s}</li>
-                                    ))}
-                                  </ol>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="font-bold">3. Asesmen Akhir (Sumatif)</td>
-                                <td>
-                                  <p className="font-semibold">Soal Asesmen Akhir Bab:</p>
-                                  <ol className="list-decimal pl-4">
-                                    {effectiveSoalAkhir.map((s, i) => (
-                                      <li key={i}>{s}</li>
-                                    ))}
-                                  </ol>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                    {/* 2. DYNAMIC DOCUMENT BODY BY SERVICE_ID (Modularized per Cluster) */}
+                    {(activeService.id === '03_cp_tp' ||
+                      activeService.id === '04_atp' ||
+                      activeService.id === '05_prota' ||
+                      activeService.id === '06_promes' ||
+                      activeService.id === '07_kktp' ||
+                      activeService.id === '08_modul_ajar') && (
+                      <CurriculumPlanningPreviews
+                        serviceId={activeService.id}
+                        jenjang={jenjang}
+                        kelas={kelas}
+                        semester={semester}
+                        faseCode={faseCode}
+                        faseLabel={faseLabel}
+                        selectedSubject={selectedSubject}
+                        selectedChapter={selectedChapter}
+                        allSubjectChapters={allSubjectChapters}
+                        currentSemesterChapters={currentSemesterChapters}
+                        teacher={teacher}
+                        activeCpElements={activeCpElements}
+                        officialElements={officialElements}
+                        activeTps={activeTps}
+                        activeDimensions={activeDimensions}
+                        activeDplList={activeDplList}
+                        currentAlokasiJp={currentAlokasiJp}
+                        pertemuanCount={pertemuanCount}
+                        jpPerMinggu={jpPerMinggu}
+                        durasiMenitJp={durasiMenitJp}
+                        modelPembelajaran={modelPembelajaran}
+                        monthLabels={monthLabels}
+                        includeLkpd={includeLkpd}
+                        includeAsesmen={includeAsesmen}
+                        includeRubrik={includeRubrik}
+                        effectiveKesiapanMurid={effectiveKesiapanMurid}
+                        effectiveKarakteristikMateri={effectiveKarakteristikMateri}
+                        effectiveLintasDisiplin={effectiveLintasDisiplin}
+                        effectiveTopikKontekstual={effectiveTopikKontekstual}
+                        effectivePemantik={effectivePemantik}
+                        effectiveSoalAwal={effectiveSoalAwal}
+                        effectiveSoalProses={effectiveSoalProses}
+                        effectiveSoalAkhir={effectiveSoalAkhir}
+                        customOverrides={customOverrides}
+                      />
                     )}
 
-                    {/* H. Lampiran 1: Lembar Kerja Peserta Didik (LKPD) */}
-                    {includeLkpd && (
-                      <div data-page-break="before" className="pt-1">
-                        <div className="text-center mb-3">
-                          <h4 className="text-sm font-extrabold uppercase text-slate-900">
-                            {customOverrides.judul_lkpd || selectedChapter?.modul_ajar_template?.lampiran?.lkpd?.judul_lkpd || 'LAMPIRAN 1: LEMBAR KERJA PESERTA DIDIK (LKPD)'}
-                          </h4>
-                          <p className="text-xs font-bold text-slate-700">
-                            {customOverrides.tujuan_lkpd || selectedChapter?.modul_ajar_template?.lampiran?.lkpd?.tujuan_aktivitas || `Materi: ${selectedChapter?.judul_bab || 'Materi Pokok'} — Pendekatan Deep Learning 3M`}
-                          </p>
-                        </div>
-
-                        {/* Identitas Kelompok LKPD */}
-                        <div className="paper-table-container">
-                          <table className="paper-table">
-                            <tbody>
-                              <tr>
-                                <th className="w-1/4 text-left">Nama Kelompok / Kelas</th>
-                                <td>........................................................... / Kelas {kelas}</td>
-                                <th className="w-1/4 text-left">Hari, Tanggal</th>
-                                <td>...........................................................</td>
-                              </tr>
-                              <tr>
-                                <th className="text-left">Nama Anggota</th>
-                                <td colSpan={3}>
-                                  1. ........................................................... 2. ...........................................................<br />
-                                  3. ........................................................... 4. ...........................................................
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Petunjuk & Langkah Kerja LKPD */}
-                        <div className="mt-3 space-y-2">
-                          <p className="font-bold text-slate-900">Petunjuk Pengerjaan:</p>
-                          {customOverrides.petunjuk_lkpd ? (
-                            <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-700">
-                              {customOverrides.petunjuk_lkpd.split('\n').filter((l) => l.trim()).map((line, idx) => (
-                                <li key={idx}>{line.replace(/^\d+[\.\)]\s*/, '')}</li>
-                              ))}
-                            </ol>
-                          ) : (
-                            <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-700">
-                              <li>Berdoalah sebelum memulai kegiatan bersama anggota kelompok Anda.</li>
-                              <li>Bacalah dengan cermat setiap instruksi pemecahan masalah dan bahan ajar yang diberikan.</li>
-                              <li>Bekerjasamalah secara aktif dan selesaikan tugas-tugas di bawah ini dengan tepat waktu.</li>
-                            </ol>
-                          )}
-                        </div>
-
-                        {/* Tabel Aktivitas LKPD 3M */}
-                        <div className="paper-table-container mt-3">
-                          <table className="paper-table">
-                            <thead>
-                              <tr>
-                                <th className="w-12 text-center">No</th>
-                                <th className="w-1/3">Tahap Aktivitas (3M)</th>
-                                <th>Instruksi Tugas &amp; Lembar Kerja Siswa</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td className="text-center font-bold">1</td>
-                                <td className="font-bold">
-                                  Memahami<br />
-                                  <span className="text-[10px] font-normal text-slate-500">(Eksplorasi Konsep)</span>
-                                </td>
-                                <td>
-                                  {customOverrides.tugas_lkpd_memahami ||
-                                    customOverrides.langkah_inti_memahami?.[0] ||
-                                    selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
-                                    `Pahamilah konsep dasar mengenai ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}. Tuliskan intisari pengertian dan prinsip utamanya pada lembar ini!`}
-                                  <div className="mt-2 h-14 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
-                                    [Ruang Jawaban / Intisari Pemahaman Konsep Siswa]
-                                  </div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="text-center font-bold">2</td>
-                                <td className="font-bold">
-                                  Mengaplikasi<br />
-                                  <span className="text-[10px] font-normal text-slate-500">(Investigasi &amp; Praktik)</span>
-                                </td>
-                                <td>
-                                  {customOverrides.tugas_lkpd_mengaplikasi ||
-                                    customOverrides.langkah_inti_mengaplikasi?.[0] ||
-                                    selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
-                                    `Diskusikan bersama kelompok studi kasus kontekstual penerapan ${selectedChapter?.judul_bab}. Temukan solusi dan langkah-langkah pemecahannya secara logis!`}
-                                  <div className="mt-2 h-16 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
-                                    [Ruang Analisis &amp; Sketsa Solusi Pemecahan Masalah]
-                                  </div>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="text-center font-bold">3</td>
-                                <td className="font-bold">
-                                  Merefleksi<br />
-                                  <span className="text-[10px] font-normal text-slate-500">(Kesimpulan &amp; Evaluasi)</span>
-                                </td>
-                                <td>
-                                  {customOverrides.tugas_lkpd_merefleksi ||
-                                    customOverrides.langkah_inti_merefleksi?.[0] ||
-                                    selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
-                                    'Simpulkan manfaat pembelajaran hari ini dan hal apa yang masih perlu diperdalam pada pertemuan selanjutnya!'}
-                                  <div className="mt-2 h-12 border border-dashed border-slate-300 rounded p-1.5 text-[10px] text-slate-400 italic">
-                                    [Ruang Refleksi Diri &amp; Kesimpulan Bersama]
-                                  </div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                    {activeService.id === '09_lkpd' && (
+                      <AssessmentLkpdPreviews
+                        selectedSubject={selectedSubject}
+                        selectedChapter={selectedChapter}
+                        activeTps={activeTps}
+                      />
                     )}
 
-                    {/* I. Lampiran 2: Rubrik Asesmen 8 Dimensi Profil Lulusan (Permendikdasmen No. 10/2025) */}
-                    {includeRubrik && (
-                      <div data-page-break="before" className="pt-1">
-                        <div className="text-center mb-3">
-                          <h4 className="text-sm font-extrabold uppercase text-slate-900">
-                            LAMPIRAN 2: RUBRIK PENILAIAN 8 DIMENSI PROFIL LULUSAN
-                          </h4>
-                          <p className="text-xs font-bold text-slate-700">
-                            Standar Kompetensi Lulusan sesuai Permendikdasmen No. 10 Tahun 2025
-                          </p>
-                        </div>
-
-                        <div className="paper-table-container">
-                          <table className="paper-table text-[10.5px]">
-                            <thead>
-                              <tr>
-                                <th className="w-8 text-center">No</th>
-                                <th className="w-1/4">Dimensi Profil Lulusan</th>
-                                <th>Indikator Perilaku Amatan di Kelas</th>
-                                <th className="w-12 text-center">MB</th>
-                                <th className="w-12 text-center">B</th>
-                                <th className="w-12 text-center">BSH</th>
-                                <th className="w-12 text-center">SB</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {activeDplList.map((dpl, idx) => (
-                                <tr key={dpl.no || idx}>
-                                  <td className="text-center font-bold">{idx + 1}</td>
-                                  <td>
-                                    <p className="font-bold text-slate-900">{dpl.nama_dimensi}</p>
-                                  </td>
-                                  <td>{dpl.indikator}</td>
-                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
-                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
-                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
-                                  <td className="text-center font-mono text-[11px] text-slate-400">[ &nbsp; ]</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div className="mt-2 space-y-1 text-[10px] text-slate-500 italic">
-                          <p>
-                            * Keterangan Skala: MB = Mulai Berkembang (Skor 1), B = Berkembang (Skor 2), BSH = Berkembang Sesuai Harapan (Skor 3), SB = Sangat Berkembang (Skor 4).
-                          </p>
-                          <p className="text-slate-600 font-medium">
-                            Catatan / Rekomendasi Guru: ........................................................................................................................................
-                          </p>
-                        </div>
-                      </div>
+                    {(activeService.id === '13_presensi' ||
+                      activeService.id === '14_jurnal_mengajar' ||
+                      activeService.id === '15_daftar_nilai') && (
+                      <ClassroomTrackingPreviews
+                        serviceId={activeService.id}
+                        kelas={kelas}
+                        semester={semester}
+                        selectedSubject={selectedSubject}
+                        currentSemesterChapters={currentSemesterChapters}
+                        teacher={teacher}
+                        activeClassroomRombel={activeClassroom?.nama_rombel}
+                        effectiveStudents={effectiveStudents}
+                        customOverrides={customOverrides}
+                      />
                     )}
-                  </div>
-                </div>
-              )}
-
-              {activeService.id === '05_prota' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      PROGRAM TAHUNAN (PROTA)
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — KELAS {kelas} (
-                      {faseLabel}) TAHUN AJARAN 2025/2026
-                    </p>
-                  </div>
-
-                  {/* CP Fase Berdasarkan Elemen */}
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      CAPAIAN PEMBELAJARAN FASE {faseCode} BERDASARKAN ELEMEN
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-1/4">Elemen</th>
-                            <th>Capaian Pembelajaran</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeCpElements.map((el, i) => (
-                            <tr key={i}>
-                              <td className="font-bold">{el.nama_elemen}</td>
-                              <td>{el.deskripsi_cp}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Tabel Distribusi Alokasi Waktu Tahunan */}
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      DISTRIBUSI ALOKASI WAKTU TAHUNAN (SEMESTER 1 &amp; SEMESTER 2)
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-24 text-center">SEMESTER</th>
-                            <th className="w-12 text-center">NO</th>
-                            <th>MATERI POKOK / JUDUL BAB &amp; TUJUAN PEMBELAJARAN</th>
-                            <th className="w-24 text-center">ALOKASI (JP)</th>
-                            <th className="w-28 text-center">KETERANGAN</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {allSubjectChapters.map((bab, idx) => {
-                            const isCurrent = bab.id === selectedChapter?.id;
-                            const babJp = isCurrent ? currentAlokasiJp : bab.alokasi_jp;
-                            const babTps = isCurrent ? activeTps : bab.tujuan_pembelajaran;
-                            return (
-                              <tr key={bab.id}>
-                                <td className="text-center font-bold">
-                                  SEMESTER {bab.semester}
-                                </td>
-                                <td className="text-center font-bold">{idx + 1}</td>
-                                <td>
-                                  <p className="font-bold">
-                                    Bab {bab.nomor_bab}: {bab.judul_bab}
-                                  </p>
-                                  <ul className="mt-1 list-disc pl-4 text-[11px] text-slate-700">
-                                    {babTps.map((t, i) => (
-                                      <li key={i}>
-                                        [{t.code}] {t.deskripsi} ({t.alokasi_jp} JP)
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </td>
-                                <td className="text-center font-bold">{babJp} JP</td>
-                                <td className="text-center">
-                                  {Math.max(1, Math.round(babJp / jpPerMinggu))} Pertemuan
-                                </td>
-                              </tr>
-                            );
-                          })}
-                          <tr>
-                            <td colSpan={3} className="text-right font-bold">
-                              Cadangan Jam Pelajaran
-                            </td>
-                            <td className="text-center font-bold">
-                              {customOverrides.cadangan_jp ?? 0} JP
-                            </td>
-                            <td className="text-center">Pengayaan / STS / SAS</td>
-                          </tr>
-                          <tr className="bg-slate-100">
-                            <td colSpan={3} className="text-right font-extrabold">
-                              Jumlah Jam Pelajaran Tahunan
-                            </td>
-                            <td className="text-center font-extrabold">
-                              {allSubjectChapters.reduce(
-                                (acc, b) =>
-                                  acc +
-                                  (b.id === selectedChapter?.id ? currentAlokasiJp : b.alokasi_jp),
-                                0
-                              ) + (customOverrides.cadangan_jp ?? 0)}{' '}
-                              JP
-                            </td>
-                            <td className="text-center font-bold">1 Tahun Ajaran</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeService.id === '06_promes' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      PROGRAM SEMESTER (PROMES) — SEMESTER {semester} (
-                      {semester === 1 ? 'GANJIL' : 'GENAP'})
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — KELAS {kelas} (
-                      {faseLabel}) TAHUN AJARAN 2025/2026
-                    </p>
-                  </div>
-
-                  {/* CP Fase Berdasarkan Elemen */}
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      CAPAIAN PEMBELAJARAN FASE {faseCode} BERDASARKAN ELEMEN
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-1/4">Elemen</th>
-                            <th>Capaian Pembelajaran</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeCpElements.map((el, i) => (
-                            <tr key={i}>
-                              <td className="font-bold">{el.nama_elemen}</td>
-                              <td>{el.deskripsi_cp}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Matriks 6 Bulan Semester */}
-                  <div className="paper-table-container">
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      MATRIKS DISTRIBUSI MINGGU EFEKTIF SEMESTER {semester}
-                    </h3>
-                    <table className="paper-table mt-1.5">
-                      <thead>
-                        <tr>
-                          <th className="w-10 text-center">NO</th>
-                          <th>BAB / TUJUAN PEMBELAJARAN (TP)</th>
-                          <th className="w-14 text-center">JP</th>
-                          {monthLabels.map((m) => (
-                            <th key={m} className="w-12 text-center">
-                              {m}
-                            </th>
-                          ))}
-                          <th className="w-20 text-center">KET</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentSemesterChapters.map((bab, bIdx) => {
-                          const isCurrent = bab.id === selectedChapter?.id;
-                          const babTps = isCurrent ? activeTps : bab.tujuan_pembelajaran;
-                          const babJp = isCurrent ? currentAlokasiJp : bab.alokasi_jp;
-                          return (
-                            <React.Fragment key={bab.id}>
-                              <tr className="bg-slate-100 font-bold">
-                                <td className="text-center">{bIdx + 1}</td>
-                                <td>
-                                  BAB {bab.nomor_bab}: {bab.judul_bab.toUpperCase()}
-                                </td>
-                                <td className="text-center">{babJp}</td>
-                                {monthLabels.map((m) => (
-                                  <td key={m} className="text-center" />
-                                ))}
-                                <td className="text-center">Intrakurikuler</td>
-                              </tr>
-                              {babTps.map((tp, tIdx) => {
-                                const targetMonthIdx = (bIdx * 2 + tIdx) % 6;
-                                return (
-                                  <tr key={`${bab.id}-${tIdx}`}>
-                                    <td className="text-center text-slate-500">
-                                      {bIdx + 1}.{tIdx + 1}
-                                    </td>
-                                    <td>
-                                      <strong>[{tp.code}]</strong> {tp.deskripsi}
-                                    </td>
-                                    <td className="text-center font-semibold">{tp.alokasi_jp}</td>
-                                    {monthLabels.map((m, mIdx) => (
-                                      <td
-                                        key={m}
-                                        className={`text-center font-bold ${
-                                          mIdx === targetMonthIdx
-                                            ? 'bg-blue-50 text-blue-800'
-                                            : 'text-slate-300'
-                                        }`}
-                                      >
-                                        {mIdx === targetMonthIdx ? tp.alokasi_jp : '-'}
-                                      </td>
-                                    ))}
-                                    <td className="text-center text-[11px]">TM</td>
-                                  </tr>
-                                );
-                              })}
-                            </React.Fragment>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {activeService.id === '07_kktp' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — FASE {selectedSubject?.fase} (KELAS {selectedSubject?.kelas})
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">Identitas Dokumen</h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <tbody>
-                          <tr>
-                            <th className="w-1/3 text-left">Mata Pelajaran</th>
-                            <td>{selectedSubject?.nama_mapel}</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Jenjang / Kelas / Fase</th>
-                            <td>
-                              {selectedSubject?.jenjang} / Kelas {selectedSubject?.kelas} / Fase {selectedSubject?.fase}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Semester / Tahun Ajaran</th>
-                            <td>Semester {semester} / 2025/2026</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Materi / Bab</th>
-                            <td>{selectedChapter?.judul_bab || 'Semua Bab'}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      A. Skala Interval Nilai KKTP (4 Interval — PPA Revisi 2025)
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-24 text-center">Interval</th>
-                            <th className="w-40 text-left">Kriteria</th>
-                            <th className="text-left">Tindak Lanjut / Intervensi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="text-center font-bold">0 - 40%</td>
-                            <td>Belum Mencapai</td>
-                            <td>Remedial di seluruh bagian</td>
-                          </tr>
-                          <tr>
-                            <td className="text-center font-bold">41 - 65%</td>
-                            <td>Belum Mencapai Ketuntasan</td>
-                            <td>Remedial di bagian yang diperlukan</td>
-                          </tr>
-                          <tr>
-                            <td className="text-center font-bold">66 - 85%</td>
-                            <td>Sudah Mencapai Ketuntasan</td>
-                            <td>Tidak perlu remedial</td>
-                          </tr>
-                          <tr>
-                            <td className="text-center font-bold">86 - 100%</td>
-                            <td>Sudah Mencapai Ketuntasan</td>
-                            <td>Perlu pengayaan atau tantangan lebih</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      B. Rubrik Ketercapaian Tujuan Pembelajaran (TP)
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-20 text-center">Kode TP</th>
-                            <th className="text-left">Tujuan Pembelajaran & Indikator Ketercapaian</th>
-                            <th className="w-16 text-center">JP</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeTps.map((tp, idx) => (
-                            <tr key={`${tp.code}-${idx}`}>
-                              <td className="text-center font-bold">{tp.code}</td>
-                              <td>{tp.deskripsi}</td>
-                              <td className="text-center">{tp.alokasi_jp}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeService.id === '09_lkpd' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      LEMBAR KERJA PESERTA DIDIK (LKPD) MANDIRI
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      MATA PELAJARAN {selectedSubject?.nama_mapel.toUpperCase()} — FASE {selectedSubject?.fase} (KELAS {selectedSubject?.kelas})
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">Identitas Peserta Didik</h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <tbody>
-                          <tr>
-                            <th className="w-1/3 text-left">Nama Peserta Didik</th>
-                            <td>............................................................</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Kelas / No. Absen</th>
-                            <td>Kelas {selectedSubject?.kelas} / ........</td>
-                          </tr>
-                          <tr>
-                            <th className="text-left">Topik / Materi Pokok</th>
-                            <td>{selectedChapter?.judul_bab || selectedSubject?.nama_mapel}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">A. Tujuan Pembelajaran</h3>
-                    <ul className="mt-1.5 list-disc space-y-1 pl-5">
-                      {activeTps.map((tp, idx) => (
-                        <li key={`${tp.code}-${idx}`}>
-                          <strong>[{tp.code}]</strong> {tp.deskripsi}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">
-                      B. Langkah Aktivitas Pembelajaran Mendalam (3M)
-                    </h3>
-                    <div className="paper-table-container">
-                      <table className="paper-table mt-1.5">
-                        <thead>
-                          <tr>
-                            <th className="w-32 text-left">Tahap 3M</th>
-                            <th className="text-left">Panduan Aktivitas Mandiri / Kelompok</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="font-bold">1. Memahami</td>
-                            <td>
-                              {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.memahami ||
-                                `Membaca dan memahami konsep inti pada materi ${selectedChapter?.judul_bab || selectedSubject?.nama_mapel}.`}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold">2. Mengaplikasi</td>
-                            <td>
-                              {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.mengaplikasi ||
-                                'Mengerjakan studi kasus atau praktik pemecahan masalah secara terstruktur.'}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="font-bold">3. Merefleksi</td>
-                            <td>
-                              {selectedChapter?.modul_ajar_template?.pembelajaran_mendalam_3m?.merefleksi ||
-                                'Menuliskan kesimpulan dan refleksi pemahaman diri setelah aktivitas.'}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-extrabold uppercase text-slate-900">C. Soal Latihan / Tugas Mandiri</h3>
-                    <ol className="mt-1.5 list-decimal space-y-1.5 pl-5">
-                      <li>
-                        Jelaskan konsep utama yang dipelajari pada topik{' '}
-                        {selectedChapter?.judul_bab || selectedSubject?.nama_mapel} dengan bahasamu sendiri!
-                      </li>
-                      <li>
-                        Berikan satu contoh penerapan nyata dari materi ini dalam kehidupan sehari-hari!
-                      </li>
-                      <li>
-                        Apa bagian yang paling menantang dan bagaimana kamu menyelesaikannya?
-                      </li>
-                    </ol>
-                  </div>
-                </div>
-              )}
-
-              {/* Service 13: Live Preview Presensi Siswa Bulanan */}
-              {activeService.id === '13_presensi' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      PRESENSI DAN KEHADIRAN PESERTA DIDIK
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      TAHUN AJARAN 2026/2027 — SEMESTER {semester}
-                    </p>
-                  </div>
-
-                  {/* Identitas Metadata */}
-                  <div className="paper-table-container">
-                    <table className="paper-table">
-                      <tbody>
-                        <tr>
-                          <th className="w-1/4 text-left">Mata Pelajaran</th>
-                          <td className="w-1/4 font-semibold">{selectedSubject?.nama_mapel}</td>
-                          <th className="w-1/4 text-left">Guru Pengampu</th>
-                          <td className="w-1/4 font-semibold">{teacher.nama_guru || '-'}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Kelas / Rombel</th>
-                          <td className="font-semibold">{customOverrides.nama_rombel || activeClassroom?.nama_rombel || `Kelas ${kelas}`}</td>
-                          <th className="text-left">Bulan Presensi</th>
-                          <td className="font-semibold text-blue-700">{customOverrides.bulan_presensi || 'Agustus'}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Tabel Presensi Siswa */}
-                  <div className="paper-table-container">
-                    <table className="paper-table text-[11px]">
-                      <thead>
-                        <tr>
-                          <th rowSpan={2} className="w-8 text-center">No</th>
-                          <th rowSpan={2} className="w-20 text-center">NISN</th>
-                          <th rowSpan={2} className="text-left min-w-[140px]">Nama Lengkap Siswa</th>
-                          <th rowSpan={2} className="w-8 text-center">L/P</th>
-                          <th colSpan={15} className="text-center bg-teal-700 text-white">
-                            Tanggal Presensi Bulan {customOverrides.bulan_presensi || 'Agustus'} (Sampel Tgl 1 - 15)
-                          </th>
-                          <th colSpan={5} className="text-center bg-teal-800 text-white">
-                            Rekapitulasi Kehadiran
-                          </th>
-                        </tr>
-                        <tr>
-                          {Array.from({ length: 15 }, (_, i) => (
-                            <th key={i + 1} className="w-5 text-center font-mono text-[10px] bg-teal-600 text-white">
-                              {i + 1}
-                            </th>
-                          ))}
-                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Hadir (Formula =COUNTIF)">H</th>
-                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Sakit (Formula =COUNTIF)">S</th>
-                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Izin (Formula =COUNTIF)">I</th>
-                          <th className="w-7 text-center font-bold bg-teal-700 text-white" title="Alpa (Formula =COUNTIF)">A</th>
-                          <th className="w-10 text-center font-bold bg-teal-800 text-white" title="Persentase Kehadiran">%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {effectiveStudents.slice(0, 15).map((s: StudentOverrideItem, idx: number) => (
-                          <tr key={idx}>
-                            <td className="text-center font-bold">{s.nomor_absen || idx + 1}</td>
-                            <td className="text-center font-mono text-[10px] text-slate-500">{s.nisn || '-'}</td>
-                            <td className="font-semibold text-slate-900">{s.nama_lengkap}</td>
-                            <td className="text-center font-bold">{s.jenis_kelamin || 'L'}</td>
-                            {Array.from({ length: 15 }, (_, dayIdx) => (
-                              <td key={dayIdx} className="text-center font-mono text-[10px] text-teal-800">
-                                {dayIdx % 7 === 5 || dayIdx % 7 === 6 ? '•' : 'H'}
-                              </td>
-                            ))}
-                            <td className="text-center font-mono font-bold text-teal-700">11</td>
-                            <td className="text-center font-mono text-slate-500">0</td>
-                            <td className="text-center font-mono text-slate-500">0</td>
-                            <td className="text-center font-mono text-slate-500">0</td>
-                            <td className="text-center font-mono font-bold text-teal-900 bg-teal-50">100%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-slate-100 font-bold border-t-2 border-slate-400">
-                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Total Rekapitulasi Kelas (Formula Excel)</td>
-                          <td colSpan={15} className="text-center text-[10px] text-slate-500 italic">Formula Aktif =COUNTIF(E10:AI10, "H") per baris</td>
-                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
-                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
-                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
-                          <td className="text-center font-mono font-extrabold text-teal-800">=SUM</td>
-                          <td className="text-center font-mono font-extrabold text-teal-900 bg-teal-100">=AVERAGE</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                  <p className="text-[11px] text-slate-500 italic">
-                    * Dokumen unduhan (.xlsx) mencakup seluruh 31 hari penuh dengan formula aktif live, dapat dibuka dan dihitung otomatis di Microsoft Excel maupun Google Sheets.
-                  </p>
-                </div>
-              )}
-
-              {/* Service 14: Live Preview Jurnal Mengajar Harian */}
-              {activeService.id === '14_jurnal_mengajar' && (() => {
-                const activeDays = customOverrides.hari_mengajar || ['Senin', 'Kamis'];
-                const jamStr = customOverrides.jam_mengajar || '1-2';
-                const rombelLabel = customOverrides.nama_rombel || activeClassroom?.nama_rombel || `Kelas ${kelas}`;
-
-                const effectiveRows =
-                  customOverrides.custom_jurnal_rows && customOverrides.custom_jurnal_rows.length > 0
-                    ? customOverrides.custom_jurnal_rows.map((r, idx) => ({
-                        ...r,
-                        no: idx + 1,
-                      }))
-                    : buildDefaultJurnalRows({
-                        kelas,
-                        semester,
-                        subjectName: selectedSubject?.nama_mapel,
-                        semesterChapters: currentSemesterChapters,
-                        hariMengajar: customOverrides.hari_mengajar,
-                        tanggalMulaiSemester: customOverrides.tanggal_mulai_semester,
-                        jamMengajar: customOverrides.jam_mengajar,
-                        jumlahPertemuan: customOverrides.jumlah_pertemuan_jurnal,
-                      });
-
-                return (
-                  <div className="mt-5 space-y-4 text-xs leading-relaxed">
-                    <div data-keep-together="true" className="text-center">
-                      <h2 className="text-base font-extrabold uppercase text-slate-900">
-                        JURNAL MENGAJAR HARIAN DAN AGENDA GURU
-                      </h2>
-                      <p className="font-bold uppercase text-slate-700">
-                        {selectedSubject?.nama_mapel} | {rombelLabel} | SEMESTER {semester}
-                      </p>
-                    </div>
-
-                    <div data-keep-together="true" className="paper-table-container">
-                      <table className="paper-table">
-                        <tbody>
-                          <tr>
-                            <th className="w-1/4 text-left">Mata Pelajaran / Rombel</th>
-                            <td className="w-1/4 font-semibold">{selectedSubject?.nama_mapel} — {rombelLabel}</td>
-                            <th className="w-1/4 text-left">Jadwal Rutin</th>
-                            <td className="w-1/4 font-semibold">{activeDays.join(', ')} (Jam {jamStr})</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div data-splittable-table="true" className="paper-table-container">
-                      <table className="paper-table text-[10.5px]">
-                        <thead>
-                          <tr>
-                            <th className="w-8 text-center">No</th>
-                            <th className="w-28 text-left">Hari / Tanggal</th>
-                            <th className="w-24 text-center">Jam / Pert.</th>
-                            <th className="text-left">Tujuan Pembelajaran (TP)</th>
-                            <th className="w-32 text-left">Materi Pembelajaran</th>
-                            <th className="w-36 text-left">Ringkasan Kegiatan</th>
-                            <th className="w-24 text-left">Kehadiran Siswa</th>
-                            <th className="w-28 text-left">Hambatan &amp; Refleksi</th>
-                            <th className="w-12 text-center">Paraf</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {effectiveRows.map((row, idx) => (
-                            <tr key={`preview-jurnal-${idx}`}>
-                              <td className="text-center font-bold">{row.no ?? idx + 1}</td>
-                              <td className="font-semibold">{row.hari_tanggal || '-'}</td>
-                              <td className="text-center">{row.jam_pertemuan || '-'}</td>
-                              <td>{row.tp || '-'}</td>
-                              <td className="font-semibold">{row.materi || '-'}</td>
-                              <td>{row.kegiatan || '-'}</td>
-                              <td>{row.kehadiran || '-'}</td>
-                              <td>{row.refleksi || '-'}</td>
-                              <td className="text-center">{row.paraf || ''}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Service 15: Live Preview Buku Pengolahan Daftar Nilai */}
-              {activeService.id === '15_daftar_nilai' && (
-                <div className="mt-5 space-y-5 text-xs leading-relaxed">
-                  <div className="text-center">
-                    <h2 className="text-base font-extrabold uppercase text-slate-900">
-                      BUKU DAFTAR NILAI PESERTA DIDIK
-                    </h2>
-                    <p className="font-bold uppercase text-slate-700">
-                      KURIKULUM MERDEKA — TAHUN AJARAN 2026/2027 (SEMESTER {semester})
-                    </p>
-                  </div>
-
-                  {/* Identitas Metadata */}
-                  <div className="paper-table-container">
-                    <table className="paper-table">
-                      <tbody>
-                        <tr>
-                          <th className="w-1/4 text-left">Mata Pelajaran</th>
-                          <td className="w-1/4 font-semibold">{selectedSubject?.nama_mapel}</td>
-                          <th className="w-1/4 text-left">Guru Pengampu</th>
-                          <td className="w-1/4 font-semibold">{teacher.nama_guru || '-'}</td>
-                        </tr>
-                        <tr>
-                          <th className="text-left">Kelas / Rombel</th>
-                          <td className="font-semibold">{customOverrides.nama_rombel || activeClassroom?.nama_rombel || `Kelas ${kelas}`}</td>
-                          <th className="text-left">KKTP Minimum</th>
-                          <td className="font-semibold text-blue-700">{customOverrides.kktp_nilai || 75} (Tuntas &ge; {customOverrides.kktp_nilai || 75})</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Tabel Daftar Nilai */}
-                  <div className="paper-table-container">
-                    <table className="paper-table text-[11px]">
-                      <thead>
-                        <tr>
-                          <th rowSpan={2} className="w-8 text-center">No</th>
-                          <th rowSpan={2} className="w-20 text-center">NISN</th>
-                          <th rowSpan={2} className="text-left min-w-[140px]">Nama Lengkap Siswa</th>
-                          <th rowSpan={2} className="w-8 text-center">L/P</th>
-                          <th colSpan={5} className="text-center bg-blue-900 text-white">
-                            Asesmen Formatif (Lingkup TP)
-                          </th>
-                          <th colSpan={3} className="text-center bg-blue-800 text-white">
-                            Asesmen Sumatif
-                          </th>
-                          <th colSpan={3} className="text-center bg-teal-800 text-white">
-                            Hasil Akhir &amp; Keterangan
-                          </th>
-                        </tr>
-                        <tr>
-                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 1</th>
-                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 2</th>
-                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 3</th>
-                          <th className="w-10 text-center font-mono text-[10px] bg-blue-800 text-white">TP 4</th>
-                          <th className="w-12 text-center font-bold font-mono text-[10px] bg-blue-700 text-white" title="=AVERAGE">Rata F</th>
-                          <th className="w-10 text-center font-mono text-[10px] bg-blue-700 text-white">STS</th>
-                          <th className="w-10 text-center font-mono text-[10px] bg-blue-700 text-white">SAS</th>
-                          <th className="w-12 text-center font-bold font-mono text-[10px] bg-blue-600 text-white" title="=AVERAGE">Rata S</th>
-                          <th className="w-12 text-center font-bold font-mono text-[10px] bg-teal-700 text-white" title="=ROUND((RataF*50% + RataS*50%),0)">NA</th>
-                          <th className="w-16 text-center font-bold bg-teal-800 text-white" title="=IF(NA>=KKTP)">Status</th>
-                          <th className="min-w-[100px] text-left text-[10px] bg-teal-900 text-white">Capaian Kompetensi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {effectiveStudents.slice(0, 15).map((s: StudentOverrideItem, idx: number) => (
-                          <tr key={idx}>
-                            <td className="text-center font-bold">{s.nomor_absen || idx + 1}</td>
-                            <td className="text-center font-mono text-[10px] text-slate-500">{s.nisn || '-'}</td>
-                            <td className="font-semibold text-slate-900">{s.nama_lengkap}</td>
-                            <td className="text-center font-bold">{s.jenis_kelamin || 'L'}</td>
-                            <td className="text-center font-mono text-slate-700">85</td>
-                            <td className="text-center font-mono text-slate-700">80</td>
-                            <td className="text-center font-mono text-slate-700">88</td>
-                            <td className="text-center font-mono text-slate-700">82</td>
-                            <td className="text-center font-mono font-bold text-blue-800 bg-blue-50">83.8</td>
-                            <td className="text-center font-mono text-slate-700">80</td>
-                            <td className="text-center font-mono text-slate-700">85</td>
-                            <td className="text-center font-mono font-bold text-blue-800 bg-blue-50">82.5</td>
-                            <td className="text-center font-mono font-extrabold text-teal-800 bg-teal-50">83</td>
-                            <td className="text-center font-bold text-[10px] text-emerald-700 bg-emerald-50">TUNTAS</td>
-                            <td className="text-[10px] text-slate-600">Menunjukkan penguasaan optimal</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-slate-100 font-bold border-t border-slate-300">
-                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Nilai Tertinggi Kelas</td>
-                          <td colSpan={8} className="text-center text-[10px] text-slate-400 italic">Formula Excel Otomatis</td>
-                          <td className="text-center font-mono text-teal-800">=MAX</td>
-                          <td colSpan={2} className="text-[10px] text-slate-500">Capaian tertinggi rombel</td>
-                        </tr>
-                        <tr className="bg-slate-100 font-bold">
-                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Nilai Terendah Kelas</td>
-                          <td colSpan={8} className="text-center text-[10px] text-slate-400 italic">Formula Excel Otomatis</td>
-                          <td className="text-center font-mono text-teal-800">=MIN</td>
-                          <td colSpan={2} className="text-[10px] text-slate-500">Batas bawah evaluasi</td>
-                        </tr>
-                        <tr className="bg-slate-100 font-bold">
-                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Rata-rata Kelas</td>
-                          <td colSpan={8} className="text-center text-[10px] text-slate-400 italic">Formula Excel Otomatis</td>
-                          <td className="text-center font-mono text-teal-800">=AVERAGE</td>
-                          <td colSpan={2} className="text-[10px] text-slate-500">Mean nilai akhir</td>
-                        </tr>
-                        <tr className="bg-teal-50 font-bold border-t-2 border-teal-600 text-teal-900">
-                          <td colSpan={4} className="text-right pr-2 uppercase text-[10px]">Ketuntasan Klasikal (%)</td>
-                          <td colSpan={8} className="text-center text-[10px] text-teal-700 italic">Formula =COUNTIF(Status, "TUNTAS")/Total</td>
-                          <td colSpan={3} className="text-center font-mono font-extrabold text-teal-900">=ROUND((COUNTIF/COUNT)*100, 1)%</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                  <p className="text-[11px] text-slate-500 italic">
-                    * Dokumen unduhan (.xlsx) mencakup formula aktif live: rata-rata formatif, pembobotan sumatif (STS/SAS), Nilai Akhir (NA), status KKTP, dan statistik kelas.
-                  </p>
-                </div>
-              )}
 
                     {/* 3. LEMBAR PENGESAHAN RESMI */}
                     {renderOfficialPengesahan()}

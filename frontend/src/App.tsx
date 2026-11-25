@@ -31,7 +31,6 @@ import { SchoolProfileModal } from './components/modals/SchoolProfileModal';
 import { SuccessDownloadModal } from './components/modals/SuccessDownloadModal';
 import { GoogleLoginModal } from './components/modals/GoogleLoginModal';
 import { ClassroomManagementModal } from './components/modals/ClassroomManagementModal';
-import { ServiceModeSelectionModal } from './components/modals/ServiceModeSelectionModal';
 import { CacheConsentBadge } from './components/modals/CacheConsentBadge';
 import { getClassrooms, getActiveClassroom, StudentItem } from './services/classroomStorage';
 import {
@@ -48,10 +47,8 @@ export const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'home' | 'katalog' | 'generator' | 'riwayat'>('home');
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('08_modul_ajar');
 
-  // Dual-Mode Document Generator State ('template' vs 'manual')
+  // Generator Mode State ('template' default for curriculum, 'manual' for exams/tracking)
   const [generationMode, setGenerationMode] = useState<GenerationMode>('template');
-  const [isModeModalOpen, setIsModeModalOpen] = useState<boolean>(false);
-  const [pendingServiceId, setPendingServiceId] = useState<ServiceId | null>(null);
 
   // Classroom Management Modal State
   const [isClassroomModalOpen, setIsClassroomModalOpen] = useState<boolean>(false);
@@ -212,20 +209,22 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Select Service from Home or Katalog -> Opens Mode Selection Pop-up Modal (except Exam Services: direct Manual)
+  // Select Service from Home or Katalog -> Opens Studio Generator immediately (no blocking pop-up)
   const handleSelectService = (serviceId: ServiceId) => {
-    const isDirectManualExam =
-      serviceId === '10_kuis' || serviceId === '11_sumatif_bab' || serviceId === '12_sts_sas';
-    if (isDirectManualExam) {
-      applyServiceSelection(serviceId, 'manual');
-      return;
-    }
-    if (activeSection !== 'generator') {
-      setPendingServiceId(serviceId);
-      setIsModeModalOpen(true);
-    } else {
-      applyServiceSelection(serviceId, generationMode);
-    }
+    const isCurriculum =
+      serviceId === '03_cp_tp' ||
+      serviceId === '04_atp' ||
+      serviceId === '05_prota' ||
+      serviceId === '06_promes' ||
+      serviceId === '07_kktp' ||
+      serviceId === '08_modul_ajar' ||
+      serviceId === '09_lkpd';
+    const nextMode: GenerationMode = !isCurriculum
+      ? 'manual'
+      : activeSection === 'generator'
+      ? generationMode
+      : 'template';
+    applyServiceSelection(serviceId, nextMode);
   };
 
   const applyServiceSelection = (serviceId: ServiceId, mode: GenerationMode) => {
@@ -242,14 +241,6 @@ export const App: React.FC = () => {
     });
     setErrorMsg(null);
     handleNavigate('generator');
-  };
-
-  const handleConfirmModeSelection = (mode: GenerationMode) => {
-    if (pendingServiceId) {
-      applyServiceSelection(pendingServiceId, mode);
-      setPendingServiceId(null);
-    }
-    setIsModeModalOpen(false);
   };
 
   // Handle Jenjang Change in Generator
@@ -529,6 +520,7 @@ export const App: React.FC = () => {
             <ServiceCatalog
               selectedServiceId={selectedServiceId}
               onSelectService={handleSelectService}
+              onOpenClassroomModal={() => setIsClassroomModalOpen(true)}
             />
           </div>
 
@@ -536,6 +528,7 @@ export const App: React.FC = () => {
             <DocumentGenerator
               activeService={activeServiceObj}
               generationMode={generationMode}
+              onChangeGenerationMode={setGenerationMode}
               jenjang={jenjang}
               kelas={kelas}
               subjects={subjects}
@@ -630,22 +623,6 @@ export const App: React.FC = () => {
       <ClassroomManagementModal
         isOpen={isClassroomModalOpen}
         onClose={() => setIsClassroomModalOpen(false)}
-      />
-
-      {/* Modal 5: Pop-up Pemilihan Mode Pembuatan (Gunakan Template vs Buat Manual) */}
-      <ServiceModeSelectionModal
-        isOpen={isModeModalOpen}
-        service={
-          pendingServiceId
-            ? CORE_SERVICES.find((s) => s.id === pendingServiceId) || null
-            : null
-        }
-        selectedSubjectId={selectedSubject?.id}
-        onSelectMode={handleConfirmModeSelection}
-        onClose={() => {
-          setIsModeModalOpen(false);
-          setPendingServiceId(null);
-        }}
       />
     </div>
   );

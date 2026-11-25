@@ -23,7 +23,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenHistory,
   onSelectService,
 }) => {
-  const activeServices = CORE_SERVICES.filter((s) => !s.isComingSoon);
+  const activeServices = CORE_SERVICES.filter((s) => !s.isComingSoon && s.id !== '01_data_kelas');
 
   const renderServiceIcon = (id: string) => {
     if (id === '06_promes') return <FileSpreadsheet className="h-6 w-6 text-white" />;

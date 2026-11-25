@@ -243,7 +243,7 @@ export interface HistoryDocumentItem {
 }
 
 export interface ServiceCatalogItem {
-  id: ServiceId | 'coming_soon';
+  id: ServiceId | '01_data_kelas' | 'coming_soon';
   codeLabel: string;
   title: string;
   shortTitle: string;
