@@ -284,4 +284,17 @@ export const SERVICE_ICON_PACK: Record<string, string> = {
   '08_modul_ajar': '/icons/modul-icon.webp',
   '05_prota': '/icons/prota-icon.webp',
   '06_promes': '/icons/promes-icon.webp',
+  '07_kktp': '/icons/kktp-icon.webp',
+  '09_lkpd': '/icons/lkpd-icon.webp',
+  '10_kuis': '/icons/kuis-icon.webp',
+  '11_sumatif_bab': '/icons/sumatif-bab-icon.webp',
+  '12_sts_sas': '/icons/sts-sas-icon.webp',
+  '13_presensi': '/icons/presensi-icon.webp',
+  '14_jurnal_mengajar': '/icons/jurnal-icon.webp',
+  '15_daftar_nilai': '/icons/daftar-nilai-icon.webp',
 };
+
+export const QUICK_LINK_ICONS = {
+  katalog: '/icons/katalog-icon.webp',
+  riwayat: '/icons/riwayat-icon.webp',
+} as const;

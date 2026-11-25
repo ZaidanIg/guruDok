@@ -6,12 +6,10 @@ import {
   FileSpreadsheet,
   Calendar,
   ListOrdered,
-  LayoutGrid,
-  History,
   CheckSquare,
   ClipboardList,
 } from 'lucide-react';
-import { CORE_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
+import { CORE_SERVICES, QUICK_LINK_ICONS, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceId } from '../../types';
 
 interface HeroSectionProps {
@@ -169,8 +167,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               onClick={onOpenCatalog}
               className="group flex w-20 flex-col items-center gap-2 focus:outline-none sm:w-24"
             >
-              <div className="clay-icon-blue flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-110 sm:h-14 sm:w-14">
-                <LayoutGrid className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-110 sm:h-14 sm:w-14">
+                <img
+                  src={QUICK_LINK_ICONS.katalog}
+                  alt="Katalog Layanan"
+                  className="h-full w-full object-contain drop-shadow-md select-none pointer-events-none"
+                  draggable={false}
+                />
               </div>
               <span className="text-center text-xs font-bold leading-tight text-slate-700 transition group-hover:text-blue-700">
                 Katalog
@@ -183,8 +186,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               onClick={onOpenHistory}
               className="group flex w-20 flex-col items-center gap-2 focus:outline-none sm:w-24"
             >
-              <div className="clay-icon-amber flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-110 sm:h-14 sm:w-14">
-                <History className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-110 sm:h-14 sm:w-14">
+                <img
+                  src={QUICK_LINK_ICONS.riwayat}
+                  alt="Riwayat Dokumen"
+                  className="h-full w-full object-contain drop-shadow-md select-none pointer-events-none"
+                  draggable={false}
+                />
               </div>
               <span className="text-center text-xs font-bold leading-tight text-slate-700 transition group-hover:text-blue-700">
                 Riwayat

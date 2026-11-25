@@ -61,10 +61,16 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 48** | **Perbaikan Alokasi Waktu (`0`), Integrasi Live Preview, & Validasi Preview PDF** | [plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md](../plan/sprint-48-perbaikan-input-alokasi-waktu-nol-dan-sinkronisasi-preview.md) | [todo/sprint-48-todo.md](./sprint-48-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 49** | **Service 14: Jurnal Mengajar Harian (DOCX, XLSX, PDF Landscape 9 Kolom & Live Preview)** | [plan/sprint-49-service-14-jurnal-mengajar-harian.md](../plan/sprint-49-service-14-jurnal-mengajar-harian.md) | [todo/sprint-49-todo.md](./sprint-49-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 50** | **Full CRUD Baris Jurnal Mengajar Harian (Service 14)** | [plan/sprint-50-crud-jurnal-mengajar-harian.md](../plan/sprint-50-crud-jurnal-mengajar-harian.md) | [todo/sprint-50-todo.md](./sprint-50-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 51** | **Optimasi & Integrasi 10 Ikon 3D Clay Terbaru (`asset/icon-pack/*.jpg`)** | [plan/sprint-51-integrasi-optimasi-10-icon-clay-baru.md](../plan/sprint-51-integrasi-optimasi-10-icon-clay-baru.md) | [todo/sprint-51-todo.md](./sprint-51-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-25 (Sprint 51):**
+  - Mengonversi & mengompresi 10 ikon 3D Clay terbaru dari `asset/icon-pack/*.jpg` ke **`160×160` RGBA transparan (`.webp` 8.6–11.7 KB/file + `.png`)** di `frontend/public/icons/` menggunakan *outer flood-fill border transparency* agar teks & kertas putih di dalam ikon tetap utuh.
+  - Memetakan 8 layanan tersisa (`07_kktp`, `09_lkpd`, `10_kuis`, `11_sumatif_bab`, `12_sts_sas`, `13_presensi`, `14_jurnal_mengajar`, `15_daftar_nilai`) di [services.ts](../frontend/src/constants/services.ts), memasang ikon **Katalog** & **Riwayat** di [HeroSection.tsx](../frontend/src/components/sections/HeroSection.tsx), dan menambahkan seluruh 10 aset ke daftar *pre-cache* [cacheConsent.ts](../frontend/src/services/cacheConsent.ts).
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **134/134 PASS (100%)**.
 
 - **2026-11-24 (Sprint 50):**
   - Menambahkan kemampuan **Full CRUD & Reorder** baris pertemuan pada **Service 14: Jurnal Mengajar Harian (`14_jurnal_mengajar`)**:

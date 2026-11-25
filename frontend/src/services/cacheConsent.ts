@@ -13,6 +13,16 @@ const HOME_STATIC_ASSETS = [
   '/icons/modul-icon.webp',
   '/icons/prota-icon.webp',
   '/icons/promes-icon.webp',
+  '/icons/kktp-icon.webp',
+  '/icons/lkpd-icon.webp',
+  '/icons/kuis-icon.webp',
+  '/icons/sumatif-bab-icon.webp',
+  '/icons/sts-sas-icon.webp',
+  '/icons/presensi-icon.webp',
+  '/icons/jurnal-icon.webp',
+  '/icons/daftar-nilai-icon.webp',
+  '/icons/katalog-icon.webp',
+  '/icons/riwayat-icon.webp',
 ];
 
 export function isLocalCacheAllowed(): boolean {
