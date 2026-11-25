@@ -7,6 +7,7 @@ from app.schemas.curriculum import JenjangEnum, CustomTpItem
 
 
 class ServiceIdEnum(str, Enum):
+    ADMIN_KELAS = "02_admin_kelas"
     CP_TP = "03_cp_tp"
     ATP = "04_atp"
     PROTA = "05_prota"
@@ -22,12 +23,14 @@ class ServiceIdEnum(str, Enum):
     DAFTAR_NILAI = "15_daftar_nilai"
     DESKRIPSI_RAPOR = "16_deskripsi_rapor"
     REKAP_RAPOR = "17_rekap_rapor"
+    PAKET_SUPERVISI = "18_paket_supervisi"
 
 
 class OutputFormatEnum(str, Enum):
     DOCX = "docx"
     XLSX = "xlsx"
     PDF = "pdf"
+    ZIP = "zip"
 
 
 class StudentItemInput(BaseModel):
@@ -228,6 +231,19 @@ class CustomDocumentOverrides(BaseModel):
     custom_jurnal_rows: Optional[List[CustomJurnalRowItem]] = Field(None, max_length=60)
     # Service 16 & 17: Rapor Deskripsi & Rekap Overrides
     rapor_entries: Optional[List[CustomRaporEntryItem]] = Field(None, max_length=60)
+    # Service 02: Administrasi Kelas Overrides
+    ketua_kelas: Optional[str] = Field(None, max_length=150)
+    wakil_ketua_kelas: Optional[str] = Field(None, max_length=150)
+    sekretaris_kelas: Optional[str] = Field(None, max_length=150)
+    bendahara_kelas: Optional[str] = Field(None, max_length=150)
+    denah_duduk: Optional[str] = Field("Kelompok Kolaboratif", max_length=100)
+    jadwal_piket: Optional[dict] = None
+    kesepakatan_kelas: Optional[List[str]] = None
+    # Service 18: Paket Siap Supervisi Overrides
+    nomor_sk_mengajar: Optional[str] = Field(None, max_length=120)
+    tanggal_supervisi: Optional[str] = Field(None, max_length=30)
+    nama_pengawas: Optional[str] = Field(None, max_length=150)
+    nip_pengawas: Optional[str] = Field(None, max_length=30)
 
     @model_validator(mode="after")
     def sync_and_sanitize(self):
@@ -280,6 +296,15 @@ class CustomDocumentOverrides(BaseModel):
             "bulan_presensi",
             "tanggal_mulai_semester",
             "jam_mengajar",
+            "ketua_kelas",
+            "wakil_ketua_kelas",
+            "sekretaris_kelas",
+            "bendahara_kelas",
+            "denah_duduk",
+            "nomor_sk_mengajar",
+            "tanggal_supervisi",
+            "nama_pengawas",
+            "nip_pengawas",
         ]
         for f_name in str_fields:
             val = getattr(self, f_name)
@@ -301,6 +326,7 @@ class CustomDocumentOverrides(BaseModel):
             "soal_asesmen_akhir",
             "langkah_lkpd",
             "hari_mengajar",
+            "kesepakatan_kelas",
         ]
         for lf in list_fields:
             items = getattr(self, lf)
@@ -311,6 +337,18 @@ class CustomDocumentOverrides(BaseModel):
                     if it and it.strip()
                 ]
                 setattr(self, lf, cleaned_list)
+
+        if isinstance(self.jadwal_piket, dict):
+            cleaned_piket = {}
+            for day_key, names in self.jadwal_piket.items():
+                clean_day = InputSanitizer.sanitize_text(str(day_key), max_length=30)
+                if isinstance(names, list):
+                    cleaned_piket[clean_day] = [
+                        InputSanitizer.sanitize_text(str(n), max_length=150)
+                        for n in names
+                        if str(n).strip()
+                    ]
+            self.jadwal_piket = cleaned_piket
 
         # 5. Sanitize custom_rubrik_dpl
         if self.custom_rubrik_dpl:

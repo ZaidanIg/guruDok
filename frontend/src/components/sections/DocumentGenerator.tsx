@@ -60,6 +60,8 @@ import { CpElementEditorModal } from '../curriculum/CpElementEditorModal';
 import { QuestionBuilderSection } from '../curriculum/QuestionBuilderSection';
 import { JurnalEditorSection } from '../curriculum/JurnalEditorSection';
 import { RaporGradesEditorSection } from '../curriculum/RaporGradesEditorSection';
+import { AdminKelasEditorSection } from '../curriculum/AdminKelasEditorSection';
+import { SupervisiEditorSection } from '../curriculum/SupervisiEditorSection';
 import { CurriculumPlanningPreviews } from '../preview/services/CurriculumPlanningPreviews';
 import { AssessmentLkpdPreviews } from '../preview/services/AssessmentLkpdPreviews';
 import { ClassroomTrackingPreviews } from '../preview/services/ClassroomTrackingPreviews';
@@ -289,13 +291,15 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const isSumatifBab = activeService.id === '11_sumatif_bab';
   const isStsSas = activeService.id === '12_sts_sas';
   const isExamService = isKuis || isSumatifBab || isStsSas;
+  const isAdminKelas = activeService.id === '02_admin_kelas';
   const isPresensi = activeService.id === '13_presensi';
   const isJurnal = activeService.id === '14_jurnal_mengajar';
   const isDaftarNilai = activeService.id === '15_daftar_nilai';
   const isDeskripsiRapor = activeService.id === '16_deskripsi_rapor';
   const isRekapRapor = activeService.id === '17_rekap_rapor';
+  const isPaketSupervisi = activeService.id === '18_paket_supervisi';
   const isRaporService = isDeskripsiRapor || isRekapRapor;
-  const isClassroomService = isPresensi || isDaftarNilai || isRaporService;
+  const isClassroomService = isAdminKelas || isPresensi || isDaftarNilai || isRaporService || isPaketSupervisi;
 
   // Form Field Toggles by Service
   const showChapterSelector = Boolean(activeService.requiresChapter || isModulAjar || isLkpd || isKuis || isSumatifBab);
@@ -809,7 +813,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   }, [activeService.id]);
 
   const handleFetchPdfPreview = async () => {
-    if (!selectedSubject || activeService.id === 'coming_soon' || activeService.id === '01_data_kelas') return;
+    if (!selectedSubject || activeService.id === '01_data_kelas') return;
     setIsLoadingPdfPreview(true);
     setPdfPreviewError(null);
     try {
@@ -1558,6 +1562,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     const supported = (activeService.formats || ['DOCX', 'PDF']).map((f) => f.toLowerCase() as OutputFormat);
                     const formatOptions = (
                       [
+                        { id: 'zip', label: 'ZIP' },
                         { id: 'docx', label: 'DOCX' },
                         { id: 'xlsx', label: 'XLSX' },
                         { id: 'pdf', label: 'PDF' },
@@ -1968,6 +1973,25 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               subjectName={selectedSubject?.nama_mapel}
               semesterChapters={currentSemesterChapters}
               effectiveStudents={effectiveStudents}
+              customOverrides={customOverrides}
+              onChangeCustomOverrides={onChangeCustomOverrides}
+            />
+          )}
+
+          {/* Card Khusus 1D: Administrasi Kelas Lengkap (Service 02) */}
+          {isAdminKelas && (
+            <AdminKelasEditorSection
+              kelas={kelas}
+              defaultRombel={activeClassroom?.nama_rombel}
+              effectiveStudents={effectiveStudents}
+              customOverrides={customOverrides}
+              onChangeCustomOverrides={onChangeCustomOverrides}
+            />
+          )}
+
+          {/* Card Khusus 1E: Identitas & Checklist Paket Siap Supervisi (Service 18) */}
+          {isPaketSupervisi && (
+            <SupervisiEditorSection
               customOverrides={customOverrides}
               onChangeCustomOverrides={onChangeCustomOverrides}
             />
@@ -3107,11 +3131,13 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       />
                     )}
 
-                    {(activeService.id === '13_presensi' ||
+                    {(activeService.id === '02_admin_kelas' ||
+                      activeService.id === '13_presensi' ||
                       activeService.id === '14_jurnal_mengajar' ||
                       activeService.id === '15_daftar_nilai' ||
                       activeService.id === '16_deskripsi_rapor' ||
-                      activeService.id === '17_rekap_rapor') && (
+                      activeService.id === '17_rekap_rapor' ||
+                      activeService.id === '18_paket_supervisi') && (
                       <ClassroomTrackingPreviews
                         serviceId={activeService.id}
                         kelas={kelas}

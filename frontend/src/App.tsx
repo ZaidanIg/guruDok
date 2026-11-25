@@ -233,6 +233,9 @@ export const App: React.FC = () => {
     const targetService = CORE_SERVICES.find((s) => s.id === serviceId);
     const allowed = (targetService?.formats || ['DOCX', 'PDF']).map((f) => f.toLowerCase() as OutputFormat);
     setOutputFormat((prev) => {
+      if (serviceId === '18_paket_supervisi') {
+        return 'zip';
+      }
       if (
         serviceId === '06_promes' ||
         serviceId === '13_presensi' ||
@@ -309,13 +312,15 @@ export const App: React.FC = () => {
     try {
       let finalOverrides: CustomDocumentOverrides = { ...customOverrides };
 
-      // Automatic Student and Rombel injection for Classroom, Jurnal & Rapor Services
+      // Automatic Student and Rombel injection for Classroom, Jurnal, Rapor, Admin Kelas & Supervisi Services
       if (
+        selectedServiceId === '02_admin_kelas' ||
         selectedServiceId === '13_presensi' ||
         selectedServiceId === '14_jurnal_mengajar' ||
         selectedServiceId === '15_daftar_nilai' ||
         selectedServiceId === '16_deskripsi_rapor' ||
-        selectedServiceId === '17_rekap_rapor'
+        selectedServiceId === '17_rekap_rapor' ||
+        selectedServiceId === '18_paket_supervisi'
       ) {
         const activeRombel = getActiveClassroom() || getClassrooms()[0];
         if (activeRombel) {

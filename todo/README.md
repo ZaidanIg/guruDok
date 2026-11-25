@@ -65,10 +65,18 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 52** | **Penyeragaman Brand Title Menjadi `GuruDok` (Hapus `.id`)** | [plan/sprint-52-ubah-brand-title-gurudok.md](../plan/sprint-52-ubah-brand-title-gurudok.md) | [todo/sprint-52-todo.md](./sprint-52-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 53** | **Penyederhanaan Flow Generator, Sinkronisasi Katalog, & Modularisasi Preview** | [plan/sprint-53-refactor-flow-generator-katalog.md](../plan/sprint-53-refactor-flow-generator-katalog.md) | [todo/sprint-53-todo.md](./sprint-53-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 54** | **Service 16 (Deskripsi e-Rapor) & Service 17 (Rekap Nilai Rapor)** | [plan/sprint-54-service-16-deskripsi-rapor-dan-17-rekap-rapor.md](../plan/sprint-54-service-16-deskripsi-rapor-dan-17-rekap-rapor.md) | [todo/sprint-54-todo.md](./sprint-54-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 55** | **Service 02 (Administrasi Kelas) & Service 18 (Paket Siap Supervisi — 18/18 Final)** | [plan/sprint-55-service-02-admin-kelas-dan-18-paket-supervisi.md](../plan/sprint-55-service-02-admin-kelas-dan-18-paket-supervisi.md) | [todo/sprint-55-todo.md](./sprint-55-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-25 (Sprint 55 — 18/18 Layanan Lengkap):**
+  - Menuntaskan seluruh roadmap **18 dari 18 layanan** GuruDok dengan mengimplementasikan **Service 02 (`02_admin_kelas`)** dan **Service 18 (`18_paket_supervisi`)**:
+    - Memperluas whitelist keamanan `.zip` (`PK\x03\x04` & `application/zip`) di [security.py](../backend/app/core/security.py), [storage_service.py](../backend/app/services/storage_service.py), dan [download.py](../backend/app/api/v1/endpoints/download.py).
+    - Membuat [admin_supervisi_blueprint.py](../backend/app/services/document_engine/admin_supervisi_blueprint.py) & [zip_engine.py](../backend/app/services/document_engine/zip_engine.py) (`ZipBundleEngine` mengemas 15 dokumen `.docx`/`.xlsx`/`.pdf` dalam 1 arsip `.zip`), serta menambahkan builder `_build_admin_kelas` & `_build_paket_supervisi` di [docx_engine.py](../backend/app/services/document_engine/docx_engine.py) dan [pdf_engine.py](../backend/app/services/document_engine/pdf_engine.py).
+    - Membuat komponen Clean Code [AdminKelasEditorSection.tsx](../frontend/src/components/curriculum/AdminKelasEditorSection.tsx), [SupervisiEditorSection.tsx](../frontend/src/components/curriculum/SupervisiEditorSection.tsx), menambahkan *Live Preview* di [ClassroomTrackingPreviews.tsx](../frontend/src/components/preview/services/ClassroomTrackingPreviews.tsx), dukungan badge `ZIP (.zip)` di [SuccessDownloadModal.tsx](../frontend/src/components/modals/SuccessDownloadModal.tsx), serta memensiunkan `coming_soon` di [ServiceCatalog.tsx](../frontend/src/components/sections/ServiceCatalog.tsx) & [services.ts](../frontend/src/constants/services.ts).
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **139/139 PASS (100%)**.
 
 - **2026-11-25 (Sprint 54):**
   - Menuntaskan **Klaster 4** dengan mengimplementasikan **Service 16 (`16_deskripsi_rapor`)** dan **Service 17 (`17_rekap_rapor`)**:

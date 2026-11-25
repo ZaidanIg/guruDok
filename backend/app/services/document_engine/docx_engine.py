@@ -18,6 +18,10 @@ from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
 from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
 from app.services.document_engine.rapor_blueprint import RaporBlueprintEngine
+from app.services.document_engine.admin_supervisi_blueprint import (
+    AdminKelasBlueprint,
+    SupervisiBlueprint,
+)
 
 
 def _resolve_effective_tps(chapter: Optional[ChapterTopic], request: DocumentGenerateRequest) -> List[LearningObjective]:
@@ -177,7 +181,9 @@ class DocxDocumentEngine(DocumentEngine):
             self._add_page_number_to_footer(section)
 
             tpl = raw_template or (chapter.modul_ajar_template if chapter else None)
-            if request.service_id == ServiceIdEnum.MODUL_AJAR:
+            if request.service_id == ServiceIdEnum.ADMIN_KELAS:
+                self._build_admin_kelas(doc, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.MODUL_AJAR:
                 self._build_modul_ajar(doc, request, subject, chapter, teacher, tpl)
             elif request.service_id == ServiceIdEnum.ATP:
                 self._build_atp(doc, request, subject, chapter, teacher)
@@ -199,8 +205,11 @@ class DocxDocumentEngine(DocumentEngine):
                 self._build_deskripsi_rapor(doc, request, subject, teacher)
             elif request.service_id == ServiceIdEnum.REKAP_RAPOR:
                 self._build_rekap_rapor(doc, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.PAKET_SUPERVISI:
+                self._build_paket_supervisi(doc, request, subject, chapter, teacher)
 
-            self._add_lembar_pengesahan(doc, teacher)
+            if request.service_id != ServiceIdEnum.PAKET_SUPERVISI:
+                self._add_lembar_pengesahan(doc, teacher)
 
             buffer = io.BytesIO()
             doc.save(buffer)
@@ -1734,3 +1743,170 @@ class DocxDocumentEngine(DocumentEngine):
             t.cell(r_i, 6).text = f"#{item['peringkat']}"
             t.cell(r_i, 7).text = item["status"]
         self._style_data_table(t, [10, 28, 66, 24, 22, 28, 24, 38], has_header_row=True)
+
+    def _build_admin_kelas(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        """Builds Word document for Service 02 (Template Administrasi Kelas Lengkap)."""
+        self._add_kop_surat(doc, teacher)
+        bp = AdminKelasBlueprint.build_blueprint(request, subject, teacher)
+
+        p_title = doc.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_t = p_title.add_run("PERANGKAT ADMINISTRASI KELAS & MANAJEMEN ROMBEL\n")
+        r_t.bold = True
+        r_t.font.size = Pt(12)
+        r_sub = p_title.add_run(
+            f"{bp['rombel'].upper()} | {subject.jenjang} KELAS {subject.kelas} | SEMESTER {request.semester} | WALI KELAS: {bp['wali_kelas'].upper()}"
+        )
+        r_sub.bold = True
+        r_sub.font.size = Pt(10)
+
+        # A. Struktur Organisasi Kelas
+        self._add_section_heading(doc, "A. Struktur Organisasi Kelas")
+        t_org = doc.add_table(rows=len(bp["pengurus"]) + 1, cols=3)
+        for c_i, h in enumerate(["No", "Jabatan", "Nama Pejabat / Pengurus"]):
+            t_org.cell(0, c_i).text = h
+            self._format_header_cell(t_org.cell(0, c_i))
+        for idx, item in enumerate(bp["pengurus"], start=1):
+            t_org.cell(idx, 0).text = str(idx)
+            t_org.cell(idx, 1).text = item["jabatan"]
+            t_org.cell(idx, 2).text = item["nama"]
+        self._style_data_table(t_org, [14, 58, 98], has_header_row=True)
+
+        # B. Jadwal Piket Kebersihan Kelas
+        self._add_section_heading(doc, "B. Jadwal Piket Kebersihan Kelas (Senin - Jumat)")
+        t_piket = doc.add_table(rows=len(bp["jadwal_piket"]) + 1, cols=3)
+        for c_i, h in enumerate(["Hari", "Petugas Piket Harian", "Area & Tanggung Jawab"]):
+            t_piket.cell(0, c_i).text = h
+            self._format_header_cell(t_piket.cell(0, c_i))
+        for idx, row in enumerate(bp["jadwal_piket"], start=1):
+            t_piket.cell(idx, 0).text = row["hari"]
+            t_piket.cell(idx, 1).text = row["petugas"]
+            t_piket.cell(idx, 2).text = row["tugas"]
+        self._style_data_table(t_piket, [26, 86, 58], has_header_row=True)
+
+        # C. Skema Denah Duduk Siswa
+        self._add_section_heading(doc, f"C. Denah Duduk Kelas — Formasi: {bp['denah_duduk']}")
+        p_denah = doc.add_paragraph(bp["denah_desc"])
+        p_denah.paragraph_format.space_after = Pt(4)
+        t_grid = doc.add_table(rows=5, cols=4)
+        for c_i in range(4):
+            t_grid.cell(0, c_i).text = "PAPAN TULIS & MEJA GURU" if c_i == 1 else (f"Baris Depan {c_i + 1}")
+            self._format_header_cell(t_grid.cell(0, c_i))
+        for r_i, row_cells in enumerate(bp["seating_grid"], start=1):
+            for c_i, cell_val in enumerate(row_cells):
+                t_grid.cell(r_i, c_i).text = cell_val
+        self._style_data_table(t_grid, [42.5, 42.5, 42.5, 42.5], has_header_row=True)
+
+        # D. Kesepakatan Kelas (Keyakinan Belajar)
+        self._add_section_heading(doc, "D. Kesepakatan Kelas (Budaya Positif)")
+        t_rules = doc.add_table(rows=len(bp["kesepakatan_kelas"]) + 1, cols=2)
+        t_rules.cell(0, 0).text = "No"
+        t_rules.cell(0, 1).text = "Butir Kesepakatan Bersama Guru & Peserta Didik"
+        self._format_header_cell(t_rules.cell(0, 0))
+        self._format_header_cell(t_rules.cell(0, 1))
+        for idx, rule_txt in enumerate(bp["kesepakatan_kelas"], start=1):
+            t_rules.cell(idx, 0).text = str(idx)
+            t_rules.cell(idx, 1).text = rule_txt
+        self._style_data_table(t_rules, [14, 156], has_header_row=True)
+
+    def _build_paket_supervisi(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+    ) -> None:
+        """Builds Word Cover, Daftar Isi, Pengesahan 3 Pihak, and Instrumen Supervisi for Service 18."""
+        self._add_kop_surat(doc, teacher)
+        bp = SupervisiBlueprint.build_blueprint(request, subject, chapter, teacher)
+        kop = teacher.get_formatted_kop()
+
+        # Cover Resmi
+        p_cov = doc.add_paragraph()
+        p_cov.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_cov.paragraph_format.space_before = Pt(12)
+        p_cov.paragraph_format.space_after = Pt(10)
+        r_title = p_cov.add_run("DOKUMEN INDUK PAKET SIAP SUPERVISI AKADEMIK\n")
+        r_title.bold = True
+        r_title.font.size = Pt(15)
+        r_sub = p_cov.add_run(
+            f"ADMINISTRASI PERENCANAAN, PELAKSANAAN, ASESMEN & PELAPORAN PEMBELAJARAN\n"
+            f"TAHUN PELAJARAN BERJALAN — KURIKULUM MERDEKA (BSKAP NO. 046/H/KR/2025)"
+        )
+        r_sub.bold = True
+        r_sub.font.size = Pt(10.5)
+
+        meta_rows = [
+            ("Satuan Pendidikan", f"{kop['nama_sekolah']} (NPSN: {kop['npsn']})"),
+            ("Mata Pelajaran / Fase", f"{subject.nama_mapel} — Fase {subject.fase}"),
+            ("Jenjang / Kelas / Rombel", f"{subject.jenjang} Kelas {subject.kelas} ({bp['rombel']})"),
+            ("Semester", f"Semester {request.semester}"),
+            ("Nama Guru Pengampu", f"{teacher.nama_guru} (NIP/NUPTK: {teacher.nip_guru})"),
+            ("Nomor SK Pembagian Tugas", bp["nomor_sk_mengajar"]),
+            ("Tanggal Supervisi Akademik", bp["tanggal_supervisi"]),
+            ("Nama Pengawas / Supervisor", f"{bp['nama_pengawas']} (NIP: {bp['nip_pengawas']})"),
+            ("Cakupan Semester", f"{bp['chapter_count']} Bab/Lingkup Materi • Total {bp['total_jp']} JP"),
+        ]
+        t_meta = doc.add_table(rows=len(meta_rows), cols=2)
+        for r_i, (k, v) in enumerate(meta_rows):
+            t_meta.cell(r_i, 0).text = k
+            t_meta.cell(r_i, 1).text = v
+        self._style_data_table(t_meta, [58, 112], has_header_row=False)
+
+        # Halaman Daftar Isi Arsip ZIP Supervisi
+        doc.add_page_break()
+        self._add_section_heading(doc, "Daftar Isi Bundel Master Siap Supervisi (.ZIP & Binder PDF)")
+        t_idx = doc.add_table(rows=len(bp["bundle_manifest"]) + 1, cols=3)
+        for c_i, h in enumerate(["No", "Nama Berkas dalam Paket", "Keterangan Isi Dokumen"]):
+            t_idx.cell(0, c_i).text = h
+            self._format_header_cell(t_idx.cell(0, c_i))
+        for r_i, item in enumerate(bp["bundle_manifest"], start=1):
+            t_idx.cell(r_i, 0).text = item["no"]
+            t_idx.cell(r_i, 1).text = item["berkas"]
+            t_idx.cell(r_i, 2).text = item["isi"]
+        self._style_data_table(t_idx, [14, 72, 84], has_header_row=True)
+
+        # Instrumen Checklist Verifikasi Supervisi
+        self._add_section_heading(doc, "Instrumen Telaah Kelengkapan Administrasi Guru (Pengawas / Kepala Sekolah)")
+        t_ins = doc.add_table(rows=len(bp["instrumen_items"]) + 1, cols=5)
+        for c_i, h in enumerate(["No", "Komponen Administrasi", "Acuan Regulasi / Fitur", "Ada", "Catatan Supervisor"]):
+            t_ins.cell(0, c_i).text = h
+            self._format_header_cell(t_ins.cell(0, c_i))
+        for r_i, (no_str, komp, _, desc) in enumerate(bp["instrumen_items"], start=1):
+            t_ins.cell(r_i, 0).text = no_str
+            t_ins.cell(r_i, 1).text = komp
+            t_ins.cell(r_i, 2).text = desc
+            t_ins.cell(r_i, 3).text = "[ v ]"
+            t_ins.cell(r_i, 4).text = "Lengkap / Sesuai"
+        self._style_data_table(t_ins, [12, 46, 58, 16, 38], has_header_row=True)
+
+        # Lembar Pengesahan Resmi 3 Pihak
+        doc.add_page_break()
+        self._add_section_heading(doc, "Lembar Pengesahan Paket Supervisi Akademik")
+        pengesahan = teacher.get_lembar_pengesahan()
+        p_titi = doc.add_paragraph(pengesahan["titimangsa"])
+        p_titi.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        t_sig = doc.add_table(rows=4, cols=3)
+        t_sig.cell(0, 0).text = "Menyetujui,\nKepala Sekolah"
+        t_sig.cell(0, 1).text = "Supervisor / Pengawas Pembina,\nDinas Pendidikan"
+        t_sig.cell(0, 2).text = f"Penyusun,\n{pengesahan['jabatan_guru']}"
+        for c_i in range(3):
+            t_sig.cell(1, c_i).text = "\n\n\n"
+        t_sig.cell(2, 0).text = pengesahan["nama_kepala_sekolah"]
+        t_sig.cell(2, 1).text = bp["nama_pengawas"]
+        t_sig.cell(2, 2).text = pengesahan["nama_guru"]
+        t_sig.cell(3, 0).text = pengesahan["nip_kepala_sekolah"]
+        t_sig.cell(3, 1).text = f"NIP. {bp['nip_pengawas']}"
+        t_sig.cell(3, 2).text = pengesahan["nip_guru"]
+        for row in t_sig.rows:
+            for c_i, cell in enumerate(row.cells):
+                cell.width = Mm(56)
+                for p in cell.paragraphs:
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER

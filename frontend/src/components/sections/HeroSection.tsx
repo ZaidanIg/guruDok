@@ -10,6 +10,8 @@ import {
   ClipboardList,
   Award,
   BarChart3,
+  LayoutGrid,
+  PackageCheck,
 } from 'lucide-react';
 import { CORE_SERVICES, QUICK_LINK_ICONS, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceId } from '../../types';
@@ -28,6 +30,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const activeServices = CORE_SERVICES.filter((s) => !s.isComingSoon && s.id !== '01_data_kelas');
 
   const renderServiceIcon = (id: string) => {
+    if (id === '02_admin_kelas') return <LayoutGrid className="h-6 w-6 text-white" />;
     if (id === '06_promes') return <FileSpreadsheet className="h-6 w-6 text-white" />;
     if (id === '08_modul_ajar') return <BookOpen className="h-6 w-6 text-white" />;
     if (id === '05_prota') return <Calendar className="h-6 w-6 text-white" />;
@@ -36,6 +39,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (id === '09_lkpd') return <ClipboardList className="h-6 w-6 text-white" />;
     if (id === '16_deskripsi_rapor') return <Award className="h-6 w-6 text-white" />;
     if (id === '17_rekap_rapor') return <BarChart3 className="h-6 w-6 text-white" />;
+    if (id === '18_paket_supervisi') return <PackageCheck className="h-6 w-6 text-white" />;
     return <FileText className="h-6 w-6 text-white" />;
   };
 

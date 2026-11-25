@@ -1,7 +1,24 @@
 export type Jenjang = 'SD' | 'SMP' | 'SMA';
 export type PaperSize = 'F4' | 'A4';
-export type OutputFormat = 'docx' | 'xlsx' | 'pdf';
-export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '10_kuis' | '11_sumatif_bab' | '12_sts_sas' | '13_presensi' | '14_jurnal_mengajar' | '15_daftar_nilai' | '16_deskripsi_rapor' | '17_rekap_rapor';
+export type OutputFormat = 'docx' | 'xlsx' | 'pdf' | 'zip';
+export type ServiceId =
+  | '02_admin_kelas'
+  | '03_cp_tp'
+  | '04_atp'
+  | '05_prota'
+  | '06_promes'
+  | '07_kktp'
+  | '08_modul_ajar'
+  | '09_lkpd'
+  | '10_kuis'
+  | '11_sumatif_bab'
+  | '12_sts_sas'
+  | '13_presensi'
+  | '14_jurnal_mengajar'
+  | '15_daftar_nilai'
+  | '16_deskripsi_rapor'
+  | '17_rekap_rapor'
+  | '18_paket_supervisi';
 export type GenerationMode = 'template' | 'manual';
 
 export interface CustomChapterItem {
@@ -201,6 +218,17 @@ export interface CustomDocumentOverrides {
   jumlah_pertemuan_jurnal?: number;
   custom_jurnal_rows?: CustomJurnalRowItem[];
   rapor_entries?: CustomRaporEntryItem[];
+  ketua_kelas?: string;
+  wakil_ketua_kelas?: string;
+  sekretaris_kelas?: string;
+  bendahara_kelas?: string;
+  denah_duduk?: string;
+  jadwal_piket?: Record<string, string[]>;
+  kesepakatan_kelas?: string[];
+  nomor_sk_mengajar?: string;
+  tanggal_supervisi?: string;
+  nama_pengawas?: string;
+  nip_pengawas?: string;
 }
 
 export interface DocumentGenerateRequest {
@@ -255,12 +283,12 @@ export interface HistoryDocumentItem {
 }
 
 export interface ServiceCatalogItem {
-  id: ServiceId | '01_data_kelas' | 'coming_soon';
+  id: ServiceId | '01_data_kelas';
   codeLabel: string;
   title: string;
   shortTitle: string;
   description: string;
-  formats: ('DOCX' | 'XLSX' | 'PDF')[];
+  formats: ('DOCX' | 'XLSX' | 'PDF' | 'ZIP')[];
   isFree: boolean;
   isPopular?: boolean;
   isComingSoon?: boolean;

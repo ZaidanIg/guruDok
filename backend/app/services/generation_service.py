@@ -19,6 +19,7 @@ class DocumentGenerationService:
     """Core domain service orchestrating deterministic document generation backed by GuruDocDB."""
 
     SERVICE_DISPLAY_NAMES = {
+        ServiceIdEnum.ADMIN_KELAS: "Template Administrasi Kelas Lengkap",
         ServiceIdEnum.CP_TP: "Capaian Pembelajaran & Alur Tujuan (CP-TP)",
         ServiceIdEnum.ATP: "Alur Tujuan Pembelajaran (ATP)",
         ServiceIdEnum.PROTA: "Program Tahunan (Prota)",
@@ -34,6 +35,7 @@ class DocumentGenerationService:
         ServiceIdEnum.DAFTAR_NILAI: "Buku Pengolahan Daftar Nilai Siswa",
         ServiceIdEnum.DESKRIPSI_RAPOR: "Deskripsi Capaian Kompetensi (e-Rapor Generator)",
         ServiceIdEnum.REKAP_RAPOR: "Rekap Nilai Rapor Final & Peringkat Kelas",
+        ServiceIdEnum.PAKET_SUPERVISI: "Paket Siap Supervisi Lengkap (Master Bundle ZIP)",
     }
 
     def __init__(
@@ -213,11 +215,15 @@ class DocumentGenerationService:
         # 1. Resolve Curriculum Subject, Chapter, Teacher & Template
         subject, chapter, teacher, raw_template = self._resolve_context(req, persist_teacher=True)
 
-        # 4. Engine Strategy & Output Format Selection (docx, xlsx, or pdf)
+        # 4. Engine Strategy & Output Format Selection (docx, xlsx, pdf, or zip)
         if req.output_format:
             file_format = req.output_format.value
+        elif req.service_id == ServiceIdEnum.PAKET_SUPERVISI:
+            file_format = "zip"
+        elif req.service_id == ServiceIdEnum.PROMES:
+            file_format = "xlsx"
         else:
-            file_format = "xlsx" if req.service_id == ServiceIdEnum.PROMES else "docx"
+            file_format = "docx"
         engine = DocumentEngineFactory.get_engine(req.service_id, req.output_format)
 
         # 5. Generate Binary File Bytes Enriched from GuruDocDB

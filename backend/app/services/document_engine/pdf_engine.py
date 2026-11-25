@@ -11,6 +11,10 @@ from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
 from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
 from app.services.document_engine.rapor_blueprint import RaporBlueprintEngine
+from app.services.document_engine.admin_supervisi_blueprint import (
+    AdminKelasBlueprint,
+    SupervisiBlueprint,
+)
 
 # Official styling constants for Table Headers & Accents (BSKAP / GuruDok Standard)
 HEADER_STYLE = FontFace(emphasis="BOLD", fill_color=(217, 226, 243))  # #D9E2F3
@@ -210,7 +214,9 @@ class PdfDocumentEngine(DocumentEngine):
 
             # 2. Content by Service ID
             tpl = raw_template or (chapter.modul_ajar_template if chapter else {}) or {}
-            if request.service_id == ServiceIdEnum.MODUL_AJAR:
+            if request.service_id == ServiceIdEnum.ADMIN_KELAS:
+                self._build_admin_kelas(pdf, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.MODUL_AJAR:
                 self._build_modul_ajar(pdf, request, subject, chapter, teacher, tpl)
             elif request.service_id == ServiceIdEnum.ATP:
                 self._build_atp(pdf, request, subject, chapter)
@@ -236,9 +242,12 @@ class PdfDocumentEngine(DocumentEngine):
                 self._build_deskripsi_rapor(pdf, request, subject)
             elif request.service_id == ServiceIdEnum.REKAP_RAPOR:
                 self._build_rekap_rapor(pdf, request, subject)
+            elif request.service_id == ServiceIdEnum.PAKET_SUPERVISI:
+                self._build_paket_supervisi(pdf, request, subject, chapter, teacher)
 
             # 3. Lembar Pengesahan
-            self._add_lembar_pengesahan(pdf, teacher)
+            if request.service_id != ServiceIdEnum.PAKET_SUPERVISI:
+                self._add_lembar_pengesahan(pdf, teacher)
             page_count = pdf.page_no()
             return bytes(pdf.output()), page_count
 
@@ -1195,6 +1204,154 @@ class PdfDocumentEngine(DocumentEngine):
                 r.cell(str(item["nilai_akhir"]))
                 r.cell(f"#{item['peringkat']}")
                 r.cell(_ascii_safe(item["status"]))
+
+    def _build_admin_kelas(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        bp = AdminKelasBlueprint.build_blueprint(request, subject, teacher)
+        self._add_doc_title(
+            pdf,
+            "PERANGKAT ADMINISTRASI KELAS & MANAJEMEN ROMBEL",
+            f"{bp['rombel']} | {subject.jenjang} Kelas {subject.kelas} | Semester {request.semester} | Wali Kelas: {bp['wali_kelas']}",
+        )
+
+        self._add_section_title(pdf, "A. Struktur Organisasi Kelas")
+        pdf.set_font("Helvetica", size=8)
+        with pdf.table(col_widths=(12, 58, 100), line_height=5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("No", "Jabatan", "Nama Pejabat / Pengurus"):
+                hdr.cell(h)
+            for idx, item in enumerate(bp["pengurus"], start=1):
+                r = table.row()
+                r.cell(str(idx))
+                r.cell(_ascii_safe(item["jabatan"]))
+                r.cell(_ascii_safe(item["nama"]))
+
+        pdf.ln(3)
+        self._add_section_title(pdf, "B. Jadwal Piket Kebersihan Kelas (Senin - Jumat)")
+        pdf.set_font("Helvetica", size=8)
+        with pdf.table(col_widths=(24, 90, 56), line_height=5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("Hari", "Petugas Piket", "Area & Tugas"):
+                hdr.cell(h)
+            for row in bp["jadwal_piket"]:
+                r = table.row()
+                r.cell(_ascii_safe(row["hari"]))
+                r.cell(_ascii_safe(row["petugas"]))
+                r.cell(_ascii_safe(row["tugas"]))
+
+        pdf.ln(3)
+        self._add_section_title(pdf, f"C. Denah Duduk Kelas - Formasi: {bp['denah_duduk']}")
+        pdf.set_font("Helvetica", "I", 8)
+        pdf.multi_cell(0, 4.5, _ascii_safe(bp["denah_desc"]), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(1)
+        pdf.set_font("Helvetica", size=7.2)
+        with pdf.table(col_widths=(42.5, 42.5, 42.5, 42.5), line_height=4.5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            hdr.cell("Depan Kiri")
+            hdr.cell("Papan Tulis")
+            hdr.cell("Meja Guru")
+            hdr.cell("Depan Kanan")
+            for row_cells in bp["seating_grid"]:
+                r = table.row()
+                for c in row_cells:
+                    r.cell(_ascii_safe(c))
+
+        pdf.ln(3)
+        self._add_section_title(pdf, "D. Kesepakatan Kelas")
+        pdf.set_font("Helvetica", size=8)
+        with pdf.table(col_widths=(12, 158), line_height=5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            hdr.cell("No")
+            hdr.cell("Butir Kesepakatan Bersama")
+            for idx, rule_txt in enumerate(bp["kesepakatan_kelas"], start=1):
+                r = table.row()
+                r.cell(str(idx))
+                r.cell(_ascii_safe(rule_txt))
+
+    def _build_paket_supervisi(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        chapter: Optional[ChapterTopic],
+        teacher: TeacherProfile,
+    ) -> None:
+        bp = SupervisiBlueprint.build_blueprint(request, subject, chapter, teacher)
+        kop = teacher.get_formatted_kop()
+        self._add_doc_title(
+            pdf,
+            "PAKET SIAP SUPERVISI AKADEMIK (BINDER LENGKAP)",
+            f"{subject.nama_mapel} | {bp['rombel']} | Semester {request.semester} | SK: {bp['nomor_sk_mengajar']}",
+        )
+
+        pdf.set_font("Helvetica", size=8.2)
+        meta_rows = [
+            ("Satuan Pendidikan", f"{kop['nama_sekolah']} (NPSN: {kop['npsn']})"),
+            ("Mata Pelajaran / Fase", f"{subject.nama_mapel} - Fase {subject.fase}"),
+            ("Jenjang / Kelas / Rombel", f"{subject.jenjang} Kelas {subject.kelas} ({bp['rombel']})"),
+            ("Guru Pengampu", f"{teacher.nama_guru} (NIP/NUPTK: {teacher.nip_guru})"),
+            ("Nomor SK Mengajar", bp["nomor_sk_mengajar"]),
+            ("Tanggal Supervisi", bp["tanggal_supervisi"]),
+            ("Pengawas / Supervisor", f"{bp['nama_pengawas']} (NIP: {bp['nip_pengawas']})"),
+            ("Cakupan Perangkat", f"{bp['chapter_count']} Bab • Total {bp['total_jp']} JP"),
+        ]
+        with pdf.table(col_widths=(55, 115), line_height=5) as table:
+            for k, v in meta_rows:
+                r = table.row()
+                r.cell(_ascii_safe(k), style=BOLD_STYLE)
+                r.cell(_ascii_safe(v))
+
+        pdf.ln(3)
+        self._add_section_title(pdf, "Daftar Isi & Kelengkapan Berkas Supervisi")
+        pdf.set_font("Helvetica", size=7.2)
+        with pdf.table(col_widths=(10, 72, 88), line_height=4.5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("No", "Nama Berkas dalam Arsip ZIP", "Cakupan Isi"):
+                hdr.cell(h)
+            for item in bp["bundle_manifest"]:
+                r = table.row()
+                r.cell(item["no"])
+                r.cell(_ascii_safe(item["berkas"]))
+                r.cell(_ascii_safe(item["isi"]))
+
+        pdf.add_page()
+        self._add_section_title(pdf, "Instrumen Telaah Administrasi Guru (Supervisor)")
+        pdf.set_font("Helvetica", size=7.5)
+        with pdf.table(col_widths=(10, 52, 68, 14, 26), line_height=4.6) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("No", "Komponen", "Acuan Standar", "Ada", "Keterangan"):
+                hdr.cell(h)
+            for no_str, komp, _, desc in bp["instrumen_items"]:
+                r = table.row()
+                r.cell(no_str)
+                r.cell(_ascii_safe(komp))
+                r.cell(_ascii_safe(desc))
+                r.cell("[ v ]")
+                r.cell("Lengkap")
+
+        pdf.ln(8)
+        pengesahan = teacher.get_lembar_pengesahan()
+        pdf.set_font("Helvetica", "", 9)
+        pdf.cell(0, 5, _ascii_safe(pengesahan["titimangsa"]), new_x="LMARGIN", new_y="NEXT", align="R")
+        pdf.ln(2)
+        col_w = (pdf.w - pdf.l_margin - pdf.r_margin) / 3.0
+        pdf.cell(col_w, 5, "Mengetahui, Kepala Sekolah", align="C")
+        pdf.cell(col_w, 5, "Pengawas / Supervisor,", align="C")
+        pdf.cell(col_w, 5, _ascii_safe(pengesahan["jabatan_guru"]), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.ln(14)
+        pdf.set_font("Helvetica", "B", 8.8)
+        pdf.cell(col_w, 5, _ascii_safe(pengesahan["nama_kepala_sekolah"]), align="C")
+        pdf.cell(col_w, 5, _ascii_safe(bp["nama_pengawas"]), align="C")
+        pdf.cell(col_w, 5, _ascii_safe(pengesahan["nama_guru"]), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.set_font("Helvetica", "", 8.2)
+        pdf.cell(col_w, 5, _ascii_safe(pengesahan["nip_kepala_sekolah"]), align="C")
+        pdf.cell(col_w, 5, _ascii_safe(f"NIP. {bp['nip_pengawas']}"), align="C")
+        pdf.cell(col_w, 5, _ascii_safe(pengesahan["nip_guru"]), new_x="LMARGIN", new_y="NEXT", align="C")
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
         pdf.add_page()

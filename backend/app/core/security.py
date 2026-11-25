@@ -16,7 +16,7 @@ PHONE_PATTERN = re.compile(r"^(\+62|62|0)8[1-9][0-9]{7,11}$")
 NIP_PATTERN = re.compile(r"^(\d{18}|\d{16}|-)$")
 
 # Allowed file extensions for generation
-ALLOWED_EXTENSIONS: Set[str] = {".docx", ".xlsx", ".pdf"}
+ALLOWED_EXTENSIONS: Set[str] = {".docx", ".xlsx", ".pdf", ".zip"}
 
 # Standard Zip Magic Bytes for docx & xlsx (PK\x03\x04) and PDF (%PDF-)
 ZIP_MAGIC_HEADER = b"PK\x03\x04"
@@ -150,11 +150,11 @@ class FileAttackGuard:
 
     @staticmethod
     def verify_file_signature(file_bytes: bytes, ext: Optional[str] = None) -> bool:
-        """Verifies magic byte signature for .docx, .xlsx (PK\\x03\\x04) and .pdf (%PDF-)."""
+        """Verifies magic byte signature for .docx, .xlsx, .zip (PK\\x03\\x04) and .pdf (%PDF-)."""
         if len(file_bytes) < 4:
             return False
         if ext and ext.lower() == ".pdf":
             return file_bytes.startswith(PDF_MAGIC_HEADER)
-        if ext and ext.lower() in {".docx", ".xlsx"}:
+        if ext and ext.lower() in {".docx", ".xlsx", ".zip"}:
             return file_bytes.startswith(ZIP_MAGIC_HEADER)
         return file_bytes.startswith(ZIP_MAGIC_HEADER) or file_bytes.startswith(PDF_MAGIC_HEADER)

@@ -9,6 +9,8 @@ import {
 } from '../../../types';
 import { buildDefaultJurnalRows } from '../../curriculum/JurnalEditorSection';
 import { buildRaporPreviewData } from '../../curriculum/RaporGradesEditorSection';
+import { DEFAULT_KESEPAKATAN_KELAS } from '../../curriculum/AdminKelasEditorSection';
+import { SUPERVISI_BUNDLE_ITEMS } from '../../curriculum/SupervisiEditorSection';
 
 export interface ClassroomTrackingPreviewsProps {
   serviceId: ServiceId;
@@ -37,6 +39,169 @@ export const ClassroomTrackingPreviews: React.FC<ClassroomTrackingPreviewsProps>
 }) => {
   const rombelLabel = customOverrides.nama_rombel || activeClassroomRombel || `Kelas ${kelas}`;
   const previewStudents = effectiveStudents.slice(0, 15);
+  const piketDays = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+
+  if (serviceId === '02_admin_kelas') {
+    const names = effectiveStudents.map((s) => s.nama_lengkap);
+    const ketua = customOverrides.ketua_kelas || names[0] || '...................................';
+    const wakil = customOverrides.wakil_ketua_kelas || names[1] || '...................................';
+    const sekretaris = customOverrides.sekretaris_kelas || names[2] || '...................................';
+    const bendahara = customOverrides.bendahara_kelas || names[3] || '...................................';
+    const denahMode = customOverrides.denah_duduk || 'Kelompok Kolaboratif';
+    const rules =
+      customOverrides.kesepakatan_kelas && customOverrides.kesepakatan_kelas.length > 0
+        ? customOverrides.kesepakatan_kelas
+        : DEFAULT_KESEPAKATAN_KELAS;
+
+    return (
+      <div className="mt-5 space-y-4 text-xs leading-relaxed">
+        <div data-keep-together="true" className="text-center">
+          <h2 className="text-base font-extrabold uppercase text-slate-900">
+            PERANGKAT ADMINISTRASI KELAS &amp; MANAJEMEN ROMBEL
+          </h2>
+          <p className="font-bold uppercase text-slate-700">
+            {rombelLabel} | {selectedSubject?.jenjang} KELAS {kelas} | SEMESTER {semester} | WALI KELAS:{' '}
+            {customOverrides.wali_kelas || teacher.nama_guru || '...................'}
+          </p>
+        </div>
+
+        <div data-splittable-table="true" className="paper-table-container">
+          <h3 className="mb-1.5 text-xs font-extrabold uppercase text-slate-800">
+            A. Struktur Organisasi Kelas
+          </h3>
+          <table className="paper-table text-[11px]">
+            <thead>
+              <tr>
+                <th className="w-8 text-center">No</th>
+                <th className="w-44 text-left">Jabatan</th>
+                <th className="text-left">Nama Pejabat / Pengurus</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { jabatan: 'Kepala Sekolah', nama: teacher.nama_kepala_sekolah || '...................................' },
+                { jabatan: 'Wali Kelas / Pembina', nama: customOverrides.wali_kelas || teacher.nama_guru || '...................................' },
+                { jabatan: 'Ketua Kelas', nama: ketua },
+                { jabatan: 'Wakil Ketua Kelas', nama: wakil },
+                { jabatan: 'Sekretaris Kelas', nama: sekretaris },
+                { jabatan: 'Bendahara Kelas', nama: bendahara },
+              ].map((row, idx) => (
+                <tr key={row.jabatan}>
+                  <td className="text-center font-bold">{idx + 1}</td>
+                  <td className="font-semibold">{row.jabatan}</td>
+                  <td>{row.nama}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div data-splittable-table="true" className="paper-table-container">
+          <h3 className="mb-1.5 text-xs font-extrabold uppercase text-slate-800">
+            B. Jadwal Piket Kebersihan Kelas &amp; Formasi Denah ({denahMode})
+          </h3>
+          <table className="paper-table text-[11px]">
+            <thead>
+              <tr>
+                <th className="w-24 text-left">Hari</th>
+                <th className="text-left">Petugas Piket Harian</th>
+                <th className="w-52 text-left">Tugas Utama</th>
+              </tr>
+            </thead>
+            <tbody>
+              {piketDays.map((day, dIdx) => {
+                const customList = customOverrides.jadwal_piket?.[day];
+                const petugas =
+                  customList && customList.length > 0
+                    ? customList.join(', ')
+                    : names.filter((_, sIdx) => sIdx % piketDays.length === dIdx).slice(0, 4).join(', ') || '-';
+                return (
+                  <tr key={day}>
+                    <td className="font-bold">{day}</td>
+                    <td>{petugas}</td>
+                    <td>Kebersihan kelas, papan tulis, &amp; kerapian meja</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div data-keep-together="true" className="paper-table-container">
+          <h3 className="mb-1.5 text-xs font-extrabold uppercase text-slate-800">
+            C. Kesepakatan Kelas ({rules.length} Butir)
+          </h3>
+          <table className="paper-table text-[11px]">
+            <thead>
+              <tr>
+                <th className="w-8 text-center">No</th>
+                <th className="text-left">Butir Kesepakatan Bersama Guru &amp; Peserta Didik</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rules.map((rText, idx) => (
+                <tr key={`prev-rule-${idx}`}>
+                  <td className="text-center font-bold">{idx + 1}</td>
+                  <td>{rText}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (serviceId === '18_paket_supervisi') {
+    const totalJp = currentSemesterChapters.reduce((acc, ch) => acc + (ch.alokasi_jp || 0), 0);
+    return (
+      <div className="mt-5 space-y-4 text-xs leading-relaxed">
+        <div data-keep-together="true" className="text-center border-2 border-slate-800 rounded-lg p-4 bg-slate-50/70">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700">
+            DOKUMEN INDUK MASTER BUNDLE (.ZIP &amp; BINDER PDF)
+          </p>
+          <h2 className="mt-1 text-base font-extrabold uppercase text-slate-900">
+            PAKET SIAP SUPERVISI AKADEMIK GURU
+          </h2>
+          <p className="mt-1 text-xs font-bold text-slate-700">
+            {selectedSubject?.nama_mapel} • {rombelLabel} • SEMESTER {semester} • SK MENGAJAR:{' '}
+            {customOverrides.nomor_sk_mengajar || '800/SK-PBM/2025'}
+          </p>
+          <p className="mt-1 text-[11px] text-slate-600">
+            Supervisor / Pengawas: <strong>{customOverrides.nama_pengawas || '........................................'}</strong>{' '}
+            (NIP: {customOverrides.nip_pengawas || '-'}) • Tgl Supervisi:{' '}
+            {customOverrides.tanggal_supervisi || 'Sesuai Jadwal'} • Cakupan: {currentSemesterChapters.length} Bab ({totalJp} JP)
+          </p>
+        </div>
+
+        <div data-splittable-table="true" className="paper-table-container">
+          <h3 className="mb-1.5 text-xs font-extrabold uppercase text-slate-800">
+            Daftar Isi Bundel Master ZIP &amp; Instrumen Telaah Supervisi
+          </h3>
+          <table className="paper-table text-[11px]">
+            <thead>
+              <tr>
+                <th className="w-12 text-center">Kode</th>
+                <th className="text-left">Komponen Dokumen Perangkat Pembelajaran</th>
+                <th className="w-28 text-center">Format Output</th>
+                <th className="w-20 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SUPERVISI_BUNDLE_ITEMS.map((item) => (
+                <tr key={item.code}>
+                  <td className="text-center font-bold">{item.code}</td>
+                  <td className="font-semibold">{item.title}</td>
+                  <td className="text-center font-mono text-[10px]">{item.format}</td>
+                  <td className="text-center font-bold text-emerald-700">[ ✓ ] Lengkap</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   if (serviceId === '13_presensi') {
     const bulanLabel = customOverrides.bulan_presensi || 'Agustus';

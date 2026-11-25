@@ -21,7 +21,7 @@ export const Footer: React.FC = () => {
         </p>
 
         <div className="text-xs font-semibold text-slate-600">
-          Standar Cetak F4 &amp; A4
+          Create by artefact-project
         </div>
       </div>
     </footer>

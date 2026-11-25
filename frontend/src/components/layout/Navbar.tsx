@@ -39,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName =
     authUser?.full_name || teacher.nama_guru || 'Akun & Profil';
   const displaySub =
-    teacher.nama_sekolah || (authUser ? authUser.email : 'Atur KOP & Masuk');
+    teacher.nama_sekolah || (authUser ? authUser.email : 'Atur profil & Masuk');
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -165,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 ) : (
                   <p className="text-[11px] font-semibold text-slate-500">
-                    Belum masuk akun Google (opsional hingga unduh dokumen).
+                    Belum masuk akun Google.
                   </p>
                 )}
               </div>

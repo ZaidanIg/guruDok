@@ -4,14 +4,16 @@ from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.docx_engine import DocxDocumentEngine
 from app.services.document_engine.xlsx_engine import XlsxDocumentEngine
 from app.services.document_engine.pdf_engine import PdfDocumentEngine
+from app.services.document_engine.zip_engine import ZipBundleEngine
 
 
 class DocumentEngineFactory:
-    """Factory to instantiate and return the correct document engine strategy for .docx, .xlsx, or .pdf."""
+    """Factory to instantiate and return the correct document engine strategy for .docx, .xlsx, .pdf, or .zip."""
 
     _docx_engine = DocxDocumentEngine()
     _xlsx_engine = XlsxDocumentEngine()
     _pdf_engine = PdfDocumentEngine()
+    _zip_engine = ZipBundleEngine()
 
     @classmethod
     def get_engine(
@@ -20,6 +22,8 @@ class DocumentEngineFactory:
         output_format: Optional[OutputFormatEnum] = None,
     ) -> DocumentEngine:
         """Returns the appropriate DocumentEngine instance based on requested output format or service default."""
+        if output_format == OutputFormatEnum.ZIP:
+            return cls._zip_engine
         if output_format == OutputFormatEnum.PDF:
             return cls._pdf_engine
         if output_format == OutputFormatEnum.XLSX:
@@ -28,6 +32,8 @@ class DocumentEngineFactory:
             return cls._docx_engine
 
         # Default fallback by service type when output_format is not explicitly specified
+        if service_id == ServiceIdEnum.PAKET_SUPERVISI:
+            return cls._zip_engine
         if service_id == ServiceIdEnum.PROMES:
             return cls._xlsx_engine
         return cls._docx_engine

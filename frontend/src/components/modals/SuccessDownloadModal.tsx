@@ -2,6 +2,7 @@ import React from 'react';
 import {
   FileText,
   FileSpreadsheet,
+  FileArchive,
   Download,
   MessageCircle,
   X,
@@ -26,7 +27,14 @@ export const SuccessDownloadModal: React.FC<SuccessDownloadModalProps> = ({
 
   const isExcel = result.file_format === 'xlsx';
   const isPdf = result.file_format === 'pdf';
-  const formatBadge = isExcel ? 'Excel (.xlsx)' : isPdf ? 'PDF (.pdf)' : 'Word (.docx)';
+  const isZip = result.file_format === 'zip';
+  const formatBadge = isZip
+    ? 'Paket ZIP (.zip)'
+    : isExcel
+    ? 'Excel (.xlsx)'
+    : isPdf
+    ? 'PDF (.pdf)'
+    : 'Word (.docx)';
 
   const handleShareToWhatsApp = () => {
     // Session-protected web link: opening this URL checks auth session before allowing download
@@ -54,14 +62,18 @@ export const SuccessDownloadModal: React.FC<SuccessDownloadModalProps> = ({
         <div className="mx-auto flex flex-col items-center">
           <div
             className={`flex h-16 w-16 items-center justify-center rounded-2xl shadow-md ${
-              isExcel
+              isZip
+                ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white'
+                : isExcel
                 ? 'clay-icon-green bg-gradient-to-br from-emerald-500 to-teal-600'
                 : isPdf
                 ? 'bg-gradient-to-br from-rose-500 to-red-600 text-white'
                 : 'clay-icon-blue bg-gradient-to-br from-blue-500 to-indigo-600'
             }`}
           >
-            {isExcel ? (
+            {isZip ? (
+              <FileArchive className="h-8 w-8 text-white" />
+            ) : isExcel ? (
               <FileSpreadsheet className="h-8 w-8 text-white" />
             ) : (
               <FileText className="h-8 w-8 text-white" />

@@ -13,6 +13,17 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
     requiresChapter: false,
   },
   {
+    id: '02_admin_kelas',
+    codeLabel: 'Service 02',
+    title: 'Template Administrasi Kelas',
+    shortTitle: 'Admin Kelas',
+    description: 'Struktur organisasi kelas, jadwal piket Senin–Jumat, skema denah duduk, dan kesepakatan kelas siap cetak.',
+    formats: ['DOCX', 'PDF'],
+    isFree: true,
+    iconColor: 'green',
+    requiresChapter: false,
+  },
+  {
     id: '03_cp_tp',
     codeLabel: 'Service 03',
     title: 'CP dan TP',
@@ -189,14 +200,15 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
     requiresChapter: false,
   },
   {
-    id: 'coming_soon',
-    codeLabel: 'Tahap Akhir',
-    title: '2 Layanan Tambahan',
-    shortTitle: 'Roadmap 18 Service',
-    description: 'Template Administrasi Kelas & Paket Siap Supervisi (Master Bundle ZIP/PDF).',
-    formats: ['DOCX', 'XLSX', 'PDF'],
+    id: '18_paket_supervisi',
+    codeLabel: 'Service 18',
+    title: 'Paket Siap Supervisi',
+    shortTitle: 'Paket Supervisi',
+    description: 'Master Bundle ZIP lengkap berisi 15 perangkat ajar (.docx/.xlsx/.pdf), Cover Pengesahan 3 Pihak, & Instrumen Supervisi.',
+    formats: ['ZIP', 'PDF', 'DOCX'],
     isFree: false,
-    isComingSoon: true,
+    isPopular: true,
+    isComingSoon: false,
     iconColor: 'amber',
     requiresChapter: false,
   },
@@ -303,10 +315,7 @@ export const DELAPAN_DIMENSI_PROFIL_LULUSAN: DimensiProfilLulusanItem[] = [
   },
 ];
 
-export const UPCOMING_SERVICES = [
-  { code: '02', name: 'Template Administrasi Kelas (Struktur, Piket, Denah)', format: 'DOCX / PDF' },
-  { code: '18', name: 'Paket Siap Supervisi (Master Bundle All-in-One)', format: 'ZIP / PDF' },
-];
+export const UPCOMING_SERVICES: { code: string; name: string; format: string }[] = [];
 
 export const SERVICE_ICON_PACK: Record<string, string> = {
   '03_cp_tp': '/icons/cp-icon.webp',

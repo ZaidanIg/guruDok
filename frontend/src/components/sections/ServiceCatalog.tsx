@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   FileText,
   FileSpreadsheet,
@@ -6,15 +6,15 @@ import {
   Calendar,
   ListOrdered,
   ChevronRight,
-  Layers,
-  X,
   CheckSquare,
   ClipboardList,
   Users,
   Award,
   BarChart3,
+  PackageCheck,
+  LayoutGrid,
 } from 'lucide-react';
-import { CORE_SERVICES, UPCOMING_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
+import { CORE_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceCatalogItem, ServiceId } from '../../types';
 
 interface ServiceCatalogProps {
@@ -30,10 +30,9 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
   onSelectService,
   onOpenClassroomModal,
 }) => {
-  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
-
   const renderIcon = (item: ServiceCatalogItem) => {
     if (item.id === '01_data_kelas') return <Users className="h-5 w-5 text-white" />;
+    if (item.id === '02_admin_kelas') return <LayoutGrid className="h-5 w-5 text-white" />;
     if (item.id === '06_promes') return <FileSpreadsheet className="h-5 w-5 text-white" />;
     if (item.id === '08_modul_ajar') return <BookOpen className="h-5 w-5 text-white" />;
     if (item.id === '05_prota') return <Calendar className="h-5 w-5 text-white" />;
@@ -42,7 +41,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
     if (item.id === '09_lkpd') return <ClipboardList className="h-5 w-5 text-white" />;
     if (item.id === '16_deskripsi_rapor') return <Award className="h-5 w-5 text-white" />;
     if (item.id === '17_rekap_rapor') return <BarChart3 className="h-5 w-5 text-white" />;
-    if (item.id === 'coming_soon') return <Layers className="h-5 w-5 text-white" />;
+    if (item.id === '18_paket_supervisi') return <PackageCheck className="h-5 w-5 text-white" />;
     return <FileText className="h-5 w-5 text-white" />;
   };
 
@@ -133,16 +132,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
               </div>
 
               <div className="mt-5">
-                {item.isComingSoon ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowRoadmapModal(true)}
-                    className="clay-btn-white flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold text-slate-700"
-                  >
-                    <span>Daftar 2 Layanan Tersisa</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                ) : item.id === '01_data_kelas' ? (
+                {item.id === '01_data_kelas' ? (
                   <button
                     type="button"
                     onClick={() => onOpenClassroomModal?.()}
@@ -166,59 +156,6 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
           );
         })}
       </div>
-
-      {/* Roadmap 13 Additional Services Modal */}
-      {showRoadmapModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-          <div className="clay-card relative max-h-[85vh] w-full max-w-2xl overflow-y-auto p-6">
-            <button
-              type="button"
-              onClick={() => setShowRoadmapModal(false)}
-              className="clay-btn-white absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-lg"
-            >
-              <X className="h-4 w-4 text-slate-600" />
-            </button>
-
-            <div>
-              <h3 className="text-lg font-extrabold text-slate-900">
-                Daftar 2 Layanan Tambahan (Menuju 18 Service Lengkap)
-              </h3>
-              <p className="mt-1 text-xs font-medium text-slate-500">
-                Melengkapi 16 layanan aktif saat ini menjadi total 18 layanan administrasi guru sesuai spesifikasi.
-              </p>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {UPCOMING_SERVICES.map((srv) => (
-                <div
-                  key={srv.code}
-                  className="clay-subcard flex items-center justify-between px-3.5 py-2.5"
-                >
-                  <div className="pr-2">
-                    <span className="text-[10px] font-bold uppercase text-blue-700">
-                      Layanan {srv.code}
-                    </span>
-                    <p className="text-xs font-bold text-slate-800">{srv.name}</p>
-                  </div>
-                  <span className="shrink-0 rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                    {srv.format}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowRoadmapModal(false)}
-                className="clay-btn-primary px-5 py-2 text-xs font-bold"
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };
