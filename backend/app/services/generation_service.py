@@ -32,6 +32,8 @@ class DocumentGenerationService:
         ServiceIdEnum.PRESENSI: "Presensi Siswa Bulanan",
         ServiceIdEnum.JURNAL_MENGAJAR: "Jurnal Mengajar Harian & Agenda Guru",
         ServiceIdEnum.DAFTAR_NILAI: "Buku Pengolahan Daftar Nilai Siswa",
+        ServiceIdEnum.DESKRIPSI_RAPOR: "Deskripsi Capaian Kompetensi (e-Rapor Generator)",
+        ServiceIdEnum.REKAP_RAPOR: "Rekap Nilai Rapor Final & Peringkat Kelas",
     }
 
     def __init__(

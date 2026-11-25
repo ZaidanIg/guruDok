@@ -20,6 +20,8 @@ class ServiceIdEnum(str, Enum):
     PRESENSI = "13_presensi"
     JURNAL_MENGAJAR = "14_jurnal_mengajar"
     DAFTAR_NILAI = "15_daftar_nilai"
+    DESKRIPSI_RAPOR = "16_deskripsi_rapor"
+    REKAP_RAPOR = "17_rekap_rapor"
 
 
 class OutputFormatEnum(str, Enum):
@@ -137,6 +139,32 @@ class CustomJurnalRowItem(BaseModel):
         return self
 
 
+class CustomRaporEntryItem(BaseModel):
+    """Pydantic model representing student score & TP achievement entry for Services 16 & 17 (e-Rapor / Rekap Rapor)."""
+    nomor_absen: Optional[int] = Field(None, ge=1, le=100)
+    nisn: Optional[str] = Field("-", max_length=30)
+    nama_lengkap: str = Field(..., min_length=1, max_length=200)
+    nilai_sumatif: Optional[int] = Field(82, ge=0, le=100)
+    nilai_sas: Optional[int] = Field(80, ge=0, le=100)
+    tp_tertinggi_code: Optional[str] = Field(None, max_length=60)
+    tp_terendah_code: Optional[str] = Field(None, max_length=60)
+    catatan_deskriptif: Optional[str] = Field("", max_length=1500)
+
+    @model_validator(mode="after")
+    def sanitize_rapor_entry(self):
+        self.nama_lengkap = InputSanitizer.sanitize_text(self.nama_lengkap, max_length=200, allow_empty=False)
+        for field_name, limit in (
+            ("nisn", 30),
+            ("tp_tertinggi_code", 60),
+            ("tp_terendah_code", 60),
+            ("catatan_deskriptif", 1500),
+        ):
+            val = getattr(self, field_name)
+            if val:
+                setattr(self, field_name, InputSanitizer.sanitize_text(val, max_length=limit))
+        return self
+
+
 class CustomDocumentOverrides(BaseModel):
     """Flexible user overrides allowing teachers to add/edit TPs, readiness, questions, assessments, and classroom rosters."""
     custom_chapters: Optional[List[CustomChapterItem]] = None
@@ -198,6 +226,8 @@ class CustomDocumentOverrides(BaseModel):
     jam_mengajar: Optional[str] = Field(None, max_length=30)
     jumlah_pertemuan_jurnal: Optional[int] = Field(16, ge=4, le=48)
     custom_jurnal_rows: Optional[List[CustomJurnalRowItem]] = Field(None, max_length=60)
+    # Service 16 & 17: Rapor Deskripsi & Rekap Overrides
+    rapor_entries: Optional[List[CustomRaporEntryItem]] = Field(None, max_length=60)
 
     @model_validator(mode="after")
     def sync_and_sanitize(self):

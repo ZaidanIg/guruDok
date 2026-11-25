@@ -10,6 +10,7 @@ from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
 from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
+from app.services.document_engine.rapor_blueprint import RaporBlueprintEngine
 
 # Official styling constants for Table Headers & Accents (BSKAP / GuruDok Standard)
 HEADER_STYLE = FontFace(emphasis="BOLD", fill_color=(217, 226, 243))  # #D9E2F3
@@ -185,6 +186,8 @@ class PdfDocumentEngine(DocumentEngine):
                 ServiceIdEnum.PRESENSI,
                 ServiceIdEnum.JURNAL_MENGAJAR,
                 ServiceIdEnum.DAFTAR_NILAI,
+                ServiceIdEnum.DESKRIPSI_RAPOR,
+                ServiceIdEnum.REKAP_RAPOR,
             )
             orientation = "L" if is_landscape else "P"
             if request.paper_size.value == "F4":
@@ -229,6 +232,10 @@ class PdfDocumentEngine(DocumentEngine):
                 self._build_jurnal_mengajar(pdf, request, subject, teacher)
             elif request.service_id == ServiceIdEnum.DAFTAR_NILAI:
                 self._build_daftar_nilai(pdf, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.DESKRIPSI_RAPOR:
+                self._build_deskripsi_rapor(pdf, request, subject)
+            elif request.service_id == ServiceIdEnum.REKAP_RAPOR:
+                self._build_rekap_rapor(pdf, request, subject)
 
             # 3. Lembar Pengesahan
             self._add_lembar_pengesahan(pdf, teacher)
@@ -1132,6 +1139,62 @@ class PdfDocumentEngine(DocumentEngine):
                 r.cell(_ascii_safe(item["kehadiran"]))
                 r.cell(_ascii_safe(item["refleksi"]))
                 r.cell(_ascii_safe(item["paraf"]))
+
+    def _build_deskripsi_rapor(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+    ) -> None:
+        bp = RaporBlueprintEngine.build_blueprint(request, subject)
+        self._add_doc_title(
+            pdf,
+            "DESKRIPSI CAPAIAN KOMPETENSI (e-RAPOR)",
+            f"{subject.nama_mapel} | {bp['rombel']} | Semester {request.semester} | KKTP: {bp['kktp']}",
+        )
+        pdf.set_font("Helvetica", size=7.2)
+        col_widths = (9, 24, 42, 14, 90, 90)
+        with pdf.table(col_widths=col_widths, line_height=4.5) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("No", "NISN", "Nama Peserta Didik", "Nilai", "Deskripsi Capaian Tertinggi", "Deskripsi Perlu Bimbingan"):
+                hdr.cell(h)
+            for item in bp["rows"]:
+                r = table.row()
+                r.cell(str(item["no"]))
+                r.cell(_ascii_safe(str(item["nisn"])))
+                r.cell(_ascii_safe(item["nama"]))
+                r.cell(str(item["nilai_akhir"]))
+                r.cell(_ascii_safe(item["deskripsi_tinggi"]))
+                r.cell(_ascii_safe(item["deskripsi_bimbingan"]))
+
+    def _build_rekap_rapor(
+        self,
+        pdf: FPDF,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+    ) -> None:
+        bp = RaporBlueprintEngine.build_blueprint(request, subject)
+        self._add_doc_title(
+            pdf,
+            "REKAPITULASI NILAI RAPOR FINAL DAN PERINGKAT",
+            f"{subject.nama_mapel} | {bp['rombel']} | Bobot {bp['bobot_sumatif']}% Sumatif : {bp['bobot_sas']}% SAS | KKTP: {bp['kktp']}",
+        )
+        pdf.set_font("Helvetica", size=7.5)
+        col_widths = (10, 26, 68, 22, 20, 26, 24, 34)
+        with pdf.table(col_widths=col_widths, line_height=4.8) as table:
+            hdr = table.row(style=HEADER_STYLE)
+            for h in ("No", "NISN", "Nama Peserta Didik", "Sumatif", "SAS", "Nilai Akhir", "Peringkat", "Ketuntasan"):
+                hdr.cell(h)
+            for item in bp["rows"]:
+                r = table.row()
+                r.cell(str(item["no"]))
+                r.cell(_ascii_safe(str(item["nisn"])))
+                r.cell(_ascii_safe(item["nama"]))
+                r.cell(str(item["sumatif"]))
+                r.cell(str(item["sas"]))
+                r.cell(str(item["nilai_akhir"]))
+                r.cell(f"#{item['peringkat']}")
+                r.cell(_ascii_safe(item["status"]))
 
     def _add_lembar_pengesahan(self, pdf: FPDF, teacher: TeacherProfile) -> None:
         pdf.add_page()

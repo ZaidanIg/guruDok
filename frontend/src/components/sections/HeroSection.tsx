@@ -8,6 +8,8 @@ import {
   ListOrdered,
   CheckSquare,
   ClipboardList,
+  Award,
+  BarChart3,
 } from 'lucide-react';
 import { CORE_SERVICES, QUICK_LINK_ICONS, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceId } from '../../types';
@@ -32,6 +34,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (id === '04_atp') return <ListOrdered className="h-6 w-6 text-white" />;
     if (id === '07_kktp') return <CheckSquare className="h-6 w-6 text-white" />;
     if (id === '09_lkpd') return <ClipboardList className="h-6 w-6 text-white" />;
+    if (id === '16_deskripsi_rapor') return <Award className="h-6 w-6 text-white" />;
+    if (id === '17_rekap_rapor') return <BarChart3 className="h-6 w-6 text-white" />;
     return <FileText className="h-6 w-6 text-white" />;
   };
 

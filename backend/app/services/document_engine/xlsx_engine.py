@@ -11,6 +11,7 @@ from app.models.teacher import TeacherProfile
 from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
+from app.services.document_engine.rapor_blueprint import RaporBlueprintEngine
 
 
 def _resolve_effective_tps(chapter: Optional[ChapterTopic], request: DocumentGenerateRequest) -> List[LearningObjective]:
@@ -65,6 +66,10 @@ class XlsxDocumentEngine(DocumentEngine):
                 return self._generate_jurnal_xlsx(request, subject, teacher)
             if request.service_id == ServiceIdEnum.DAFTAR_NILAI:
                 return self._generate_daftar_nilai_xlsx(request, subject, chapter, teacher)
+            if request.service_id == ServiceIdEnum.DESKRIPSI_RAPOR:
+                return self._generate_deskripsi_rapor_xlsx(request, subject, teacher)
+            if request.service_id == ServiceIdEnum.REKAP_RAPOR:
+                return self._generate_rekap_rapor_xlsx(request, subject, teacher)
             return self._generate_structured_curriculum_xlsx(request, subject, chapter, teacher, raw_template)
         except Exception as e:
             raise DocumentGenerationError(f"Failed to generate Excel document: {str(e)}")
@@ -1010,6 +1015,200 @@ class XlsxDocumentEngine(DocumentEngine):
         ws.cell(row=sig_row + 1, column=7, value="Guru Mata Pelajaran")
         ws.cell(row=sig_row + 5, column=7, value=f"({teacher.nama_guru or '................................'})").font = td_bold
         ws.cell(row=sig_row + 6, column=7, value=f"NIP. {teacher.nip_guru or '-'}")
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def _generate_deskripsi_rapor_xlsx(
+        self,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> bytes:
+        bp = RaporBlueprintEngine.build_blueprint(request, subject)
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Deskripsi e-Rapor"
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+        title_font = Font(name="Arial", size=13, bold=True, color="0F172A")
+        sub_font = Font(name="Arial", size=10, bold=True, color="334155")
+        th_font = Font(name="Arial", size=9.5, bold=True, color="0F172A")
+        td_font = Font(name="Arial", size=9, color="1E293B")
+        td_bold = Font(name="Arial", size=9, bold=True, color="0F172A")
+        header_fill = PatternFill(start_color="D9E2F3", end_color="D9E2F3", fill_type="solid")
+        summary_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+        thin_side = Side(style="thin", color="475569")
+        cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+        center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left_align = Alignment(horizontal="left", vertical="top", wrap_text=True)
+
+        kop = teacher.get_formatted_kop()
+        ws.cell(row=1, column=1, value=f"DESKRIPSI CAPAIAN KOMPETENSI (e-RAPOR) — {subject.nama_mapel.upper()}").font = title_font
+        ws.cell(row=2, column=1, value=f"Satuan Pendidikan: {kop['nama_sekolah']} | Rombel: {bp['rombel']} | Semester {request.semester}").font = sub_font
+        ws.cell(row=3, column=1, value=f"KKTP Minimum: {bp['kktp']} | Format siap salin (copy-paste) ke aplikasi e-Rapor Kemendikdasmen").font = sub_font
+
+        headers = [
+            "No",
+            "NISN",
+            "Nama Peserta Didik",
+            "Nilai Rapor",
+            "Kompetensi Tertinggi (TP)",
+            "Kompetensi Perlu Pendampingan (TP)",
+            "Deskripsi Capaian Tertinggi (e-Rapor)",
+            "Deskripsi Perlu Pendampingan (e-Rapor)",
+        ]
+        header_row = 5
+        for c_idx, h_text in enumerate(headers, start=1):
+            c = ws.cell(row=header_row, column=c_idx, value=h_text)
+            c.font = th_font
+            c.fill = header_fill
+            c.alignment = center_align
+            c.border = cell_border
+        ws.row_dimensions[header_row].height = 28
+
+        curr_row = header_row + 1
+        start_data_row = curr_row
+        for item in bp["rows"]:
+            vals = [
+                item["no"],
+                item["nisn"],
+                item["nama"],
+                item["nilai_akhir"],
+                f"[{item['tp_tertinggi_code']}] {item['tp_tertinggi_ringkasan']}",
+                f"[{item['tp_terendah_code']}] {item['tp_terendah_ringkasan']}",
+                f'="Menunjukkan penguasaan yang sangat baik dalam "&SUBSTITUTE(E{curr_row},"["&LEFT(E{curr_row},FIND("]",E{curr_row})-1)&"] ","")&"."',
+                f'="Perlu bimbingan dan pendampingan lebih lanjut dalam "&SUBSTITUTE(F{curr_row},"["&LEFT(F{curr_row},FIND("]",F{curr_row})-1)&"] ","")&"."',
+            ]
+            for c_idx, val in enumerate(vals, start=1):
+                cell = ws.cell(row=curr_row, column=c_idx, value=val)
+                cell.font = td_bold if c_idx in (1, 4) else td_font
+                cell.alignment = center_align if c_idx in (1, 2, 4) else left_align
+                cell.border = cell_border
+            ws.row_dimensions[curr_row].height = 42
+            curr_row += 1
+
+        end_data_row = curr_row - 1
+        ws.cell(row=curr_row, column=3, value="RATA-RATA NILAI RAPOR").alignment = left_align
+        ws.cell(row=curr_row, column=4, value=f"=ROUND(AVERAGE(D{start_data_row}:D{end_data_row}), 1)").alignment = center_align
+        ws.cell(row=curr_row, column=5, value=f'=COUNTIF(D{start_data_row}:D{end_data_row}, ">={bp["kktp"]}")&" Siswa Tuntas"').alignment = center_align
+        for c_idx in range(1, 9):
+            c = ws.cell(row=curr_row, column=c_idx)
+            c.font = td_bold
+            c.fill = summary_fill
+            c.border = cell_border
+
+        col_widths = [5, 14, 24, 12, 30, 30, 42, 42]
+        for idx_w, w in enumerate(col_widths, start=1):
+            ws.column_dimensions[get_column_letter(idx_w)].width = w
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def _generate_rekap_rapor_xlsx(
+        self,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> bytes:
+        bp = RaporBlueprintEngine.build_blueprint(request, subject)
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Rekap Nilai Rapor"
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+        title_font = Font(name="Arial", size=13, bold=True, color="0F172A")
+        sub_font = Font(name="Arial", size=10, bold=True, color="334155")
+        th_font = Font(name="Arial", size=9.5, bold=True, color="0F172A")
+        td_font = Font(name="Arial", size=9, color="1E293B")
+        td_bold = Font(name="Arial", size=9, bold=True, color="0F172A")
+        header_fill = PatternFill(start_color="D9E2F3", end_color="D9E2F3", fill_type="solid")
+        summary_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+        thin_side = Side(style="thin", color="475569")
+        cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+        center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
+
+        kop = teacher.get_formatted_kop()
+        ws.cell(row=1, column=1, value=f"REKAP NILAI RAPOR FINAL & PERINGKAT KELAS — {subject.nama_mapel.upper()}").font = title_font
+        ws.cell(row=2, column=1, value=f"Satuan Pendidikan: {kop['nama_sekolah']} | Rombel: {bp['rombel']} | Semester {request.semester}").font = sub_font
+        ws.cell(row=3, column=1, value="KKTP Minimum").font = td_bold
+        ws.cell(row=3, column=2, value=bp["kktp"]).font = td_bold
+        ws.cell(row=3, column=4, value="Bobot Sumatif (%)").font = td_bold
+        ws.cell(row=3, column=5, value=bp["bobot_sumatif"]).font = td_bold
+        ws.cell(row=3, column=6, value="Bobot SAS (%)").font = td_bold
+        ws.cell(row=3, column=7, value=bp["bobot_sas"]).font = td_bold
+
+        headers = [
+            "No",
+            "NISN",
+            "Nama Peserta Didik",
+            "Rata Sumatif Materi",
+            "Nilai SAS",
+            "Nilai Akhir Rapor",
+            "Peringkat",
+            "Ketuntasan (KKTP)",
+            "Predikat",
+        ]
+        header_row = 5
+        for c_idx, h_text in enumerate(headers, start=1):
+            c = ws.cell(row=header_row, column=c_idx, value=h_text)
+            c.font = th_font
+            c.fill = header_fill
+            c.alignment = center_align
+            c.border = cell_border
+        ws.row_dimensions[header_row].height = 28
+
+        start_data_row = header_row + 1
+        end_data_row = start_data_row + len(bp["rows"]) - 1
+        curr_row = start_data_row
+        for item in bp["rows"]:
+            vals = [
+                item["no"],
+                item["nisn"],
+                item["nama"],
+                item["sumatif"],
+                item["sas"],
+                f"=ROUND((D{curr_row}*$E$3/100)+(E{curr_row}*$G$3/100), 0)",
+                f"=RANK(F{curr_row}, $F${start_data_row}:$F${end_data_row})",
+                f'=IF(F{curr_row}>=$B$3, "TUNTAS", "BELUM TUNTAS")',
+                f'=IF(F{curr_row}>=90, "A (Sangat Baik)", IF(F{curr_row}>=80, "B (Baik)", IF(F{curr_row}>=$B$3, "C (Cukup)", "D (Perlu Bimbingan)")))',
+            ]
+            for c_idx, val in enumerate(vals, start=1):
+                cell = ws.cell(row=curr_row, column=c_idx, value=val)
+                cell.font = td_bold if c_idx in (1, 6, 7) else td_font
+                cell.alignment = left_align if c_idx == 3 else center_align
+                cell.border = cell_border
+            ws.row_dimensions[curr_row].height = 22
+            curr_row += 1
+
+        # Summary rows: AVERAGE, MAX, MIN
+        stats = [
+            ("RATA-RATA KELAS", f"=ROUND(AVERAGE(F{start_data_row}:F{end_data_row}), 1)"),
+            ("NILAI TERTINGGI", f"=MAX(F{start_data_row}:F{end_data_row})"),
+            ("NILAI TERENDAH", f"=MIN(F{start_data_row}:F{end_data_row})"),
+        ]
+        for label, formula in stats:
+            ws.cell(row=curr_row, column=3, value=label).alignment = left_align
+            ws.cell(row=curr_row, column=6, value=formula).alignment = center_align
+            for c_idx in range(1, 10):
+                c = ws.cell(row=curr_row, column=c_idx)
+                c.font = td_bold
+                c.fill = summary_fill
+                c.border = cell_border
+            curr_row += 1
+
+        col_widths = [5, 14, 28, 16, 12, 16, 12, 18, 22]
+        for idx_w, w in enumerate(col_widths, start=1):
+            ws.column_dimensions[get_column_letter(idx_w)].width = w
 
         buffer = io.BytesIO()
         wb.save(buffer)

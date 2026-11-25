@@ -233,7 +233,13 @@ export const App: React.FC = () => {
     const targetService = CORE_SERVICES.find((s) => s.id === serviceId);
     const allowed = (targetService?.formats || ['DOCX', 'PDF']).map((f) => f.toLowerCase() as OutputFormat);
     setOutputFormat((prev) => {
-      if (serviceId === '06_promes' || serviceId === '13_presensi' || serviceId === '15_daftar_nilai') {
+      if (
+        serviceId === '06_promes' ||
+        serviceId === '13_presensi' ||
+        serviceId === '15_daftar_nilai' ||
+        serviceId === '16_deskripsi_rapor' ||
+        serviceId === '17_rekap_rapor'
+      ) {
         return 'xlsx';
       }
       if (allowed.includes(prev)) return prev;
@@ -303,8 +309,14 @@ export const App: React.FC = () => {
     try {
       let finalOverrides: CustomDocumentOverrides = { ...customOverrides };
 
-      // Automatic Student and Rombel injection for Classroom & Jurnal Services
-      if (selectedServiceId === '13_presensi' || selectedServiceId === '14_jurnal_mengajar' || selectedServiceId === '15_daftar_nilai') {
+      // Automatic Student and Rombel injection for Classroom, Jurnal & Rapor Services
+      if (
+        selectedServiceId === '13_presensi' ||
+        selectedServiceId === '14_jurnal_mengajar' ||
+        selectedServiceId === '15_daftar_nilai' ||
+        selectedServiceId === '16_deskripsi_rapor' ||
+        selectedServiceId === '17_rekap_rapor'
+      ) {
         const activeRombel = getActiveClassroom() || getClassrooms()[0];
         if (activeRombel) {
           if (!finalOverrides.students || finalOverrides.students.length === 0) {
@@ -325,7 +337,12 @@ export const App: React.FC = () => {
         if (selectedServiceId === '13_presensi' && !finalOverrides.bulan_presensi) {
           finalOverrides.bulan_presensi = 'Agustus';
         }
-        if (selectedServiceId === '15_daftar_nilai' && !finalOverrides.kktp_nilai) {
+        if (
+          (selectedServiceId === '15_daftar_nilai' ||
+            selectedServiceId === '16_deskripsi_rapor' ||
+            selectedServiceId === '17_rekap_rapor') &&
+          !finalOverrides.kktp_nilai
+        ) {
           finalOverrides.kktp_nilai = 75;
         }
       }
@@ -345,6 +362,14 @@ export const App: React.FC = () => {
           ...row,
           no: idx + 1,
           hari_tanggal: row.hari_tanggal?.trim() || `Pertemuan Ke-${idx + 1}`,
+        }));
+      }
+
+      if (finalOverrides.rapor_entries && finalOverrides.rapor_entries.length > 0) {
+        finalOverrides.rapor_entries = finalOverrides.rapor_entries.map((entry, idx) => ({
+          ...entry,
+          nomor_absen: entry.nomor_absen || idx + 1,
+          nama_lengkap: entry.nama_lengkap?.trim() || `Peserta Didik ${idx + 1}`,
         }));
       }
 

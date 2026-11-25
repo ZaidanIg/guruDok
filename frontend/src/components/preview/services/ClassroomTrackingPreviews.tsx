@@ -8,6 +8,7 @@ import {
   TeacherProfile,
 } from '../../../types';
 import { buildDefaultJurnalRows } from '../../curriculum/JurnalEditorSection';
+import { buildRaporPreviewData } from '../../curriculum/RaporGradesEditorSection';
 
 export interface ClassroomTrackingPreviewsProps {
   serviceId: ServiceId;
@@ -383,6 +384,124 @@ export const ClassroomTrackingPreviews: React.FC<ClassroomTrackingPreviewsProps>
           * Dokumen unduhan (.xlsx) mencakup formula aktif live: rata-rata formatif, pembobotan sumatif (STS/SAS),
           Nilai Akhir (NA), status KKTP, dan statistik kelas.
         </p>
+      </div>
+    );
+  }
+
+  if (serviceId === '16_deskripsi_rapor') {
+    const { kktp, rows } = buildRaporPreviewData({
+      kelas,
+      subjectName: selectedSubject?.nama_mapel,
+      semesterChapters: currentSemesterChapters,
+      students: effectiveStudents,
+      customOverrides,
+    });
+
+    return (
+      <div className="mt-5 space-y-4 text-xs leading-relaxed">
+        <div data-keep-together="true" className="text-center">
+          <h2 className="text-base font-extrabold uppercase text-slate-900">
+            DESKRIPSI CAPAIAN KOMPETENSI PESERTA DIDIK (e-RAPOR)
+          </h2>
+          <p className="font-bold uppercase text-slate-700">
+            {selectedSubject?.nama_mapel} | {rombelLabel} | SEMESTER {semester} | KKTP: {kktp}
+          </p>
+        </div>
+
+        <div data-splittable-table="true" className="paper-table-container">
+          <table className="paper-table text-[10.5px]">
+            <thead>
+              <tr>
+                <th className="w-8 text-center">No</th>
+                <th className="w-20 text-center">NISN</th>
+                <th className="w-36 text-left">Nama Peserta Didik</th>
+                <th className="w-12 text-center">Nilai</th>
+                <th className="text-left">Deskripsi Capaian Tertinggi (e-Rapor)</th>
+                <th className="text-left">Deskripsi Perlu Pendampingan (e-Rapor)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, idx) => (
+                <tr key={`rapor16-${row.nisn}-${row.no}-${idx}`}>
+                  <td className="text-center font-bold">{row.no}</td>
+                  <td className="text-center font-mono text-[10px]">{row.nisn}</td>
+                  <td className="font-semibold">{row.nama}</td>
+                  <td className="text-center font-bold">{row.nilaiAkhir}</td>
+                  <td>{row.deskripsiTinggi}</td>
+                  <td>{row.deskripsiBimbingan}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (serviceId === '17_rekap_rapor') {
+    const { kktp, wSumatif, wSas, rows } = buildRaporPreviewData({
+      kelas,
+      subjectName: selectedSubject?.nama_mapel,
+      semesterChapters: currentSemesterChapters,
+      students: effectiveStudents,
+      customOverrides,
+    });
+    const avgScore = rows.length > 0 ? (rows.reduce((a, b) => a + b.nilaiAkhir, 0) / rows.length).toFixed(1) : '0';
+
+    return (
+      <div className="mt-5 space-y-4 text-xs leading-relaxed">
+        <div data-keep-together="true" className="text-center">
+          <h2 className="text-base font-extrabold uppercase text-slate-900">
+            REKAPITULASI NILAI RAPOR FINAL &amp; PERINGKAT KELAS
+          </h2>
+          <p className="font-bold uppercase text-slate-700">
+            {selectedSubject?.nama_mapel} | {rombelLabel} | BOBOT {wSumatif}% SUMATIF : {wSas}% SAS | KKTP: {kktp}
+          </p>
+        </div>
+
+        <div data-splittable-table="true" className="paper-table-container">
+          <table className="paper-table text-[11px]">
+            <thead>
+              <tr>
+                <th className="w-8 text-center">No</th>
+                <th className="w-20 text-center">NISN</th>
+                <th className="text-left">Nama Peserta Didik</th>
+                <th className="w-16 text-center">Sumatif</th>
+                <th className="w-14 text-center">SAS</th>
+                <th className="w-16 text-center">Nilai Rapor</th>
+                <th className="w-16 text-center">Peringkat</th>
+                <th className="w-24 text-center">Ketuntasan</th>
+                <th className="w-28 text-left">Predikat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, idx) => (
+                <tr key={`rapor17-${row.nisn}-${row.no}-${idx}`}>
+                  <td className="text-center font-bold">{row.no}</td>
+                  <td className="text-center font-mono text-[10px]">{row.nisn}</td>
+                  <td className="font-semibold">{row.nama}</td>
+                  <td className="text-center">{row.sumatif}</td>
+                  <td className="text-center">{row.sas}</td>
+                  <td className="text-center font-extrabold text-blue-800">{row.nilaiAkhir}</td>
+                  <td className="text-center font-bold">#{row.peringkat}</td>
+                  <td className="text-center font-bold">{row.status}</td>
+                  <td>{row.predikat}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-slate-100 font-bold">
+                <td colSpan={5} className="text-right pr-2">
+                  Rata-rata Nilai Akhir Kelas (=AVERAGE)
+                </td>
+                <td className="text-center font-extrabold text-blue-800">{avgScore}</td>
+                <td colSpan={3} className="text-[10px] text-slate-500">
+                  Formula Excel: =ROUND / =RANK / =IF
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     );
   }

@@ -31,6 +31,8 @@ export const LANDSCAPE_SERVICE_IDS = new Set<string>([
   '13_presensi',
   '14_jurnal_mengajar',
   '15_daftar_nilai',
+  '16_deskripsi_rapor',
+  '17_rekap_rapor',
 ]);
 
 export function getServiceOrientation(serviceId: string): PageOrientation {

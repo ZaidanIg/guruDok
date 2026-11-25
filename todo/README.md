@@ -64,10 +64,19 @@ Folder `todo/` ini menyimpan **Daftar Tugas Sprint Aktif (Active Sprint ToDo)** 
 | **Sprint 51** | **Optimasi & Integrasi 10 Ikon 3D Clay Terbaru (`asset/icon-pack/*.jpg`)** | [plan/sprint-51-integrasi-optimasi-10-icon-clay-baru.md](../plan/sprint-51-integrasi-optimasi-10-icon-clay-baru.md) | [todo/sprint-51-todo.md](./sprint-51-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 52** | **Penyeragaman Brand Title Menjadi `GuruDok` (Hapus `.id`)** | [plan/sprint-52-ubah-brand-title-gurudok.md](../plan/sprint-52-ubah-brand-title-gurudok.md) | [todo/sprint-52-todo.md](./sprint-52-todo.md) | ✅ `VERIFIED_DONE` |
 | **Sprint 53** | **Penyederhanaan Flow Generator, Sinkronisasi Katalog, & Modularisasi Preview** | [plan/sprint-53-refactor-flow-generator-katalog.md](../plan/sprint-53-refactor-flow-generator-katalog.md) | [todo/sprint-53-todo.md](./sprint-53-todo.md) | ✅ `VERIFIED_DONE` |
+| **Sprint 54** | **Service 16 (Deskripsi e-Rapor) & Service 17 (Rekap Nilai Rapor)** | [plan/sprint-54-service-16-deskripsi-rapor-dan-17-rekap-rapor.md](../plan/sprint-54-service-16-deskripsi-rapor-dan-17-rekap-rapor.md) | [todo/sprint-54-todo.md](./sprint-54-todo.md) | ✅ `VERIFIED_DONE` |
 
 ---
 
 ## 2. Log Perubahan Terakhir (Activity & Change Log)
+
+- **2026-11-25 (Sprint 54):**
+  - Menuntaskan **Klaster 4** dengan mengimplementasikan **Service 16 (`16_deskripsi_rapor`)** dan **Service 17 (`17_rekap_rapor`)**:
+    - Menambahkan `DESKRIPSI_RAPOR` & `REKAP_RAPOR`, model `CustomRaporEntryItem` (`InputSanitizer`), dan `rapor_entries` pada [generation.py](../backend/app/schemas/generation.py), serta mendaftarkan display names di [generation_service.py](../backend/app/services/generation_service.py).
+    - Membuat [rapor_blueprint.py](../backend/app/services/document_engine/rapor_blueprint.py) untuk kalkulasi Nilai Rapor berbobot, Peringkat kelas, Ketuntasan KKTP, dan narasi baku e-Rapor Kemendikdasmen berbasis `ringkasan_rapor` `GuruDocDB`.
+    - Menambahkan generator `.xlsx` berformula aktif (`=ROUND`, `=RANK`, `=IF`, `=MAX`, `=MIN`, `=AVERAGE`, `=COUNTIF`) di [xlsx_engine.py](../backend/app/services/document_engine/xlsx_engine.py), serta `.docx` & `.pdf` Landscape di [docx_engine.py](../backend/app/services/document_engine/docx_engine.py) dan [pdf_engine.py](../backend/app/services/document_engine/pdf_engine.py).
+    - Membuat [RaporGradesEditorSection.tsx](../frontend/src/components/curriculum/RaporGradesEditorSection.tsx), menambahkan *Live Preview* di [ClassroomTrackingPreviews.tsx](../frontend/src/components/preview/services/ClassroomTrackingPreviews.tsx), serta memperbarui Katalog [services.ts](../frontend/src/constants/services.ts) sehingga tepat menyisakan **2 layanan akhir (`02` & `18`)**.
+  - **Verifikasi Zero-Trust:** `npm run build` **0 errors** dan `pytest` **136/136 PASS (100%)**.
 
 - **2026-11-25 (Sprint 53):**
   - Menghapus hambatan pop-up `ServiceModeSelectionModal` pada [App.tsx](../frontend/src/App.tsx) agar pemilihan layanan langsung membuka Studio Generator, serta mengganti tombol `Ganti Mode` menjadi switch *in-place* khusus layanan kurikulum (`03`–`09`) di [DocumentGenerator.tsx](../frontend/src/components/sections/DocumentGenerator.tsx).

@@ -17,6 +17,7 @@ from app.schemas.generation import DocumentGenerateRequest, ServiceIdEnum
 from app.services.document_engine.base_engine import DocumentEngine
 from app.services.document_engine.question_blueprint import QuestionBlueprintEngine
 from app.services.document_engine.jurnal_blueprint import JurnalBlueprintEngine
+from app.services.document_engine.rapor_blueprint import RaporBlueprintEngine
 
 
 def _resolve_effective_tps(chapter: Optional[ChapterTopic], request: DocumentGenerateRequest) -> List[LearningObjective]:
@@ -122,7 +123,11 @@ class DocxDocumentEngine(DocumentEngine):
                 section.page_width = Mm(self.A4_WIDTH_MM)
                 section.page_height = Mm(self.A4_HEIGHT_MM)
 
-            if request.service_id == ServiceIdEnum.JURNAL_MENGAJAR:
+            if request.service_id in (
+                ServiceIdEnum.JURNAL_MENGAJAR,
+                ServiceIdEnum.DESKRIPSI_RAPOR,
+                ServiceIdEnum.REKAP_RAPOR,
+            ):
                 section.orientation = WD_ORIENT.LANDSCAPE
                 section.page_width, section.page_height = section.page_height, section.page_width
 
@@ -190,6 +195,10 @@ class DocxDocumentEngine(DocumentEngine):
                 self._build_exam_document(doc, request, subject, chapter, teacher)
             elif request.service_id == ServiceIdEnum.JURNAL_MENGAJAR:
                 self._build_jurnal_mengajar(doc, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.DESKRIPSI_RAPOR:
+                self._build_deskripsi_rapor(doc, request, subject, teacher)
+            elif request.service_id == ServiceIdEnum.REKAP_RAPOR:
+                self._build_rekap_rapor(doc, request, subject, teacher)
 
             self._add_lembar_pengesahan(doc, teacher)
 
@@ -1651,3 +1660,77 @@ class DocxDocumentEngine(DocumentEngine):
             j_table.cell(r_i, 8).text = item["paraf"]
 
         self._style_data_table(j_table, [10, 32, 22, 50, 32, 42, 25, 34, 13], has_header_row=True)
+
+    def _build_deskripsi_rapor(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        """Builds Word Landscape table for Service 16 (Deskripsi Capaian Kompetensi e-Rapor)."""
+        self._add_kop_surat(doc, teacher)
+        bp = RaporBlueprintEngine.build_blueprint(request, subject)
+
+        p_title = doc.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_t = p_title.add_run("DESKRIPSI CAPAIAN KOMPETENSI PESERTA DIDIK (e-RAPOR)\n")
+        r_t.bold = True
+        r_t.font.size = Pt(12)
+        r_sub = p_title.add_run(
+            f"{subject.nama_mapel.upper()} | {bp['rombel']} | SEMESTER {request.semester} | KKTP: {bp['kktp']}"
+        )
+        r_sub.bold = True
+        r_sub.font.size = Pt(10)
+
+        headers = ["No", "NISN", "Nama Peserta Didik", "Nilai", "Deskripsi Capaian Tertinggi", "Deskripsi Perlu Bimbingan"]
+        t = doc.add_table(rows=len(bp["rows"]) + 1, cols=6)
+        for c_i, h_text in enumerate(headers):
+            t.cell(0, c_i).text = h_text
+            self._format_header_cell(t.cell(0, c_i))
+        for r_i, item in enumerate(bp["rows"], start=1):
+            t.cell(r_i, 0).text = str(item["no"])
+            t.cell(r_i, 1).text = str(item["nisn"])
+            t.cell(r_i, 2).text = item["nama"]
+            t.cell(r_i, 3).text = str(item["nilai_akhir"])
+            t.cell(r_i, 4).text = item["deskripsi_tinggi"]
+            t.cell(r_i, 5).text = item["deskripsi_bimbingan"]
+        self._style_data_table(t, [10, 26, 44, 16, 82, 82], has_header_row=True)
+
+    def _build_rekap_rapor(
+        self,
+        doc: Document,
+        request: DocumentGenerateRequest,
+        subject: CurriculumSubject,
+        teacher: TeacherProfile,
+    ) -> None:
+        """Builds Word Landscape table for Service 17 (Rekap Nilai Rapor Final & Peringkat Kelas)."""
+        self._add_kop_surat(doc, teacher)
+        bp = RaporBlueprintEngine.build_blueprint(request, subject)
+
+        p_title = doc.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_t = p_title.add_run("REKAPITULASI NILAI RAPOR FINAL DAN PERINGKAT KELAS\n")
+        r_t.bold = True
+        r_t.font.size = Pt(12)
+        r_sub = p_title.add_run(
+            f"{subject.nama_mapel.upper()} | {bp['rombel']} | BOBOT SUMATIF {bp['bobot_sumatif']}% : SAS {bp['bobot_sas']}% | KKTP: {bp['kktp']}"
+        )
+        r_sub.bold = True
+        r_sub.font.size = Pt(10)
+
+        headers = ["No", "NISN", "Nama Peserta Didik", "Sumatif", "SAS", "Nilai Rapor", "Peringkat", "Ketuntasan"]
+        t = doc.add_table(rows=len(bp["rows"]) + 1, cols=8)
+        for c_i, h_text in enumerate(headers):
+            t.cell(0, c_i).text = h_text
+            self._format_header_cell(t.cell(0, c_i))
+        for r_i, item in enumerate(bp["rows"], start=1):
+            t.cell(r_i, 0).text = str(item["no"])
+            t.cell(r_i, 1).text = str(item["nisn"])
+            t.cell(r_i, 2).text = item["nama"]
+            t.cell(r_i, 3).text = str(item["sumatif"])
+            t.cell(r_i, 4).text = str(item["sas"])
+            t.cell(r_i, 5).text = str(item["nilai_akhir"])
+            t.cell(r_i, 6).text = f"#{item['peringkat']}"
+            t.cell(r_i, 7).text = item["status"]
+        self._style_data_table(t, [10, 28, 66, 24, 22, 28, 24, 38], has_header_row=True)

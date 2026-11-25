@@ -1,7 +1,7 @@
 export type Jenjang = 'SD' | 'SMP' | 'SMA';
 export type PaperSize = 'F4' | 'A4';
 export type OutputFormat = 'docx' | 'xlsx' | 'pdf';
-export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '10_kuis' | '11_sumatif_bab' | '12_sts_sas' | '13_presensi' | '14_jurnal_mengajar' | '15_daftar_nilai';
+export type ServiceId = '03_cp_tp' | '04_atp' | '05_prota' | '06_promes' | '07_kktp' | '08_modul_ajar' | '09_lkpd' | '10_kuis' | '11_sumatif_bab' | '12_sts_sas' | '13_presensi' | '14_jurnal_mengajar' | '15_daftar_nilai' | '16_deskripsi_rapor' | '17_rekap_rapor';
 export type GenerationMode = 'template' | 'manual';
 
 export interface CustomChapterItem {
@@ -140,6 +140,17 @@ export interface CustomJurnalRowItem {
   paraf: string;
 }
 
+export interface CustomRaporEntryItem {
+  nomor_absen?: number;
+  nisn?: string;
+  nama_lengkap: string;
+  nilai_sumatif?: number;
+  nilai_sas?: number;
+  tp_tertinggi_code?: string;
+  tp_terendah_code?: string;
+  catatan_deskriptif?: string;
+}
+
 export interface CustomDocumentOverrides {
   custom_chapters?: CustomChapterItem[];
   custom_elemen_cp?: CustomCpElementItem[];
@@ -189,6 +200,7 @@ export interface CustomDocumentOverrides {
   jam_mengajar?: string;
   jumlah_pertemuan_jurnal?: number;
   custom_jurnal_rows?: CustomJurnalRowItem[];
+  rapor_entries?: CustomRaporEntryItem[];
 }
 
 export interface DocumentGenerateRequest {

@@ -11,6 +11,8 @@ import {
   CheckSquare,
   ClipboardList,
   Users,
+  Award,
+  BarChart3,
 } from 'lucide-react';
 import { CORE_SERVICES, UPCOMING_SERVICES, SERVICE_ICON_PACK } from '../../constants/services';
 import { ServiceCatalogItem, ServiceId } from '../../types';
@@ -38,6 +40,8 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
     if (item.id === '04_atp') return <ListOrdered className="h-5 w-5 text-white" />;
     if (item.id === '07_kktp') return <CheckSquare className="h-5 w-5 text-white" />;
     if (item.id === '09_lkpd') return <ClipboardList className="h-5 w-5 text-white" />;
+    if (item.id === '16_deskripsi_rapor') return <Award className="h-5 w-5 text-white" />;
+    if (item.id === '17_rekap_rapor') return <BarChart3 className="h-5 w-5 text-white" />;
     if (item.id === 'coming_soon') return <Layers className="h-5 w-5 text-white" />;
     return <FileText className="h-5 w-5 text-white" />;
   };
@@ -135,7 +139,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                     onClick={() => setShowRoadmapModal(true)}
                     className="clay-btn-white flex w-full items-center justify-between px-4 py-2.5 text-xs font-bold text-slate-700"
                   >
-                    <span>Daftar 4 Layanan Tersisa</span>
+                    <span>Daftar 2 Layanan Tersisa</span>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 ) : item.id === '01_data_kelas' ? (
@@ -177,10 +181,10 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
 
             <div>
               <h3 className="text-lg font-extrabold text-slate-900">
-                Daftar 4 Layanan Tambahan (Menuju 18 Service Lengkap)
+                Daftar 2 Layanan Tambahan (Menuju 18 Service Lengkap)
               </h3>
               <p className="mt-1 text-xs font-medium text-slate-500">
-                Melengkapi 14 layanan aktif saat ini menjadi total 18 layanan administrasi guru sesuai spesifikasi.
+                Melengkapi 16 layanan aktif saat ini menjadi total 18 layanan administrasi guru sesuai spesifikasi.
               </p>
             </div>
 

@@ -59,6 +59,7 @@ import { ChapterEditorModal } from '../curriculum/ChapterEditorModal';
 import { CpElementEditorModal } from '../curriculum/CpElementEditorModal';
 import { QuestionBuilderSection } from '../curriculum/QuestionBuilderSection';
 import { JurnalEditorSection } from '../curriculum/JurnalEditorSection';
+import { RaporGradesEditorSection } from '../curriculum/RaporGradesEditorSection';
 import { CurriculumPlanningPreviews } from '../preview/services/CurriculumPlanningPreviews';
 import { AssessmentLkpdPreviews } from '../preview/services/AssessmentLkpdPreviews';
 import { ClassroomTrackingPreviews } from '../preview/services/ClassroomTrackingPreviews';
@@ -291,7 +292,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const isPresensi = activeService.id === '13_presensi';
   const isJurnal = activeService.id === '14_jurnal_mengajar';
   const isDaftarNilai = activeService.id === '15_daftar_nilai';
-  const isClassroomService = isPresensi || isDaftarNilai;
+  const isDeskripsiRapor = activeService.id === '16_deskripsi_rapor';
+  const isRekapRapor = activeService.id === '17_rekap_rapor';
+  const isRaporService = isDeskripsiRapor || isRekapRapor;
+  const isClassroomService = isPresensi || isDaftarNilai || isRaporService;
 
   // Form Field Toggles by Service
   const showChapterSelector = Boolean(activeService.requiresChapter || isModulAjar || isLkpd || isKuis || isSumatifBab);
@@ -835,6 +839,15 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           ...row,
           no: idx + 1,
           hari_tanggal: row.hari_tanggal?.trim() || `Pertemuan Ke-${idx + 1}`,
+        }));
+      }
+
+      // Sanitize Rapor entries so empty nama fields never trigger HTTP 422
+      if (sanitizedOverrides.rapor_entries && sanitizedOverrides.rapor_entries.length > 0) {
+        sanitizedOverrides.rapor_entries = sanitizedOverrides.rapor_entries.map((entry, idx) => ({
+          ...entry,
+          nomor_absen: entry.nomor_absen || idx + 1,
+          nama_lengkap: entry.nama_lengkap?.trim() || `Peserta Didik ${idx + 1}`,
         }));
       }
 
@@ -1942,6 +1955,19 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               subjectName={selectedSubject?.nama_mapel}
               defaultRombel={activeClassroom?.nama_rombel}
               semesterChapters={currentSemesterChapters}
+              customOverrides={customOverrides}
+              onChangeCustomOverrides={onChangeCustomOverrides}
+            />
+          )}
+
+          {/* Card Khusus 1C: Pengaturan Nilai & Deskripsi Rapor (Service 16 & 17) */}
+          {(isDeskripsiRapor || isRekapRapor) && (
+            <RaporGradesEditorSection
+              serviceId={isRekapRapor ? '17_rekap_rapor' : '16_deskripsi_rapor'}
+              kelas={kelas}
+              subjectName={selectedSubject?.nama_mapel}
+              semesterChapters={currentSemesterChapters}
+              effectiveStudents={effectiveStudents}
               customOverrides={customOverrides}
               onChangeCustomOverrides={onChangeCustomOverrides}
             />
@@ -3083,7 +3109,9 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
                     {(activeService.id === '13_presensi' ||
                       activeService.id === '14_jurnal_mengajar' ||
-                      activeService.id === '15_daftar_nilai') && (
+                      activeService.id === '15_daftar_nilai' ||
+                      activeService.id === '16_deskripsi_rapor' ||
+                      activeService.id === '17_rekap_rapor') && (
                       <ClassroomTrackingPreviews
                         serviceId={activeService.id}
                         kelas={kelas}

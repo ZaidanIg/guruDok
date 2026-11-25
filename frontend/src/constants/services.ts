@@ -165,11 +165,35 @@ export const CORE_SERVICES: ServiceCatalogItem[] = [
     requiresChapter: false,
   },
   {
+    id: '16_deskripsi_rapor',
+    codeLabel: 'Service 16',
+    title: 'Deskripsi Rapor (e-Rapor Generator)',
+    shortTitle: 'Deskripsi e-Rapor',
+    description: 'Generator narasi capaian kompetensi otomatis dari TP & ringkasan rapor siap salin ke e-Rapor dinas.',
+    formats: ['XLSX', 'DOCX', 'PDF'],
+    isFree: true,
+    isComingSoon: false,
+    iconColor: 'green',
+    requiresChapter: false,
+  },
+  {
+    id: '17_rekap_rapor',
+    codeLabel: 'Service 17',
+    title: 'Rekap Nilai Rapor Final',
+    shortTitle: 'Rekap Rapor',
+    description: 'Rekapitulasi nilai rapor final berbobot (Sumatif + SAS), peringkat kelas (RANK), rata-rata & ketuntasan KKTP.',
+    formats: ['XLSX', 'DOCX', 'PDF'],
+    isFree: true,
+    isComingSoon: false,
+    iconColor: 'green',
+    requiresChapter: false,
+  },
+  {
     id: 'coming_soon',
     codeLabel: 'Tahap Akhir',
-    title: '4 Layanan Tambahan',
+    title: '2 Layanan Tambahan',
     shortTitle: 'Roadmap 18 Service',
-    description: 'Template Administrasi Kelas, Deskripsi e-Rapor, Rekap Nilai Rapor Final, & Paket Siap Supervisi (ZIP/PDF).',
+    description: 'Template Administrasi Kelas & Paket Siap Supervisi (Master Bundle ZIP/PDF).',
     formats: ['DOCX', 'XLSX', 'PDF'],
     isFree: false,
     isComingSoon: true,
@@ -281,8 +305,6 @@ export const DELAPAN_DIMENSI_PROFIL_LULUSAN: DimensiProfilLulusanItem[] = [
 
 export const UPCOMING_SERVICES = [
   { code: '02', name: 'Template Administrasi Kelas (Struktur, Piket, Denah)', format: 'DOCX / PDF' },
-  { code: '16', name: 'Deskripsi Capaian Kompetensi (e-Rapor Generator)', format: 'XLSX' },
-  { code: '17', name: 'Rekap Nilai Rapor Final & Peringkat Kelas', format: 'XLSX' },
   { code: '18', name: 'Paket Siap Supervisi (Master Bundle All-in-One)', format: 'ZIP / PDF' },
 ];
 
